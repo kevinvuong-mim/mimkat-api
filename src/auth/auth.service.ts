@@ -20,6 +20,7 @@ import {
   ActiveSessionsResponseDto,
 } from './dto/session.dto';
 import { AUTH_CONSTANTS } from './constants/auth.constants';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -49,6 +50,7 @@ export class AuthService {
         email,
         password: hashedPassword,
         fullName,
+        provider: 'local',
       },
       select: {
         id: true,
@@ -74,6 +76,13 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Check if user has password (not OAuth user)
+    if (!user.password) {
+      throw new UnauthorizedException(
+        'This account uses Google login. Please sign in with Google.',
+      );
     }
 
     // Check if user is active
@@ -102,6 +111,77 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+      },
+      ...tokens,
+    };
+  }
+
+  async googleLogin(googleUser: GoogleAuthDto, deviceInfo?: DeviceInfo) {
+    if (!googleUser) {
+      throw new BadRequestException('No user from Google');
+    }
+
+    // Check if user exists with Google ID
+    let user = await this.prisma.user.findUnique({
+      where: { googleId: googleUser.email }, // Using email as googleId
+    });
+
+    // If not found by googleId, check by email
+    if (!user) {
+      user = await this.prisma.user.findUnique({
+        where: { email: googleUser.email },
+      });
+    }
+
+    // If user exists but registered with local auth, link Google account
+    if (user && !user.googleId) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId: googleUser.email,
+          provider: 'google',
+          avatar: googleUser.avatar,
+          fullName:
+            user.fullName || `${googleUser.firstName} ${googleUser.lastName}`,
+        },
+      });
+    }
+
+    // If user doesn't exist, create new user
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email: googleUser.email,
+          googleId: googleUser.email,
+          fullName: `${googleUser.firstName} ${googleUser.lastName}`,
+          avatar: googleUser.avatar,
+          provider: 'google',
+          password: null, // No password for Google users
+        },
+      });
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account has been disabled');
+    }
+
+    // Check device limit
+    await this.enforceDeviceLimit(user.id);
+
+    // Generate tokens
+    const tokens = await this.generateTokens(user.id, user.email);
+
+    // Save refresh token to database with device info
+    await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
+
+    return {
+      message: 'Google login successful',
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        avatar: user.avatar,
       },
       ...tokens,
     };
@@ -226,7 +306,7 @@ export class AuthService {
     refreshToken: string,
     deviceInfo?: DeviceInfo,
   ) {
-    const expiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+    const expiresIn = AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION;
     const expiresAt = new Date();
 
     // Parse expiration time (e.g., 7d, 24h, 60m)

@@ -18,6 +18,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { DeviceUtil } from '../common/utils/device.util';
 
 @Controller('auth')
@@ -91,5 +92,23 @@ export class AuthController {
     @Param('tokenId') tokenId: string,
   ) {
     return this.authService.logoutDevice(user.id, tokenId);
+  }
+
+  // Google OAuth routes
+  @Public()
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuth() {
+    // This route initiates the Google OAuth flow
+    // User will be redirected to Google's login page
+  }
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuthCallback(@Req() req: Request) {
+    // After Google authentication, this callback is triggered
+    const deviceInfo = DeviceUtil.extractDeviceInfo(req);
+    return this.authService.googleLogin(req.user as any, deviceInfo);
   }
 }
