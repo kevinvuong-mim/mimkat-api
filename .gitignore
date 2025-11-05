@@ -51,3 +51,5 @@ Thumbs.db
 
 # NestJS specific
 *.tsbuildinfo
+
+/generated/prisma
