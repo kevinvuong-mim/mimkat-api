@@ -1,14 +1,32 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import { AppModule } from './app.module';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import helmet from 'helmet';
+import compression from 'compression';
+import { AppModule } from '@/app.module';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+
+  // Helmet - Security headers middleware
+  app.use(
+    helmet({
+      contentSecurityPolicy: process.env.NODE_ENV === 'production',
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+      },
+    }),
+  );
+
+  // Global API prefix
+  app.setGlobalPrefix('api/v1');
 
   // Enable CORS với security headers
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(', ').filter(Boolean)
+      : '*',
     credentials: true,
   });
 
@@ -24,21 +42,30 @@ async function bootstrap() {
     }),
   );
 
-  // Security headers
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader(
-      'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains',
-    );
-    next();
-  });
+  // Request size limit - Express default là 100kb
+  // Có thể config trong NestFactory.create nếu cần tăng:
+  // app.use(express.json({ limit: '10mb' }));
+  // app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(
-    `🚀 Application is running on: http://localhost:${process.env.PORT ?? 3000}`,
+  // Compression - Enable response compression
+  app.use(
+    compression({
+      threshold: 1024, // Chỉ compress response > 1KB
+      level: 6, // Compression level (0-9)
+    }),
   );
+
+  // Graceful shutdown
+  app.enableShutdownHooks();
+
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+
+  logger.log(`🚀 Application is running on: http://localhost:${port}`);
 }
-bootstrap();
+
+bootstrap().catch((err) => {
+  const logger = new Logger('Bootstrap');
+  logger.error('Failed to start application', err);
+  process.exit(1);
+});

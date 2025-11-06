@@ -1,31 +1,26 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Injectable,
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { PrismaService } from '../prisma/prisma.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { DeviceInfo } from '../common/utils/device.util';
-import {
-  SessionResponseDto,
-  ActiveSessionsResponseDto,
-} from './dto/session.dto';
-import { AUTH_CONSTANTS } from './constants/auth.constants';
-import { GoogleAuthDto } from './dto/google-auth.dto';
-import { MailService } from '../mail/mail.service';
+import { PrismaService } from '@prisma/prisma.service';
+import { RegisterDto } from '@auth/dto/register.dto';
+import { LoginDto } from '@auth/dto/login.dto';
+import { DeviceInfo } from '@common/utils/device.util';
+import { ActiveSessionsResponseDto } from '@auth/dto/session.dto';
+import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
+import { GoogleAuthDto } from '@auth/dto/google-auth.dto';
+import { MailService } from '@mail/mail.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -33,7 +28,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, fullName } = registerDto;
+    const { email, password } = registerDto;
 
     // Check if email already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -60,7 +55,6 @@ export class AuthService {
       data: {
         email,
         password: hashedPassword,
-        fullName,
         provider: 'local',
         isEmailVerified: false,
         verificationToken: hashedToken,
@@ -69,21 +63,19 @@ export class AuthService {
       select: {
         id: true,
         email: true,
-        fullName: true,
         createdAt: true,
       },
     });
 
     // Send verification email
     try {
-      await this.mailService.sendVerificationEmail(
-        email,
-        verificationToken,
-        fullName,
-      );
+      await this.mailService.sendVerificationEmail(email, verificationToken);
     } catch (error) {
       // Log error but don't fail registration
-      console.error('Failed to send verification email:', error);
+      this.logger.error(
+        'Failed to send verification email',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
 
     return {
@@ -105,10 +97,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // Check if user has password (not OAuth user)
-    if (!user.password) {
+    // Check if user supports password login (local accounts only)
+    if (!user.password || user.provider !== 'local') {
       throw new UnauthorizedException(
-        'This account uses Google login. Please sign in with Google.',
+        'This account does not support password login. Please use your account provider.',
       );
     }
 
@@ -135,7 +127,7 @@ export class AuthService {
     await this.enforceDeviceLimit(user.id);
 
     // Generate tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id);
 
     // Save refresh token to database with device info
     await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
@@ -183,6 +175,7 @@ export class AuthService {
         data: {
           googleId: googleUser.googleId,
           provider: 'google',
+          password: null, // Clear password when converting to Google account
           avatar: googleUser.avatar,
           fullName:
             user.fullName || `${googleUser.firstName} ${googleUser.lastName}`,
@@ -214,7 +207,7 @@ export class AuthService {
     await this.enforceDeviceLimit(user.id);
 
     // Generate tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id);
 
     // Save refresh token to database with device info
     await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
@@ -296,10 +289,7 @@ export class AuthService {
     }
 
     // Generate new tokens
-    const tokens = await this.generateTokens(
-      tokenRecord.user.id,
-      tokenRecord.user.email,
-    );
+    const tokens = await this.generateTokens(tokenRecord.user.id);
 
     // Delete old refresh token and save new token (token rotation)
     await this.prisma.session.delete({
@@ -307,7 +297,7 @@ export class AuthService {
     });
 
     // Preserve device info from old token if not provided
-    const deviceInfoToSave: DeviceInfo = deviceInfo || {
+    const deviceInfoToSave = deviceInfo || {
       deviceName: tokenRecord.deviceName ?? 'Unknown',
       deviceType: tokenRecord.deviceType ?? 'Unknown',
       ipAddress: tokenRecord.ipAddress ?? 'Unknown',
@@ -326,16 +316,16 @@ export class AuthService {
     };
   }
 
-  private async generateTokens(userId: string, email: string) {
-    const payload = { sub: userId, email };
+  private async generateTokens(userId: string) {
+    const payload = { sub: userId };
 
     const accessToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_SECRET || 'default-secret',
+      secret: process.env.JWT_SECRET,
       expiresIn: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION,
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_REFRESH_SECRET || 'default-refresh-secret',
+      secret: process.env.JWT_REFRESH_SECRET,
       expiresIn: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION,
     });
 
@@ -403,10 +393,10 @@ export class AuthService {
       },
     });
 
-    const sessionDtos: SessionResponseDto[] = sessions.map((session) => ({
+    const sessionDtos = sessions.map((session) => ({
       id: session.id,
-      deviceName: session.deviceName || 'Unknown Device',
-      deviceType: session.deviceType || 'web',
+      deviceName: session.deviceName || 'Unknown',
+      deviceType: session.deviceType || 'Unknown',
       ipAddress: session.ipAddress || 'Unknown',
       createdAt: session.createdAt,
       lastUsedAt: session.lastUsedAt,
@@ -561,11 +551,7 @@ export class AuthService {
     });
 
     // Send verification email
-    await this.mailService.sendVerificationEmail(
-      email,
-      verificationToken,
-      user.fullName ?? undefined,
-    );
+    await this.mailService.sendVerificationEmail(email, verificationToken);
 
     return {
       message: 'Verification email sent successfully',

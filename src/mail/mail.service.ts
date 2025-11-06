@@ -11,7 +11,7 @@ export class MailService {
     private readonly configService: ConfigService,
   ) {}
 
-  async sendVerificationEmail(email: string, token: string, fullName?: string) {
+  async sendVerificationEmail(email: string, token: string) {
     const appUrl = this.configService.get<string>('APP_URL');
     const verificationUrl = `${appUrl}/auth/verify-email?token=${token}`;
 
@@ -19,17 +19,17 @@ export class MailService {
       await this.mailerService.sendMail({
         to: email,
         subject: 'Verify Your Email Address',
-        html: this.getVerificationEmailTemplate(verificationUrl, fullName),
+        html: this.getVerificationEmailTemplate(verificationUrl),
       });
 
-      this.logger.log(`Verification email sent to ${email}`);
+      this.logger.log('Verification email sent successfully');
     } catch (error) {
-      this.logger.error(`Failed to send verification email to ${email}`, error.stack);
+      this.logger.error('Failed to send verification email', error.stack);
       throw new Error('Failed to send verification email');
     }
   }
 
-  private getVerificationEmailTemplate(verificationUrl: string, fullName?: string): string {
+  private getVerificationEmailTemplate(verificationUrl: string): string {
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -99,7 +99,7 @@ export class MailService {
             <h1>Email Verification</h1>
           </div>
           <div class="content">
-            <p>Hi ${fullName || 'there'},</p>
+            <p>Hi there,</p>
             <p>Thank you for registering! Please verify your email address to complete your registration and access all features.</p>
             <p style="text-align: center;">
               <a href="${verificationUrl}" class="button">Verify Email Address</a>

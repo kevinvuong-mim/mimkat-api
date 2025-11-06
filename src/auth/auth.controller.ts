@@ -17,11 +17,14 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { Public } from '../common/decorators/public.decorator';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
-import { DeviceUtil } from '../common/utils/device.util';
+import { Public } from '@common/decorators/public.decorator';
+import {
+  CurrentUser,
+  type UserPayload,
+} from '@common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
+import { GoogleAuthGuard } from '@auth/guards/google-auth.guard';
+import { DeviceUtil } from '@common/utils/device.util';
 
 @Controller('auth')
 export class AuthController {
@@ -48,7 +51,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: UserPayload,
     @Body() refreshTokenDto: RefreshTokenDto,
   ) {
     return this.authService.logout(user.id, refreshTokenDto.refreshToken);
@@ -72,7 +75,7 @@ export class AuthController {
   @Get('sessions')
   @HttpCode(HttpStatus.OK)
   async getActiveSessions(
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: UserPayload,
     @Body() refreshTokenDto?: RefreshTokenDto,
   ) {
     return this.authService.getActiveSessions(
@@ -84,7 +87,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Delete('sessions')
   @HttpCode(HttpStatus.OK)
-  async logoutAllDevices(@CurrentUser() user: { id: string }) {
+  async logoutAllDevices(@CurrentUser() user: UserPayload) {
     return this.authService.logoutAllDevices(user.id);
   }
 
@@ -92,7 +95,7 @@ export class AuthController {
   @Delete('sessions/:tokenId')
   @HttpCode(HttpStatus.OK)
   async logoutDevice(
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: UserPayload,
     @Param('tokenId') tokenId: string,
   ) {
     return this.authService.logoutDevice(user.id, tokenId);

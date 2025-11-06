@@ -20,18 +20,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: any,
     done: VerifyCallback,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { id, name, emails, photos } = profile;
     const user = {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       googleId: id,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       email: emails[0].value,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       firstName: name.givenName,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       lastName: name.familyName,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       avatar: photos[0].value,
       accessToken,
       refreshToken,
