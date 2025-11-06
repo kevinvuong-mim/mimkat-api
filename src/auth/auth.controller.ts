@@ -138,7 +138,7 @@ export class AuthController {
       deviceInfo,
     );
 
-    // Return HTML page that sends tokens to parent window via postMessage
+    // Return HTML page that stores tokens in localStorage and closes
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
     res.send(`
       <!DOCTYPE html>
@@ -183,20 +183,31 @@ export class AuthController {
           </div>
           <script>
             try {
-              if (window.opener) {
-                window.opener.postMessage(
-                  {
-                    type: 'GOOGLE_AUTH_SUCCESS',
-                    data: ${JSON.stringify(tokens)}
-                  },
-                  '${frontendUrl}'
-                );
-                setTimeout(() => window.close(), 1000);
-              } else {
-                document.body.innerHTML = '<div class="container"><h1>⚠️ Lỗi</h1><p>Không thể gửi dữ liệu về cửa sổ chính</p></div>';
+              const tokens = ${JSON.stringify(tokens)};
+              
+              // Store tokens in localStorage with a temporary key
+              const storageKey = 'google_oauth_result_' + Date.now();
+              localStorage.setItem(storageKey, JSON.stringify({
+                type: 'GOOGLE_AUTH_SUCCESS',
+                data: tokens,
+                timestamp: Date.now()
+              }));
+              
+              // Try postMessage first (if window.opener exists)
+              if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                  type: 'GOOGLE_AUTH_SUCCESS',
+                  data: tokens,
+                  storageKey: storageKey
+                }, '${frontendUrl}');
               }
+              
+              // Close window after a short delay
+              setTimeout(() => {
+                window.close();
+              }, 500);
             } catch (error) {
-              console.error('Error sending message:', error);
+              console.error('Error in OAuth callback:', error);
               document.body.innerHTML = '<div class="container"><h1>⚠️ Lỗi</h1><p>Có lỗi xảy ra: ' + error.message + '</p></div>';
             }
           </script>
