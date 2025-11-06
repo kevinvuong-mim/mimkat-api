@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -21,12 +22,14 @@ import {
 } from './dto/session.dto';
 import { AUTH_CONSTANTS } from './constants/auth.constants';
 import { GoogleAuthDto } from './dto/google-auth.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -44,13 +47,24 @@ export class AuthService {
     // Hash password with bcrypt (salt rounds = 12 for high security)
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create new user
+    // Generate verification token
+    const verificationToken = this.generateVerificationToken();
+    const hashedToken = await bcrypt.hash(verificationToken, 10);
+
+    // Token expires in 48 hours
+    const verificationTokenExpiry = new Date();
+    verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 48);
+
+    // Create new user with verification fields
     const user = await this.prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         fullName,
         provider: 'local',
+        isEmailVerified: false,
+        verificationToken: hashedToken,
+        verificationTokenExpiry,
       },
       select: {
         id: true,
@@ -60,8 +74,21 @@ export class AuthService {
       },
     });
 
+    // Send verification email
+    try {
+      await this.mailService.sendVerificationEmail(
+        email,
+        verificationToken,
+        fullName,
+      );
+    } catch (error) {
+      // Log error but don't fail registration
+      console.error('Failed to send verification email:', error);
+    }
+
     return {
-      message: 'Registration successful',
+      message:
+        'Registration successful. Please check your email to verify your account.',
       user,
     };
   }
@@ -82,6 +109,13 @@ export class AuthService {
     if (!user.password) {
       throw new UnauthorizedException(
         'This account uses Google login. Please sign in with Google.',
+      );
+    }
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException(
+        'Please verify your email address before logging in. Check your inbox for the verification link.',
       );
     }
 
@@ -123,7 +157,7 @@ export class AuthService {
 
     // Check if user exists with Google ID
     let user = await this.prisma.user.findUnique({
-      where: { googleId: googleUser.email }, // Using email as googleId
+      where: { googleId: googleUser.googleId },
     });
 
     // If not found by googleId, check by email
@@ -133,12 +167,21 @@ export class AuthService {
       });
     }
 
-    // If user exists but registered with local auth, link Google account
-    if (user && !user.googleId) {
+    // If user exists but not verified (from local registration spam attack)
+    // Delete the unverified account and create new one with Google
+    if (user && !user.isEmailVerified && !user.googleId) {
+      await this.prisma.user.delete({
+        where: { id: user.id },
+      });
+      user = null;
+    }
+
+    // If user exists with verified email but no Google ID, link Google account
+    if (user && !user.googleId && user.isEmailVerified) {
       user = await this.prisma.user.update({
         where: { id: user.id },
         data: {
-          googleId: googleUser.email,
+          googleId: googleUser.googleId,
           provider: 'google',
           avatar: googleUser.avatar,
           fullName:
@@ -147,16 +190,17 @@ export class AuthService {
       });
     }
 
-    // If user doesn't exist, create new user
+    // If user doesn't exist, create new user with verified email
     if (!user) {
       user = await this.prisma.user.create({
         data: {
           email: googleUser.email,
-          googleId: googleUser.email,
+          googleId: googleUser.googleId,
           fullName: `${googleUser.firstName} ${googleUser.lastName}`,
           avatar: googleUser.avatar,
           provider: 'google',
-          password: null, // No password for Google users
+          password: null,
+          isEmailVerified: true, // Google accounts are pre-verified
         },
       });
     }
@@ -438,5 +482,93 @@ export class AuthService {
         },
       });
     }
+  }
+
+  private generateVerificationToken(): string {
+    return crypto.randomBytes(32).toString('hex');
+  }
+
+  async verifyEmail(token: string) {
+    // Find user with matching token that hasn't expired
+    const users = await this.prisma.user.findMany({
+      where: {
+        verificationTokenExpiry: {
+          gte: new Date(),
+        },
+        isEmailVerified: false,
+      },
+    });
+
+    // Check token against all unverified users
+    let matchedUserId: string | null = null;
+    for (const user of users) {
+      if (user.verificationToken) {
+        const isValid = await bcrypt.compare(token, user.verificationToken);
+        if (isValid) {
+          matchedUserId = user.id;
+          break;
+        }
+      }
+    }
+
+    if (!matchedUserId) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    // Update user as verified
+    await this.prisma.user.update({
+      where: { id: matchedUserId },
+      data: {
+        isEmailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null,
+      },
+    });
+
+    return {
+      message: 'Email verified successfully. You can now log in.',
+    };
+  }
+
+  async resendVerificationEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Generate new verification token
+    const verificationToken = this.generateVerificationToken();
+    const hashedToken = await bcrypt.hash(verificationToken, 10);
+
+    // Token expires in 48 hours
+    const verificationTokenExpiry = new Date();
+    verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 48);
+
+    // Update user with new token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationToken: hashedToken,
+        verificationTokenExpiry,
+      },
+    });
+
+    // Send verification email
+    await this.mailService.sendVerificationEmail(
+      email,
+      verificationToken,
+      user.fullName ?? undefined,
+    );
+
+    return {
+      message: 'Verification email sent successfully',
+    };
   }
 }
