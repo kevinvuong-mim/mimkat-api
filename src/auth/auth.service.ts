@@ -1,35 +1,34 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Injectable,
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma/prisma.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { DeviceInfo } from '../common/utils/device.util';
-import {
-  SessionResponseDto,
-  ActiveSessionsResponseDto,
-} from './dto/session.dto';
-import { AUTH_CONSTANTS } from './constants/auth.constants';
+import * as crypto from 'crypto';
+import { PrismaService } from '@prisma/prisma.service';
+import { RegisterDto } from '@auth/dto/register.dto';
+import { LoginDto } from '@auth/dto/login.dto';
+import { DeviceInfo } from '@common/utils/device.util';
+import { ActiveSessionsResponseDto } from '@auth/dto/session.dto';
+import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
+import { GoogleAuthDto } from '@auth/dto/google-auth.dto';
+import { MailService } from '@mail/mail.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, fullName } = registerDto;
+    const { email, password } = registerDto;
 
     // Check if email already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -43,23 +42,45 @@ export class AuthService {
     // Hash password with bcrypt (salt rounds = 12 for high security)
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create new user
+    // Generate verification token
+    const verificationToken = this.generateVerificationToken();
+    const hashedToken = await bcrypt.hash(verificationToken, 10);
+
+    // Token expires in 48 hours
+    const verificationTokenExpiry = new Date();
+    verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 48);
+
+    // Create new user with verification fields
     const user = await this.prisma.user.create({
       data: {
         email,
         password: hashedPassword,
-        fullName,
+        provider: 'local',
+        isEmailVerified: false,
+        verificationToken: hashedToken,
+        verificationTokenExpiry,
       },
       select: {
         id: true,
         email: true,
-        fullName: true,
         createdAt: true,
       },
     });
 
+    // Send verification email
+    try {
+      await this.mailService.sendVerificationEmail(email, verificationToken);
+    } catch (error) {
+      // Log error but don't fail registration
+      this.logger.error(
+        'Failed to send verification email',
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+
     return {
-      message: 'Registration successful',
+      message:
+        'Registration successful. Please check your email to verify your account.',
       user,
     };
   }
@@ -74,6 +95,20 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Check if user supports password login (local accounts only)
+    if (!user.password || user.provider !== 'local') {
+      throw new UnauthorizedException(
+        'This account does not support password login. Please use your account provider.',
+      );
+    }
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException(
+        'Please verify your email address before logging in. Check your inbox for the verification link.',
+      );
     }
 
     // Check if user is active
@@ -92,7 +127,7 @@ export class AuthService {
     await this.enforceDeviceLimit(user.id);
 
     // Generate tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id);
 
     // Save refresh token to database with device info
     await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
@@ -102,6 +137,88 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+      },
+      ...tokens,
+    };
+  }
+
+  async googleLogin(googleUser: GoogleAuthDto, deviceInfo?: DeviceInfo) {
+    if (!googleUser) {
+      throw new BadRequestException('No user from Google');
+    }
+
+    // Check if user exists with Google ID
+    let user = await this.prisma.user.findUnique({
+      where: { googleId: googleUser.googleId },
+    });
+
+    // If not found by googleId, check by email
+    if (!user) {
+      user = await this.prisma.user.findUnique({
+        where: { email: googleUser.email },
+      });
+    }
+
+    // If user exists but not verified (from local registration spam attack)
+    // Delete the unverified account and create new one with Google
+    if (user && !user.isEmailVerified && !user.googleId) {
+      await this.prisma.user.delete({
+        where: { id: user.id },
+      });
+      user = null;
+    }
+
+    // If user exists with verified email but no Google ID, link Google account
+    if (user && !user.googleId && user.isEmailVerified) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId: googleUser.googleId,
+          provider: 'google',
+          password: null, // Clear password when converting to Google account
+          avatar: googleUser.avatar,
+          fullName:
+            user.fullName || `${googleUser.firstName} ${googleUser.lastName}`,
+        },
+      });
+    }
+
+    // If user doesn't exist, create new user with verified email
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email: googleUser.email,
+          googleId: googleUser.googleId,
+          fullName: `${googleUser.firstName} ${googleUser.lastName}`,
+          avatar: googleUser.avatar,
+          provider: 'google',
+          password: null,
+          isEmailVerified: true, // Google accounts are pre-verified
+        },
+      });
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account has been disabled');
+    }
+
+    // Check device limit
+    await this.enforceDeviceLimit(user.id);
+
+    // Generate tokens
+    const tokens = await this.generateTokens(user.id);
+
+    // Save refresh token to database with device info
+    await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
+
+    return {
+      message: 'Google login successful',
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        avatar: user.avatar,
       },
       ...tokens,
     };
@@ -172,10 +289,7 @@ export class AuthService {
     }
 
     // Generate new tokens
-    const tokens = await this.generateTokens(
-      tokenRecord.user.id,
-      tokenRecord.user.email,
-    );
+    const tokens = await this.generateTokens(tokenRecord.user.id);
 
     // Delete old refresh token and save new token (token rotation)
     await this.prisma.session.delete({
@@ -183,7 +297,7 @@ export class AuthService {
     });
 
     // Preserve device info from old token if not provided
-    const deviceInfoToSave: DeviceInfo = deviceInfo || {
+    const deviceInfoToSave = deviceInfo || {
       deviceName: tokenRecord.deviceName ?? 'Unknown',
       deviceType: tokenRecord.deviceType ?? 'Unknown',
       ipAddress: tokenRecord.ipAddress ?? 'Unknown',
@@ -202,16 +316,16 @@ export class AuthService {
     };
   }
 
-  private async generateTokens(userId: string, email: string) {
-    const payload = { sub: userId, email };
+  private async generateTokens(userId: string) {
+    const payload = { sub: userId };
 
     const accessToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_SECRET || 'default-secret',
+      secret: process.env.JWT_SECRET,
       expiresIn: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION,
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_REFRESH_SECRET || 'default-refresh-secret',
+      secret: process.env.JWT_REFRESH_SECRET,
       expiresIn: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION,
     });
 
@@ -226,7 +340,7 @@ export class AuthService {
     refreshToken: string,
     deviceInfo?: DeviceInfo,
   ) {
-    const expiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+    const expiresIn = AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION;
     const expiresAt = new Date();
 
     // Parse expiration time (e.g., 7d, 24h, 60m)
@@ -279,10 +393,10 @@ export class AuthService {
       },
     });
 
-    const sessionDtos: SessionResponseDto[] = sessions.map((session) => ({
+    const sessionDtos = sessions.map((session) => ({
       id: session.id,
-      deviceName: session.deviceName || 'Unknown Device',
-      deviceType: session.deviceType || 'web',
+      deviceName: session.deviceName || 'Unknown',
+      deviceType: session.deviceType || 'Unknown',
       ipAddress: session.ipAddress || 'Unknown',
       createdAt: session.createdAt,
       lastUsedAt: session.lastUsedAt,
@@ -358,5 +472,89 @@ export class AuthService {
         },
       });
     }
+  }
+
+  private generateVerificationToken(): string {
+    return crypto.randomBytes(32).toString('hex');
+  }
+
+  async verifyEmail(token: string) {
+    // Find user with matching token that hasn't expired
+    const users = await this.prisma.user.findMany({
+      where: {
+        verificationTokenExpiry: {
+          gte: new Date(),
+        },
+        isEmailVerified: false,
+      },
+    });
+
+    // Check token against all unverified users
+    let matchedUserId: string | null = null;
+    for (const user of users) {
+      if (user.verificationToken) {
+        const isValid = await bcrypt.compare(token, user.verificationToken);
+        if (isValid) {
+          matchedUserId = user.id;
+          break;
+        }
+      }
+    }
+
+    if (!matchedUserId) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    // Update user as verified
+    await this.prisma.user.update({
+      where: { id: matchedUserId },
+      data: {
+        isEmailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null,
+      },
+    });
+
+    return {
+      message: 'Email verified successfully. You can now log in.',
+    };
+  }
+
+  async resendVerificationEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Generate new verification token
+    const verificationToken = this.generateVerificationToken();
+    const hashedToken = await bcrypt.hash(verificationToken, 10);
+
+    // Token expires in 48 hours
+    const verificationTokenExpiry = new Date();
+    verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 48);
+
+    // Update user with new token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationToken: hashedToken,
+        verificationTokenExpiry,
+      },
+    });
+
+    // Send verification email
+    await this.mailService.sendVerificationEmail(email, verificationToken);
+
+    return {
+      message: 'Verification email sent successfully',
+    };
   }
 }

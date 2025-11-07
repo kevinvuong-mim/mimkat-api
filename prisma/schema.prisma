@@ -14,12 +14,23 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  password  String
-  username  String?   @unique
-  fullName  String?
-  isActive  Boolean   @default(true)
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String? // Make password optional for Google users
+  username String? @unique
+  fullName String?
+  isActive Boolean @default(true)
+
+  // Email verification fields
+  isEmailVerified         Boolean   @default(false)
+  verificationToken       String?   @unique
+  verificationTokenExpiry DateTime?
+
+  // Google OAuth fields
+  googleId String? @unique
+  avatar   String?
+  provider String  @default("local")
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   sessions  Session[]
