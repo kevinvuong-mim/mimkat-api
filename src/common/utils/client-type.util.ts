@@ -6,12 +6,7 @@ export enum ClientType {
 }
 
 export class ClientTypeUtil {
-  /**
-   * Detect client type from request headers
-   * Priority:
-   * 1. X-Client-Type header (explicit declaration)
-   * 2. User-Agent detection (fallback)
-   */
+  // Detect client type from request headers
   static detectClientType(req: Request): ClientType {
     // Check custom header first (recommended approach for explicit declaration)
     const clientTypeHeader = req.headers['x-client-type'];
@@ -46,19 +41,5 @@ export class ClientTypeUtil {
 
     // Default to web client (supports cookies)
     return ClientType.WEB;
-  }
-
-  /**
-   * Check if request is from web client
-   */
-  static isWebClient(req: Request): boolean {
-    return this.detectClientType(req) === ClientType.WEB;
-  }
-
-  /**
-   * Check if request is from mobile client
-   */
-  static isMobileClient(req: Request): boolean {
-    return this.detectClientType(req) === ClientType.MOBILE;
   }
 }

@@ -6,7 +6,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Response, Request } from 'express';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '@prisma/prisma.service';
@@ -17,7 +16,6 @@ import { ActiveSessionsResponseDto } from '@auth/dto/session.dto';
 import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
 import { GoogleAuthDto } from '@auth/dto/google-auth.dto';
 import { MailService } from '@mail/mail.service';
-import { ClientType } from '@common/utils/client-type.util';
 
 @Injectable()
 export class AuthService {
@@ -87,12 +85,7 @@ export class AuthService {
     };
   }
 
-  async login(
-    loginDto: LoginDto,
-    deviceInfo?: DeviceInfo,
-    res?: Response,
-    clientType?: ClientType,
-  ) {
+  async login(loginDto: LoginDto, deviceInfo?: DeviceInfo) {
     const { email, password } = loginDto;
 
     // Find user by email
@@ -139,33 +132,20 @@ export class AuthService {
     // Save refresh token to database with device info
     await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
 
-    const response = {
+    // Return tokens in response body for localStorage storage
+    return {
       message: 'Login successful',
       user: {
         id: user.id,
         email: user.email,
       },
-    };
-
-    // For web clients: set cookies and don't return tokens in response body
-    if (clientType === ClientType.WEB && res) {
-      this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-      return response; // No tokens in response body for security
-    }
-
-    // For mobile clients: return tokens in response body
-    return {
-      ...response,
-      ...tokens,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: 3600, // 1 hour in seconds
     };
   }
 
-  async googleLogin(
-    googleUser: GoogleAuthDto,
-    deviceInfo?: DeviceInfo,
-    res?: Response,
-    clientType?: ClientType,
-  ) {
+  async googleLogin(googleUser: GoogleAuthDto, deviceInfo?: DeviceInfo) {
     if (!googleUser) {
       throw new BadRequestException('No user from Google');
     }
@@ -235,7 +215,8 @@ export class AuthService {
     // Save refresh token to database with device info
     await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
 
-    const response = {
+    // Return tokens in response body for localStorage storage
+    return {
       message: 'Google login successful',
       user: {
         id: user.id,
@@ -243,18 +224,9 @@ export class AuthService {
         fullName: user.fullName,
         avatar: user.avatar,
       },
-    };
-
-    // For web clients: set cookies and don't return tokens in response body
-    if (clientType === ClientType.WEB && res) {
-      this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-      return response; // No tokens in response body for security
-    }
-
-    // For mobile clients: return tokens in response body
-    return {
-      ...response,
-      ...tokens,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: 3600, // 1 hour in seconds
     };
   }
 
@@ -287,12 +259,7 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(
-    refreshToken: string,
-    deviceInfo?: DeviceInfo,
-    res?: Response,
-    clientType?: ClientType,
-  ) {
+  async refreshTokens(refreshToken: string, deviceInfo?: DeviceInfo) {
     if (!refreshToken) {
       throw new BadRequestException('Refresh token not provided');
     }
@@ -349,20 +316,12 @@ export class AuthService {
       deviceInfoToSave,
     );
 
-    const response = {
-      message: 'Token refresh successful',
-    };
-
-    // For web clients: set new cookies
-    if (clientType === ClientType.WEB && res) {
-      this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-      return response; // No tokens in response body for security
-    }
-
-    // For mobile clients: return tokens in response body
+    // Return tokens in response body for localStorage storage
     return {
-      ...response,
-      ...tokens,
+      message: 'Token refresh successful',
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: 3600, // 1 hour in seconds
     };
   }
 
@@ -508,10 +467,10 @@ export class AuthService {
     });
 
     // If at or over limit, delete the oldest session(s)
-    if (activeTokens.length >= AUTH_CONSTANTS.MAX_DEVICES) {
+    if (activeTokens.length >= AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS) {
       const tokensToDelete = activeTokens.slice(
         0,
-        activeTokens.length - AUTH_CONSTANTS.MAX_DEVICES + 1,
+        activeTokens.length - AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS + 1,
       );
 
       await this.prisma.session.deleteMany({
@@ -608,70 +567,4 @@ export class AuthService {
     };
   }
 
-  /**
-   * Set authentication cookies for web clients
-   * @param res Express Response object
-   * @param accessToken JWT access token
-   * @param refreshToken JWT refresh token
-   */
-  setAuthCookies(
-    res: Response,
-    accessToken: string,
-    refreshToken: string,
-  ): void {
-    // Access token cookie (short-lived - 1 hour)
-    res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
-      ...AUTH_CONSTANTS.COOKIE_OPTIONS,
-      maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
-    });
-
-    // Refresh token cookie (long-lived - 7 days)
-    res.cookie(
-      AUTH_CONSTANTS.REFRESH_TOKEN_COOKIE_NAME,
-      refreshToken,
-      AUTH_CONSTANTS.COOKIE_OPTIONS,
-    );
-
-    this.logger.debug('Authentication cookies set successfully');
-  }
-
-  /**
-   * Clear authentication cookies (for logout)
-   * @param res Express Response object
-   */
-  clearAuthCookies(res: Response): void {
-    res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_COOKIE_NAME);
-    res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_COOKIE_NAME);
-    res.clearCookie(AUTH_CONSTANTS.CSRF_TOKEN_COOKIE_NAME);
-
-    this.logger.debug('Authentication cookies cleared');
-  }
-
-  /**
-   * Extract refresh token from request (cookie or body)
-   * Priority: Cookie first (web), then body (mobile)
-   * @param req Express Request object
-   * @param body Request body (may contain refreshToken for mobile clients)
-   * @returns Refresh token string or null
-   */
-  extractRefreshToken(
-    req: Request,
-    body?: { refreshToken?: string },
-  ): string | null {
-    // Try cookie first (web clients)
-    const cookieToken = req.cookies?.[AUTH_CONSTANTS.REFRESH_TOKEN_COOKIE_NAME];
-    if (cookieToken) {
-      this.logger.debug('Refresh token extracted from cookie');
-      return cookieToken;
-    }
-
-    // Fallback to body (mobile clients)
-    if (body?.refreshToken) {
-      this.logger.debug('Refresh token extracted from body');
-      return body.refreshToken;
-    }
-
-    this.logger.warn('No refresh token found in request');
-    return null;
-  }
 }

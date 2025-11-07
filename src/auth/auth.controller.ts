@@ -14,7 +14,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import * as crypto from 'crypto';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -28,30 +27,11 @@ import {
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { GoogleAuthGuard } from '@auth/guards/google-auth.guard';
 import { DeviceUtil } from '@common/utils/device.util';
-import { ClientTypeUtil, ClientType } from '@common/utils/client-type.util';
-import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Public()
-  @Get('csrf-token')
-  @HttpCode(HttpStatus.OK)
-  getCsrfToken(@Res({ passthrough: true }) res: Response) {
-    // Generate a random CSRF token
-    const csrfToken = crypto.randomBytes(32).toString('hex');
-
-    // Set CSRF token as a cookie (must be readable by JavaScript)
-    res.cookie(AUTH_CONSTANTS.CSRF_TOKEN_COOKIE_NAME, csrfToken, {
-      httpOnly: false, // Must be readable by JavaScript to send in headers
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    });
-
-    return { csrfToken };
-  }
 
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes
@@ -65,15 +45,9 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 900000 } }) // 10 requests per 15 minutes
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(
-    @Body() loginDto: LoginDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async login(@Body() loginDto: LoginDto, @Req() req: Request) {
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
-    const clientType = ClientTypeUtil.detectClientType(req);
-
-    return this.authService.login(loginDto, deviceInfo, res, clientType);
+    return this.authService.login(loginDto, deviceInfo);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -82,27 +56,12 @@ export class AuthController {
   async logout(
     @CurrentUser() user: UserPayload,
     @Body() refreshTokenDto: RefreshTokenDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = this.authService.extractRefreshToken(
-      req,
-      refreshTokenDto,
-    );
-
-    if (!refreshToken) {
+    if (!refreshTokenDto.refreshToken) {
       throw new BadRequestException('Refresh token not provided');
     }
 
-    const result = await this.authService.logout(user.id, refreshToken);
-
-    // Clear cookies for web clients
-    const clientType = ClientTypeUtil.detectClientType(req);
-    if (clientType === ClientType.WEB) {
-      this.authService.clearAuthCookies(res);
-    }
-
-    return result;
+    return this.authService.logout(user.id, refreshTokenDto.refreshToken);
   }
 
   @Public()
@@ -111,24 +70,15 @@ export class AuthController {
   async refreshTokens(
     @Body() refreshTokenDto: RefreshTokenDto,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
   ) {
-    const deviceInfo = DeviceUtil.extractDeviceInfo(req);
-    const clientType = ClientTypeUtil.detectClientType(req);
-    const refreshToken = this.authService.extractRefreshToken(
-      req,
-      refreshTokenDto,
-    );
-
-    if (!refreshToken) {
+    if (!refreshTokenDto.refreshToken) {
       throw new BadRequestException('Refresh token not provided');
     }
 
+    const deviceInfo = DeviceUtil.extractDeviceInfo(req);
     return this.authService.refreshTokens(
-      refreshToken,
+      refreshTokenDto.refreshToken,
       deviceInfo,
-      res,
-      clientType,
     );
   }
 
@@ -206,31 +156,17 @@ export class AuthController {
   async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
     // After Google authentication, this callback is triggered
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
-    const clientType = ClientTypeUtil.detectClientType(req);
 
     const result = await this.authService.googleLogin(
       req.user as any,
       deviceInfo,
-      res,
-      clientType,
     );
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    // Encode all data (user + tokens) as base64 to safely pass in URL
+    const authData = Buffer.from(JSON.stringify(result)).toString('base64');
 
-    // Encode user data as base64 to safely pass in URL
-    const userData = Buffer.from(JSON.stringify(result.user)).toString(
-      'base64',
-    );
-
-    // For web clients: cookies are set, only pass user data (NO TOKENS IN URL!)
-    if (clientType === ClientType.WEB) {
-      const callbackUrl = `${frontendUrl}/auth/callback?userData=${userData}&success=true`;
-      res.redirect(callbackUrl);
-    } else {
-      // For mobile clients: pass tokens in URL (mobile handles deep links differently)
-      // Mobile apps should handle this via deep linking and store in secure storage
-      const callbackUrl = `${frontendUrl}/auth/callback?accessToken=${(result as any).accessToken}&refreshToken=${(result as any).refreshToken}&userData=${userData}`;
-      res.redirect(callbackUrl);
-    }
+    // Redirect with auth data - frontend will extract and store in localStorage
+    const callbackUrl = `${process.env.FRONTEND_URL}/auth/callback?authData=${authData}`;
+    res.redirect(callbackUrl);
   }
 }
