@@ -133,86 +133,21 @@ export class AuthController {
   async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
     // After Google authentication, this callback is triggered
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
-    const tokens = await this.authService.googleLogin(
+    const result = await this.authService.googleLogin(
       req.user as any,
       deviceInfo,
     );
 
-    // Return HTML page that stores tokens in localStorage and closes
+    // Redirect về frontend với tokens và user info trong query params
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-    res.send(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Login Success</title>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              height: 100vh;
-              margin: 0;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            .container {
-              text-align: center;
-              background: white;
-              padding: 2rem;
-              border-radius: 10px;
-              box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            }
-            .success-icon {
-              font-size: 3rem;
-              margin-bottom: 1rem;
-            }
-            h1 {
-              color: #333;
-              margin-bottom: 0.5rem;
-            }
-            p {
-              color: #666;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="success-icon">✅</div>
-            <h1>Đăng nhập thành công!</h1>
-            <p>Đang đóng cửa sổ...</p>
-          </div>
-          <script>
-            try {
-              const tokens = ${JSON.stringify(tokens)};
-              
-              // Store tokens in localStorage with a temporary key
-              const storageKey = 'google_oauth_result_' + Date.now();
-              localStorage.setItem(storageKey, JSON.stringify({
-                type: 'GOOGLE_AUTH_SUCCESS',
-                data: tokens,
-                timestamp: Date.now()
-              }));
-              
-              // Try postMessage first (if window.opener exists)
-              if (window.opener && !window.opener.closed) {
-                window.opener.postMessage({
-                  type: 'GOOGLE_AUTH_SUCCESS',
-                  data: tokens,
-                  storageKey: storageKey
-                }, '${frontendUrl}');
-              }
-              
-              // Close window after a short delay
-              setTimeout(() => {
-                window.close();
-              }, 500);
-            } catch (error) {
-              console.error('Error in OAuth callback:', error);
-              document.body.innerHTML = '<div class="container"><h1>⚠️ Lỗi</h1><p>Có lỗi xảy ra: ' + error.message + '</p></div>';
-            }
-          </script>
-        </body>
-      </html>
-    `);
+
+    // Encode user data as base64 to safely pass in URL
+    const userData = Buffer.from(JSON.stringify(result.user)).toString(
+      'base64',
+    );
+
+    const callbackUrl = `${frontendUrl}/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}&userData=${userData}`;
+
+    res.redirect(callbackUrl);
   }
 }
