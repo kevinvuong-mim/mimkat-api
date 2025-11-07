@@ -8,6 +8,7 @@ import { PrismaModule } from '@prisma/prisma.module';
 import { AuthModule } from '@auth/auth.module';
 import { TasksModule } from '@tasks/tasks.module';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
+import { CsrfGuard } from '@common/guards/csrf.guard';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
 
 @Module({
@@ -31,6 +32,10 @@ import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
     },
     {
       provide: APP_GUARD,

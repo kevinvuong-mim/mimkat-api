@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Response, Request } from 'express';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '@prisma/prisma.service';
@@ -16,6 +17,7 @@ import { ActiveSessionsResponseDto } from '@auth/dto/session.dto';
 import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
 import { GoogleAuthDto } from '@auth/dto/google-auth.dto';
 import { MailService } from '@mail/mail.service';
+import { ClientType } from '@common/utils/client-type.util';
 
 @Injectable()
 export class AuthService {
@@ -85,7 +87,12 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto, deviceInfo?: DeviceInfo) {
+  async login(
+    loginDto: LoginDto,
+    deviceInfo?: DeviceInfo,
+    res?: Response,
+    clientType?: ClientType,
+  ) {
     const { email, password } = loginDto;
 
     // Find user by email
@@ -132,17 +139,33 @@ export class AuthService {
     // Save refresh token to database with device info
     await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
 
-    return {
+    const response = {
       message: 'Login successful',
       user: {
         id: user.id,
         email: user.email,
       },
+    };
+
+    // For web clients: set cookies and don't return tokens in response body
+    if (clientType === ClientType.WEB && res) {
+      this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      return response; // No tokens in response body for security
+    }
+
+    // For mobile clients: return tokens in response body
+    return {
+      ...response,
       ...tokens,
     };
   }
 
-  async googleLogin(googleUser: GoogleAuthDto, deviceInfo?: DeviceInfo) {
+  async googleLogin(
+    googleUser: GoogleAuthDto,
+    deviceInfo?: DeviceInfo,
+    res?: Response,
+    clientType?: ClientType,
+  ) {
     if (!googleUser) {
       throw new BadRequestException('No user from Google');
     }
@@ -212,7 +235,7 @@ export class AuthService {
     // Save refresh token to database with device info
     await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
 
-    return {
+    const response = {
       message: 'Google login successful',
       user: {
         id: user.id,
@@ -220,6 +243,17 @@ export class AuthService {
         fullName: user.fullName,
         avatar: user.avatar,
       },
+    };
+
+    // For web clients: set cookies and don't return tokens in response body
+    if (clientType === ClientType.WEB && res) {
+      this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      return response; // No tokens in response body for security
+    }
+
+    // For mobile clients: return tokens in response body
+    return {
+      ...response,
       ...tokens,
     };
   }
@@ -253,7 +287,12 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(refreshToken: string, deviceInfo?: DeviceInfo) {
+  async refreshTokens(
+    refreshToken: string,
+    deviceInfo?: DeviceInfo,
+    res?: Response,
+    clientType?: ClientType,
+  ) {
     if (!refreshToken) {
       throw new BadRequestException('Refresh token not provided');
     }
@@ -310,8 +349,19 @@ export class AuthService {
       deviceInfoToSave,
     );
 
-    return {
+    const response = {
       message: 'Token refresh successful',
+    };
+
+    // For web clients: set new cookies
+    if (clientType === ClientType.WEB && res) {
+      this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      return response; // No tokens in response body for security
+    }
+
+    // For mobile clients: return tokens in response body
+    return {
+      ...response,
       ...tokens,
     };
   }
@@ -556,5 +606,72 @@ export class AuthService {
     return {
       message: 'Verification email sent successfully',
     };
+  }
+
+  /**
+   * Set authentication cookies for web clients
+   * @param res Express Response object
+   * @param accessToken JWT access token
+   * @param refreshToken JWT refresh token
+   */
+  setAuthCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ): void {
+    // Access token cookie (short-lived - 1 hour)
+    res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+      ...AUTH_CONSTANTS.COOKIE_OPTIONS,
+      maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
+    });
+
+    // Refresh token cookie (long-lived - 7 days)
+    res.cookie(
+      AUTH_CONSTANTS.REFRESH_TOKEN_COOKIE_NAME,
+      refreshToken,
+      AUTH_CONSTANTS.COOKIE_OPTIONS,
+    );
+
+    this.logger.debug('Authentication cookies set successfully');
+  }
+
+  /**
+   * Clear authentication cookies (for logout)
+   * @param res Express Response object
+   */
+  clearAuthCookies(res: Response): void {
+    res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_COOKIE_NAME);
+    res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_COOKIE_NAME);
+    res.clearCookie(AUTH_CONSTANTS.CSRF_TOKEN_COOKIE_NAME);
+
+    this.logger.debug('Authentication cookies cleared');
+  }
+
+  /**
+   * Extract refresh token from request (cookie or body)
+   * Priority: Cookie first (web), then body (mobile)
+   * @param req Express Request object
+   * @param body Request body (may contain refreshToken for mobile clients)
+   * @returns Refresh token string or null
+   */
+  extractRefreshToken(
+    req: Request,
+    body?: { refreshToken?: string },
+  ): string | null {
+    // Try cookie first (web clients)
+    const cookieToken = req.cookies?.[AUTH_CONSTANTS.REFRESH_TOKEN_COOKIE_NAME];
+    if (cookieToken) {
+      this.logger.debug('Refresh token extracted from cookie');
+      return cookieToken;
+    }
+
+    // Fallback to body (mobile clients)
+    if (body?.refreshToken) {
+      this.logger.debug('Refresh token extracted from body');
+      return body.refreshToken;
+    }
+
+    this.logger.warn('No refresh token found in request');
+    return null;
   }
 }
