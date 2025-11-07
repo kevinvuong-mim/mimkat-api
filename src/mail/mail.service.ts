@@ -29,6 +29,24 @@ export class MailService {
     }
   }
 
+  async sendPasswordResetEmail(email: string, token: string) {
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    const resetUrl = `${frontendUrl}/auth/reset-password?token=${token}`;
+
+    try {
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'Reset Your Password',
+        html: this.getPasswordResetEmailTemplate(resetUrl),
+      });
+
+      this.logger.log('Password reset email sent successfully');
+    } catch (error) {
+      this.logger.error('Failed to send password reset email', error.stack);
+      throw new Error('Failed to send password reset email');
+    }
+  }
+
   private getVerificationEmailTemplate(verificationUrl: string): string {
     return `
       <!DOCTYPE html>
@@ -108,6 +126,111 @@ export class MailService {
             <p style="word-break: break-all; color: #2563eb; font-size: 14px;">${verificationUrl}</p>
             <div class="warning">
               <strong>Note:</strong> This verification link will expire in 48 hours. If you didn't request this email, please ignore it.
+            </div>
+          </div>
+          <div class="footer">
+            <p>This is an automated email, please do not reply.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private getPasswordResetEmailTemplate(resetUrl: string): string {
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reset Your Password</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+          }
+          .header h1 {
+            color: #dc2626;
+            margin: 0;
+          }
+          .content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 6px;
+          }
+          .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #dc2626;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            margin: 20px 0;
+          }
+          .button:hover {
+            background-color: #b91c1c;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #666;
+          }
+          .warning {
+            background-color: #fee2e2;
+            border-left: 4px solid #dc2626;
+            padding: 12px;
+            margin-top: 20px;
+            font-size: 14px;
+          }
+          .info {
+            background-color: #dbeafe;
+            border-left: 4px solid #2563eb;
+            padding: 12px;
+            margin-top: 20px;
+            font-size: 14px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Password Reset Request</h1>
+          </div>
+          <div class="content">
+            <p>Hi there,</p>
+            <p>We received a request to reset your password. Click the button below to set a new password:</p>
+            <p style="text-align: center;">
+              <a href="${resetUrl}" class="button">Reset Password</a>
+            </p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #dc2626; font-size: 14px;">${resetUrl}</p>
+            <div class="info">
+              <strong>Security Tips:</strong>
+              <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                <li>Choose a strong password with at least 8 characters</li>
+                <li>Include uppercase, lowercase letters and numbers</li>
+                <li>Don't reuse passwords from other accounts</li>
+              </ul>
+            </div>
+            <div class="warning">
+              <strong>Important:</strong> This reset link will expire in 1 hour for security reasons. If you didn't request this password reset, please ignore this email and your password will remain unchanged.
             </div>
           </div>
           <div class="footer">
