@@ -114,7 +114,7 @@ curl -X POST http://localhost:3000/auth/register \
 
 ### 2. Login (Đăng nhập)
 
-Đăng nhập vào hệ thống với email và password. Chỉ hỗ trợ tài khoản đăng ký bằng email (provider = 'local').
+Đăng nhập vào hệ thống với email và password. Hỗ trợ các tài khoản có password được set (local registration hoặc đã liên kết password).
 
 **Endpoint**: `POST /auth/login`
 
@@ -198,7 +198,7 @@ curl -X POST http://localhost:3000/auth/register \
 ```json
 {
   "statusCode": 401,
-  "message": "This account does not support password login. Please use your account provider.",
+  "message": "This account does not have a password set. Please use Google login or reset your password.",
   "error": "Unauthorized"
 }
 ```

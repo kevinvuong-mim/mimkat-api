@@ -450,7 +450,6 @@ model User {
   fullName                  String?
   username                  String?   @unique
   avatar                    String?
-  provider                  String    @default("local")
   googleId                  String?   @unique
   isEmailVerified           Boolean   @default(false)
   isActive                  Boolean   @default(true)

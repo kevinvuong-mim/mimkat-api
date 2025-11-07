@@ -147,8 +147,7 @@ Backend nhận được từ Google Profile API:
   googleId: string; // Google User ID
   fullName: string; // "${firstName} ${lastName}"
   avatar: string | null; // Google avatar URL
-  provider: 'google'; // OAuth provider
-  password: null; // No password for OAuth users
+  password: null; // No password for pure OAuth users
   isEmailVerified: true; // Auto-verified for Google users
   isActive: true; // Default active
   createdAt: Date;
@@ -166,7 +165,7 @@ Backend nhận được từ Google Profile API:
 
 **Flow**:
 
-1. Tạo user mới với `provider: 'google'`
+1. Tạo user mới với Google authentication
 2. `isEmailVerified: true` (Google đã verify)
 3. Tạo session và tokens
 4. Redirect với auth data
@@ -198,7 +197,7 @@ Backend nhận được từ Google Profile API:
 **Flow**:
 
 1. Link Google account với user hiện có
-2. Update: `googleId`, `provider: 'google'`, `password: null`, `avatar`
+2. Update: `googleId`, `avatar` (giữ nguyên `password` để có thể login cả 2 cách)
 3. Xóa password cũ (convert sang Google account)
 4. Tạo session và tokens
 5. Redirect với auth data
@@ -207,7 +206,7 @@ Backend nhận được từ Google Profile API:
 
 ### 4. Unverified Local User (Spam Prevention)
 
-**Scenario**: Có tài khoản local chưa verify email (có thể là spam registration)
+**Scenario**: Có tài khoản với password chưa verify email (có thể là spam registration)
 
 **Conditions**:
 
@@ -216,7 +215,7 @@ Backend nhận được từ Google Profile API:
 
 **Flow**:
 
-1. Xóa tài khoản local chưa verify
+1. Xóa tài khoản chưa verify email
 2. Tạo tài khoản Google mới
 3. Tạo session và tokens
 4. Redirect với auth data
@@ -317,11 +316,11 @@ NEXT_PUBLIC_API_URL=http://localhost:3000
 - **No password**: OAuth users không có password trong database
 - **Email verified**: Luôn `isEmailVerified: true`
 - **Account linking**: Tự động link với tài khoản hiện có (nếu email match và đã verify)
-- **Spam prevention**: Xóa tài khoản local chưa verify khi Google login
+- **Spam prevention**: Xóa tài khoản chưa verify email khi Google login
 
 ### Session Management
 
-- Áp dụng device limit như local auth
+- Áp dụng device limit như password auth
 - Hỗ trợ multi-device login
 - Token rotation khi refresh
 
@@ -421,6 +420,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
 ## Related APIs
 
-- [Authentication](./authentication.md) - Đăng ký và đăng nhập local
+- [Authentication](./authentication.md) - Đăng ký và đăng nhập bằng email/password
 - [Session Management](./session-management.md) - Quản lý phiên đăng nhập
 - [User Profile](./user-profile.md) - Thông tin người dùng

@@ -55,7 +55,6 @@ export class AuthService {
       data: {
         email,
         password: hashedPassword,
-        provider: 'local',
         isEmailVerified: false,
         verificationToken: hashedToken,
         verificationTokenExpiry,
@@ -97,10 +96,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // Check if user supports password login (local accounts only)
-    if (!user.password || user.provider !== 'local') {
+    // Check if user has a password
+    if (!user.password) {
       throw new UnauthorizedException(
-        'This account does not support password login. Please use your account provider.',
+        'This account does not have a password set. Please use Google login or reset your password.',
       );
     }
 
@@ -496,8 +495,8 @@ export class AuthService {
       };
     }
 
-    // Only allow password reset for local accounts
-    if (user.provider !== 'local') {
+    // Only allow password reset for accounts that have password capability
+    if (!user.password) {
       return {
         message:
           'If an account with that email exists, we sent a password reset link.',
@@ -608,31 +607,22 @@ export class AuthService {
       });
     }
 
-    // If user exists but not verified (from local registration spam attack)
-    // Delete the unverified account and create new one with Google
-    if (user && !user.isEmailVerified && !user.googleId) {
-      await this.prisma.user.delete({
-        where: { id: user.id },
-      });
-      user = null;
-    }
-
-    // If user exists with verified email but no Google ID, link Google account
-    if (user && !user.googleId && user.isEmailVerified) {
+    // If user exists by email but doesn't have Google linked yet
+    if (user && !user.googleId) {
+      // Link Google account to existing user
       user = await this.prisma.user.update({
         where: { id: user.id },
         data: {
           googleId: googleUser.googleId,
-          provider: 'google',
-          password: null, // Clear password when converting to Google account
-          avatar: googleUser.avatar,
+          avatar: googleUser.avatar || user.avatar,
           fullName:
             user.fullName || `${googleUser.firstName} ${googleUser.lastName}`,
+          isEmailVerified: true, // Google login implies email is verified
         },
       });
     }
 
-    // If user doesn't exist, create new user with verified email
+    // If user doesn't exist at all, create new user with Google
     if (!user) {
       user = await this.prisma.user.create({
         data: {
@@ -640,7 +630,6 @@ export class AuthService {
           googleId: googleUser.googleId,
           fullName: `${googleUser.firstName} ${googleUser.lastName}`,
           avatar: googleUser.avatar,
-          provider: 'google',
           password: null,
           isEmailVerified: true, // Google accounts are pre-verified
         },

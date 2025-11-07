@@ -2,7 +2,7 @@
 
 ## Overview
 
-API đặt lại mật khẩu cho người dùng quên mật khẩu. Chỉ áp dụng cho tài khoản local (provider = 'local').
+API đặt lại mật khẩu cho người dùng quên mật khẩu. Chỉ áp dụng cho tài khoản có password (tài khoản local hoặc tài khoản đã liên kết local login).
 
 **Base URL**: `/auth`
 
@@ -71,8 +71,8 @@ curl -X POST http://localhost:3000/auth/forgot-password \
 
 #### Notes
 
-- Chỉ gửi email cho tài khoản local (provider = 'local')
-- Tài khoản Google OAuth không thể đặt lại mật khẩu
+- Chỉ gửi email cho tài khoản có password được set
+- Tài khoản chỉ có Google OAuth (không có password) không thể đặt lại mật khẩu
 - Token có hiệu lực 1 giờ (ngắn hơn email verification để tăng bảo mật)
 - Nếu gửi email thất bại, log error nhưng vẫn trả về success message
 
@@ -243,9 +243,9 @@ sequenceDiagram
 
     U->>F: POST /auth/forgot-password
     F->>B: {email}
-    B->>D: Find user by email (provider='local')
+    B->>D: Find user by email (check if has password)
 
-    alt User exists and is local
+    alt User exists and has password
         B->>B: Generate reset token
         B->>D: Store hashed token + expiry (1 hour)
         B->>M: Send reset email
@@ -412,7 +412,7 @@ export default function ResetPasswordPage() {
 
 ### OAuth Account
 
-**Scenario**: User với Google account cố đặt lại mật khẩu
+**Scenario**: User chỉ có Google account (không có password) cố đặt lại mật khẩu
 
 **Response**:
 
@@ -465,7 +465,7 @@ export default function ResetPasswordPage() {
 2. **Token expiry**: 1 giờ cho reset token (ngắn hơn verification)
 3. **Session invalidation**: Xóa tất cả sessions sau khi reset
 4. **Email error handling**: Log errors nhưng không fail request
-5. **Provider check**: Chỉ gửi email cho local accounts
+5. **Password check**: Chỉ gửi email cho accounts có password
 
 ---
 
