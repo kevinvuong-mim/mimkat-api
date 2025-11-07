@@ -39,11 +39,11 @@ export class CleanupService {
   // Run every day at 3:00 AM
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async cleanupExpiredTokens() {
-    this.logger.log('Starting cleanup of expired verification tokens...');
+    this.logger.log('Starting cleanup of expired tokens...');
 
     try {
       // Clear expired verification tokens
-      const result = await this.prisma.user.updateMany({
+      const verificationResult = await this.prisma.user.updateMany({
         where: {
           verificationTokenExpiry: {
             lt: new Date(),
@@ -56,8 +56,21 @@ export class CleanupService {
         },
       });
 
+      // Clear expired password reset tokens
+      const passwordResetResult = await this.prisma.user.updateMany({
+        where: {
+          passwordResetTokenExpiry: {
+            lt: new Date(),
+          },
+        },
+        data: {
+          passwordResetToken: null,
+          passwordResetTokenExpiry: null,
+        },
+      });
+
       this.logger.log(
-        `Cleanup completed. Cleared ${result.count} expired verification tokens.`,
+        `Cleanup completed. Cleared ${verificationResult.count} expired verification tokens and ${passwordResetResult.count} expired password reset tokens.`,
       );
     } catch (error) {
       this.logger.error('Failed to cleanup expired tokens', error);

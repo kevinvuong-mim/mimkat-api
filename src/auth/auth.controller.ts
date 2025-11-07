@@ -11,6 +11,7 @@ import {
   UseGuards,
   Req,
   Res,
+  BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
@@ -18,6 +19,8 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Public } from '@common/decorators/public.decorator';
 import {
   CurrentUser,
@@ -30,6 +33,7 @@ import { DeviceUtil } from '@common/utils/device.util';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
 
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes
@@ -55,6 +59,10 @@ export class AuthController {
     @CurrentUser() user: UserPayload,
     @Body() refreshTokenDto: RefreshTokenDto,
   ) {
+    if (!refreshTokenDto.refreshToken) {
+      throw new BadRequestException('Refresh token not provided');
+    }
+
     return this.authService.logout(user.id, refreshTokenDto.refreshToken);
   }
 
@@ -65,11 +73,28 @@ export class AuthController {
     @Body() refreshTokenDto: RefreshTokenDto,
     @Req() req: Request,
   ) {
+    if (!refreshTokenDto.refreshToken) {
+      throw new BadRequestException('Refresh token not provided');
+    }
+
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
     return this.authService.refreshTokens(
       refreshTokenDto.refreshToken,
       deviceInfo,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  @HttpCode(HttpStatus.OK)
+  getCurrentUser(@CurrentUser() user: UserPayload) {
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      username: user.username,
+      isActive: user.isActive,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -118,6 +143,26 @@ export class AuthController {
     return this.authService.resendVerificationEmail(email);
   }
 
+  // Password reset routes
+  @Public()
+  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per 1 hour
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 requests per 1 hour
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(
+      resetPasswordDto.token,
+      resetPasswordDto.password,
+    );
+  }
+
   // Google OAuth routes
   @Public()
   @Get('google')
@@ -133,21 +178,17 @@ export class AuthController {
   async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
     // After Google authentication, this callback is triggered
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
+
     const result = await this.authService.googleLogin(
       req.user as any,
       deviceInfo,
     );
 
-    // Redirect về frontend với tokens và user info trong query params
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    // Encode all data (user + tokens) as base64 to safely pass in URL
+    const authData = Buffer.from(JSON.stringify(result)).toString('base64');
 
-    // Encode user data as base64 to safely pass in URL
-    const userData = Buffer.from(JSON.stringify(result.user)).toString(
-      'base64',
-    );
-
-    const callbackUrl = `${frontendUrl}/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}&userData=${userData}`;
-
+    // Redirect with auth data - frontend will extract and store in localStorage
+    const callbackUrl = `${process.env.FRONTEND_URL}/auth/callback?authData=${authData}`;
     res.redirect(callbackUrl);
   }
 }
