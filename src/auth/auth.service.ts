@@ -145,91 +145,6 @@ export class AuthService {
     };
   }
 
-  async googleLogin(googleUser: GoogleAuthDto, deviceInfo?: DeviceInfo) {
-    if (!googleUser) {
-      throw new BadRequestException('No user from Google');
-    }
-
-    // Check if user exists with Google ID
-    let user = await this.prisma.user.findUnique({
-      where: { googleId: googleUser.googleId },
-    });
-
-    // If not found by googleId, check by email
-    if (!user) {
-      user = await this.prisma.user.findUnique({
-        where: { email: googleUser.email },
-      });
-    }
-
-    // If user exists but not verified (from local registration spam attack)
-    // Delete the unverified account and create new one with Google
-    if (user && !user.isEmailVerified && !user.googleId) {
-      await this.prisma.user.delete({
-        where: { id: user.id },
-      });
-      user = null;
-    }
-
-    // If user exists with verified email but no Google ID, link Google account
-    if (user && !user.googleId && user.isEmailVerified) {
-      user = await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          googleId: googleUser.googleId,
-          provider: 'google',
-          password: null, // Clear password when converting to Google account
-          avatar: googleUser.avatar,
-          fullName:
-            user.fullName || `${googleUser.firstName} ${googleUser.lastName}`,
-        },
-      });
-    }
-
-    // If user doesn't exist, create new user with verified email
-    if (!user) {
-      user = await this.prisma.user.create({
-        data: {
-          email: googleUser.email,
-          googleId: googleUser.googleId,
-          fullName: `${googleUser.firstName} ${googleUser.lastName}`,
-          avatar: googleUser.avatar,
-          provider: 'google',
-          password: null,
-          isEmailVerified: true, // Google accounts are pre-verified
-        },
-      });
-    }
-
-    // Check if user is active
-    if (!user.isActive) {
-      throw new UnauthorizedException('Account has been disabled');
-    }
-
-    // Check device limit
-    await this.enforceDeviceLimit(user.id);
-
-    // Generate tokens
-    const tokens = await this.generateTokens(user.id);
-
-    // Save refresh token to database with device info
-    await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
-
-    // Return tokens in response body for localStorage storage
-    return {
-      message: 'Google login successful',
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        avatar: user.avatar,
-      },
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      expiresIn: 3600, // 1 hour in seconds
-    };
-  }
-
   async logout(userId: string, refreshToken: string) {
     if (!refreshToken) {
       throw new BadRequestException('Refresh token not provided');
@@ -676,4 +591,88 @@ export class AuthService {
     };
   }
 
+  async googleLogin(googleUser: GoogleAuthDto, deviceInfo?: DeviceInfo) {
+    if (!googleUser) {
+      throw new BadRequestException('No user from Google');
+    }
+
+    // Check if user exists with Google ID
+    let user = await this.prisma.user.findUnique({
+      where: { googleId: googleUser.googleId },
+    });
+
+    // If not found by googleId, check by email
+    if (!user) {
+      user = await this.prisma.user.findUnique({
+        where: { email: googleUser.email },
+      });
+    }
+
+    // If user exists but not verified (from local registration spam attack)
+    // Delete the unverified account and create new one with Google
+    if (user && !user.isEmailVerified && !user.googleId) {
+      await this.prisma.user.delete({
+        where: { id: user.id },
+      });
+      user = null;
+    }
+
+    // If user exists with verified email but no Google ID, link Google account
+    if (user && !user.googleId && user.isEmailVerified) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId: googleUser.googleId,
+          provider: 'google',
+          password: null, // Clear password when converting to Google account
+          avatar: googleUser.avatar,
+          fullName:
+            user.fullName || `${googleUser.firstName} ${googleUser.lastName}`,
+        },
+      });
+    }
+
+    // If user doesn't exist, create new user with verified email
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email: googleUser.email,
+          googleId: googleUser.googleId,
+          fullName: `${googleUser.firstName} ${googleUser.lastName}`,
+          avatar: googleUser.avatar,
+          provider: 'google',
+          password: null,
+          isEmailVerified: true, // Google accounts are pre-verified
+        },
+      });
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account has been disabled');
+    }
+
+    // Check device limit
+    await this.enforceDeviceLimit(user.id);
+
+    // Generate tokens
+    const tokens = await this.generateTokens(user.id);
+
+    // Save refresh token to database with device info
+    await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
+
+    // Return tokens in response body for localStorage storage
+    return {
+      message: 'Google login successful',
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        avatar: user.avatar,
+      },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: 3600, // 1 hour in seconds
+    };
+  }
 }

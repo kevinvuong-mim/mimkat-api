@@ -2,15 +2,11 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
 import compression from 'compression';
-import cookieParser from 'cookie-parser';
 import { AppModule } from '@/app.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
-
-  // Cookie parser - MUST be before routes
-  app.use(cookieParser());
 
   // Helmet - Security headers middleware
   app.use(
@@ -26,19 +22,14 @@ async function bootstrap() {
   // Global API prefix
   app.setGlobalPrefix('api/v1');
 
-  // Enable CORS with cookie support
+  // Enable CORS - Token-based authentication
   app.enableCors({
     origin: process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN.split(', ').filter(Boolean)
-      : ['http://localhost:3001', 'http://localhost:3002'],
-    credentials: true, // Critical for cookies
+      : '*',
+    credentials: false, // No cookies - using Bearer token
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Client-Type',
-      'X-CSRF-Token',
-    ],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Type'],
   });
 
   // Global validation pipe với whitelist để tránh mass assignment

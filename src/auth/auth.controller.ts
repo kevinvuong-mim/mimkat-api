@@ -11,7 +11,6 @@ import {
   UseGuards,
   Req,
   Res,
-  BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
@@ -33,7 +32,6 @@ import { DeviceUtil } from '@common/utils/device.util';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
 
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes
@@ -59,10 +57,6 @@ export class AuthController {
     @CurrentUser() user: UserPayload,
     @Body() refreshTokenDto: RefreshTokenDto,
   ) {
-    if (!refreshTokenDto.refreshToken) {
-      throw new BadRequestException('Refresh token not provided');
-    }
-
     return this.authService.logout(user.id, refreshTokenDto.refreshToken);
   }
 
@@ -73,10 +67,6 @@ export class AuthController {
     @Body() refreshTokenDto: RefreshTokenDto,
     @Req() req: Request,
   ) {
-    if (!refreshTokenDto.refreshToken) {
-      throw new BadRequestException('Refresh token not provided');
-    }
-
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
     return this.authService.refreshTokens(
       refreshTokenDto.refreshToken,

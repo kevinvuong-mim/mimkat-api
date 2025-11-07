@@ -17,13 +17,7 @@ Tài liệu này hướng dẫn cách lấy các biến môi trường cần thi
 - Nhập tên project và click "Create"
 - Nếu đã có project, chọn project đó
 
-**Bước 3: Kích hoạt Google+ API**
-
-- Vào menu "APIs & Services" > "Library"
-- Tìm kiếm "Google+ API" hoặc "Google People API"
-- Click vào và nhấn "Enable"
-
-**Bước 4: Tạo OAuth 2.0 Credentials**
+**Bước 3: Tạo OAuth 2.0 Credentials**
 
 - Vào menu "APIs & Services" > "Credentials"
 - Click "Create Credentials" > "OAuth client ID"
@@ -34,7 +28,7 @@ Tài liệu này hướng dẫn cách lấy các biến môi trường cần thi
   - Thêm test users nếu ứng dụng đang ở chế độ testing
   - Click "Save and Continue"
 
-**Bước 5: Cấu hình OAuth Client**
+**Bước 4: Cấu hình OAuth Client**
 
 - Chọn "Application type" là "Web application"
 - Nhập tên cho OAuth client
@@ -96,42 +90,6 @@ DATABASE_URL="postgresql://username:password@host:port/database_name"
 ```
 DATABASE_URL="postgresql://postgres:mypassword@localhost:5432/mimkat"
 ```
-
-**Hướng dẫn cài đặt PostgreSQL:**
-
-**Trên macOS (sử dụng Homebrew):**
-
-```bash
-# Cài đặt PostgreSQL
-brew install postgresql@15
-
-# Khởi động PostgreSQL service
-brew services start postgresql@15
-
-# Tạo database
-createdb mimkat
-```
-
-**Trên Ubuntu/Debian:**
-
-```bash
-# Cài đặt PostgreSQL
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-
-# Khởi động service
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-
-# Tạo database
-sudo -u postgres createdb mimkat
-```
-
-**Trên Windows:**
-
-- Download PostgreSQL installer từ [https://www.postgresql.org/download/windows/](https://www.postgresql.org/download/windows/)
-- Chạy installer và làm theo hướng dẫn
-- Sử dụng pgAdmin hoặc psql để tạo database
 
 ---
 
@@ -370,6 +328,51 @@ PORT=3000
 - Đảm bảo port không bị sử dụng bởi ứng dụng khác
 - Có thể thay đổi nếu cần (3001, 8000, 8080, v.v.)
 
+### NODE_ENV
+
+Môi trường chạy của ứng dụng.
+
+**Các giá trị:**
+
+- `development`: Môi trường phát triển (dev)
+- `production`: Môi trường sản xuất (production)
+- `test`: Môi trường testing
+
+**Ví dụ:**
+
+```
+NODE_ENV="development"
+```
+
+**Lưu ý:**
+
+- Trong môi trường development, logging chi tiết hơn và có hot-reload
+- Trong production, ứng dụng được tối ưu hóa về hiệu suất
+
+---
+
+## 7. Frontend Configuration
+
+### FRONTEND_URL
+
+URL của ứng dụng frontend, dùng để tạo các link redirect từ email hoặc API.
+
+**Ví dụ:**
+
+```
+# Development
+FRONTEND_URL="http://localhost:3001"
+
+# Production
+FRONTEND_URL="https://app.mimkat.com"
+```
+
+**Lưu ý:**
+
+- URL này thường khác với APP_URL (backend)
+- Được sử dụng để redirect người dùng từ email về trang frontend
+- Không có dấu `/` ở cuối URL
+
 ---
 
 ## Tổng hợp - File .env hoàn chỉnh
@@ -381,13 +384,13 @@ Sau khi lấy được tất cả các biến, thêm chúng vào file `.env` c�
 DATABASE_URL="postgresql://user:password@localhost:5432/mimkat"
 
 # JWT
-JWT_SECRET="your-jwt-secret-key"
-JWT_REFRESH_SECRET="your-jwt-refresh-secret-key"
+JWT_SECRET="your-jwt-secret-key-at-least-32-chars"
+JWT_REFRESH_SECRET="your-jwt-refresh-secret-key-at-least-32-chars"
 
 # Google OAuth
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
-GOOGLE_CALLBACK_URL="http://localhost:3000/auth/google/callback"
+GOOGLE_CALLBACK_URL="http://localhost:3000/api/v1/auth/google/callback"
 
 # Email
 MAIL_HOST="smtp.gmail.com"
@@ -395,13 +398,17 @@ MAIL_PORT=587
 MAIL_USER="your-email@gmail.com"
 MAIL_PASSWORD="your-app-password"
 MAIL_FROM="noreply@mimkat.com"
-APP_URL="http://localhost:3000"
+APP_URL="http://localhost:3000/api/v1"
 
 # CORS
 CORS_ORIGIN="http://localhost:3001, http://localhost:3002"
 
 # Server
 PORT=3000
+NODE_ENV="development"
+
+# Frontend URLs
+FRONTEND_URL="http://localhost:3001"
 ```
 
 **Lưu ý quan trọng:**
@@ -410,96 +417,3 @@ PORT=3000
 - Đảm bảo `.env` đã được thêm vào `.gitignore`
 - Sử dụng file `.env.example` để chia sẻ template với team
 - Mỗi môi trường (dev, staging, production) nên có file `.env` riêng với các giá trị khác nhau
-
-## Kiểm tra
-
-Sau khi cấu hình xong, khởi động lại ứng dụng để các biến môi trường có hiệu lực:
-
-```bash
-npm run start:dev
-```
-
-## Troubleshooting
-
-### Lỗi Database
-
-**Lỗi: "ECONNREFUSED" hoặc không kết nối được database**
-
-- Kiểm tra PostgreSQL service đã chạy chưa
-- Kiểm tra username, password, host, port trong DATABASE_URL có đúng không
-- Kiểm tra database đã được tạo chưa
-- Kiểm tra firewall có chặn kết nối không
-
-**Lỗi: "authentication failed"**
-
-- Kiểm tra lại username và password
-- Kiểm tra user có quyền truy cập database không
-
-### Lỗi JWT
-
-**Lỗi: "invalid token" hoặc "jwt malformed"**
-
-- Kiểm tra JWT_SECRET và JWT_REFRESH_SECRET có được set đúng không
-- Kiểm tra secret có bị thay đổi giữa các lần khởi động không
-- Đảm bảo secret đủ dài và phức tạp
-
-### Lỗi Google OAuth
-
-**Lỗi: "redirect_uri_mismatch"**
-
-- Kiểm tra GOOGLE_CALLBACK_URL khớp với Authorized redirect URIs trong Google Console
-- Đảm bảo không có khoảng trắng thừa trong URL
-
-**Lỗi: "access_denied"**
-
-- Kiểm tra ứng dụng có được publish (hoặc thêm test users) chưa
-- Xác nhận Google+ API hoặc Google People API đã được enable
-- Kiểm tra OAuth consent screen đã cấu hình đầy đủ
-
-**Lỗi: "invalid_client"**
-
-- Kiểm tra GOOGLE_CLIENT_ID và GOOGLE_CLIENT_SECRET có đúng không
-- Kiểm tra không có khoảng trắng thừa
-
-### Lỗi Email
-
-**Lỗi: "Invalid login" hoặc "Authentication failed"**
-
-- Kiểm tra đã bật 2FA cho tài khoản Gmail chưa
-- Kiểm tra App Password có đúng không (16 ký tự, không có khoảng trắng)
-- Kiểm tra MAIL_USER có đúng địa chỉ email không
-
-**Lỗi: "Connection timeout"**
-
-- Kiểm tra MAIL_HOST và MAIL_PORT có đúng không
-- Kiểm tra firewall hoặc antivirus có chặn kết nối SMTP không
-- Thử chuyển sang port khác (587 hoặc 465)
-
-**Lỗi: Gmail bị khóa**
-
-- Truy cập [https://accounts.google.com/DisplayUnlockCaptcha](https://accounts.google.com/DisplayUnlockCaptcha)
-- Làm theo hướng dẫn để mở khóa tài khoản
-
-### Lỗi CORS
-
-**Lỗi: "CORS policy: No 'Access-Control-Allow-Origin' header"**
-
-- Kiểm tra CORS_ORIGIN có chứa domain của client app không
-- Đảm bảo format đúng (các domain cách nhau bởi dấu phẩy)
-- Kiểm tra không có dấu `/` ở cuối URL
-
-### Lỗi Server
-
-**Lỗi: "Port already in use"**
-
-- Port đã bị sử dụng bởi ứng dụng khác
-- Thay đổi PORT trong file `.env`
-- Hoặc dừng ứng dụng đang chạy trên port đó:
-
-```bash
-# Tìm process đang dùng port
-lsof -i :3000
-
-# Kill process
-kill -9 <PID>
-```

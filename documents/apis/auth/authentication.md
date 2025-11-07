@@ -2,9 +2,17 @@
 
 ## Overview
 
-API xác thực người dùng bao gồm đăng ký, đăng nhập, đăng xuất, và quản lý phiên làm việc (sessions).
+API xác thực người dùng cơ bản bao gồm đăng ký, đăng nhập, đăng xuất và làm mới token.
 
-**Base URL**: `/api/v1/auth`
+**Base URL**: `/auth`
+
+**Các API liên quan:**
+
+- [Email Verification](./email-verification.md) - Xác thực email
+- [Password Reset](./password-reset.md) - Quên mật khẩu và đặt lại mật khẩu
+- [Google OAuth](./google-oauth.md) - Đăng nhập bằng Google
+- [Session Management](./session-management.md) - Quản lý phiên đăng nhập
+- [User Profile](./user-profile.md) - Thông tin người dùng
 
 ---
 
@@ -12,9 +20,9 @@ API xác thực người dùng bao gồm đăng ký, đăng nhập, đăng xuấ
 
 ### 1. Register (Đăng ký)
 
-Tạo tài khoản người dùng mới.
+Tạo tài khoản người dùng mới với email và mật khẩu. Sau khi đăng ký thành công, hệ thống sẽ gửi email xác thực đến địa chỉ email đã đăng ký.
 
-**Endpoint**: `POST /api/v1/auth/register`
+**Endpoint**: `POST /auth/register`
 
 **Rate Limit**: 5 requests / 15 phút
 
@@ -25,7 +33,7 @@ Tạo tài khoản người dùng mới.
 ```json
 {
   "email": "user@example.com",
-  "password": "your-password"
+  "password": "SecurePass123"
 }
 ```
 
@@ -40,12 +48,11 @@ Tạo tài khoản người dùng mới.
 
 ```json
 {
-  "message": "User registered successfully. Please check your email to verify your account.",
+  "message": "Registration successful. Please check your email to verify your account.",
   "user": {
-    "id": "uuid",
+    "id": "clx1234567890abcdefghij",
     "email": "user@example.com",
-    "emailVerified": false,
-    "createdAt": "2025-11-06T00:00:00.000Z"
+    "createdAt": "2025-11-07T00:00:00.000Z"
   }
 }
 ```
@@ -58,8 +65,8 @@ Tạo tài khoản người dùng mới.
 {
   "statusCode": 400,
   "message": [
-    "Invalid email format",
-    "Password must be at least 8 characters long"
+    "email must be an email",
+    "password must be longer than or equal to 8 characters"
   ],
   "error": "Bad Request"
 }
@@ -70,7 +77,7 @@ Tạo tài khoản người dùng mới.
 ```json
 {
   "statusCode": 409,
-  "message": "User with this email already exists",
+  "message": "Email already in use",
   "error": "Conflict"
 }
 ```
@@ -88,7 +95,7 @@ Tạo tài khoản người dùng mới.
 #### cURL Example
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/register \
+curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -96,13 +103,20 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
   }'
 ```
 
+#### Notes
+
+- Mật khẩu được hash bằng bcrypt với salt rounds = 12
+- Token xác thực email có hiệu lực 48 giờ
+- Email xác thực được gửi tự động sau khi đăng ký
+- Người dùng cần xác thực email trước khi có thể đăng nhập
+
 ---
 
 ### 2. Login (Đăng nhập)
 
-Đăng nhập vào hệ thống với email và password.
+Đăng nhập vào hệ thống với email và password. Chỉ hỗ trợ tài khoản đăng ký bằng email (provider = 'local').
 
-**Endpoint**: `POST /api/v1/auth/login`
+**Endpoint**: `POST /auth/login`
 
 **Rate Limit**: 10 requests / 15 phút
 
@@ -113,7 +127,7 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
 ```json
 {
   "email": "user@example.com",
-  "password": "your-password"
+  "password": "SecurePass123"
 }
 ```
 
@@ -128,15 +142,24 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
 
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "uuid-refresh-token",
+  "message": "Login successful",
   "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "emailVerified": true
-  }
+    "id": "clx1234567890abcdefghij",
+    "email": "user@example.com"
+  },
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 3600
 }
 ```
+
+| Field        | Type   | Description                                      |
+| ------------ | ------ | ------------------------------------------------ |
+| message      | string | Thông báo đăng nhập thành công                   |
+| user         | object | Thông tin cơ bản của người dùng                  |
+| accessToken  | string | JWT token để xác thực các API requests           |
+| refreshToken | string | Token để làm mới accessToken khi hết hạn         |
+| expiresIn    | number | Thời gian hết hạn của accessToken (giây) = 1 giờ |
 
 **Error Responses**
 
@@ -145,7 +168,7 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
 ```json
 {
   "statusCode": 400,
-  "message": ["Invalid email format", "Password is required"],
+  "message": ["email must be an email", "password should not be empty"],
   "error": "Bad Request"
 }
 ```
@@ -155,27 +178,55 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
 ```json
 {
   "statusCode": 401,
-  "message": "Invalid credentials",
+  "message": "Invalid email or password",
   "error": "Unauthorized"
 }
 ```
 
-- **403 Forbidden**: Email chưa được xác thực
+- **401 Unauthorized**: Email chưa được xác thực
 
 ```json
 {
-  "statusCode": 403,
-  "message": "Please verify your email before logging in",
-  "error": "Forbidden"
+  "statusCode": 401,
+  "message": "Please verify your email address before logging in. Check your inbox for the verification link.",
+  "error": "Unauthorized"
+}
+```
+
+- **401 Unauthorized**: Tài khoản không hỗ trợ đăng nhập bằng password
+
+```json
+{
+  "statusCode": 401,
+  "message": "This account does not support password login. Please use your account provider.",
+  "error": "Unauthorized"
+}
+```
+
+- **401 Unauthorized**: Tài khoản bị vô hiệu hóa
+
+```json
+{
+  "statusCode": 401,
+  "message": "Account has been disabled",
+  "error": "Unauthorized"
 }
 ```
 
 - **429 Too Many Requests**: Vượt quá rate limit
 
+```json
+{
+  "statusCode": 429,
+  "message": "Too many requests",
+  "error": "Too Many Requests"
+}
+```
+
 #### cURL Example
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/login \
+curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -183,13 +234,21 @@ curl -X POST http://localhost:3000/api/v1/auth/login \
   }'
 ```
 
+#### Notes
+
+- Hệ thống tự động thu thập thông tin thiết bị (device info) từ request headers
+- Mỗi người dùng có giới hạn số thiết bị đăng nhập đồng thời (xem AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS)
+- Khi vượt quá giới hạn, phiên cũ nhất sẽ tự động bị đăng xuất
+- AccessToken có thời gian sống 1 giờ
+- RefreshToken có thời gian sống 7 ngày (xem AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION)
+
 ---
 
 ### 3. Logout (Đăng xuất)
 
-Đăng xuất khỏi thiết bị hiện tại (vô hiệu hóa refresh token).
+Đăng xuất khỏi thiết bị hiện tại bằng cách vô hiệu hóa refresh token.
 
-**Endpoint**: `POST /api/v1/auth/logout`
+**Endpoint**: `POST /auth/logout`
 
 **Authentication**: Required (Bearer Token)
 
@@ -203,7 +262,7 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
-  "refreshToken": "your-refresh-token"
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -217,11 +276,21 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
-  "message": "Logged out successfully"
+  "message": "Logout successful"
 }
 ```
 
 **Error Responses**
+
+- **400 Bad Request**: Thiếu refresh token
+
+```json
+{
+  "statusCode": 400,
+  "message": "Refresh token not provided",
+  "error": "Bad Request"
+}
+```
 
 - **401 Unauthorized**: Access token không hợp lệ hoặc hết hạn
 
@@ -233,34 +302,40 @@ Authorization: Bearer {accessToken}
 }
 ```
 
-- **404 Not Found**: Refresh token không tồn tại
+- **401 Unauthorized**: Refresh token không hợp lệ
 
 ```json
 {
-  "statusCode": 404,
-  "message": "Refresh token not found",
-  "error": "Not Found"
+  "statusCode": 401,
+  "message": "Invalid refresh token",
+  "error": "Unauthorized"
 }
 ```
 
 #### cURL Example
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/logout \
+curl -X POST http://localhost:3000/auth/logout \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -d '{
-    "refreshToken": "your-refresh-token"
+    "refreshToken": "YOUR_REFRESH_TOKEN"
   }'
 ```
+
+#### Notes
+
+- Chỉ xóa phiên đăng nhập của thiết bị hiện tại
+- Các thiết bị khác vẫn giữ phiên đăng nhập
+- Để đăng xuất tất cả thiết bị, sử dụng [DELETE /auth/sessions](./session-management.md#2-logout-all-devices)
 
 ---
 
 ### 4. Refresh Token (Làm mới token)
 
-Sử dụng refresh token để lấy access token mới khi token cũ hết hạn.
+Sử dụng refresh token để lấy cặp access token và refresh token mới khi token cũ sắp hết hạn. Hệ thống sử dụng **token rotation** - refresh token cũ sẽ bị xóa và tạo token mới để tăng cường bảo mật.
 
-**Endpoint**: `POST /api/v1/auth/refresh`
+**Endpoint**: `POST /auth/refresh`
 
 **Authentication**: Không yêu cầu (Public)
 
@@ -268,7 +343,7 @@ Sử dụng refresh token để lấy access token mới khi token cũ hết h�
 
 ```json
 {
-  "refreshToken": "your-refresh-token"
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -282,19 +357,48 @@ Sử dụng refresh token để lấy access token mới khi token cũ hết h�
 
 ```json
 {
+  "message": "Token refresh successful",
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "new-uuid-refresh-token"
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 3600
 }
 ```
 
+| Field        | Type   | Description                                    |
+| ------------ | ------ | ---------------------------------------------- |
+| message      | string | Thông báo làm mới token thành công             |
+| accessToken  | string | JWT token mới để xác thực các API requests     |
+| refreshToken | string | Refresh token mới (token cũ đã bị vô hiệu hóa) |
+| expiresIn    | number | Thời gian hết hạn của accessToken (giây)       |
+
 **Error Responses**
 
-- **401 Unauthorized**: Refresh token không hợp lệ hoặc hết hạn
+- **400 Bad Request**: Thiếu refresh token
+
+```json
+{
+  "statusCode": 400,
+  "message": "Refresh token not provided",
+  "error": "Bad Request"
+}
+```
+
+- **401 Unauthorized**: Refresh token không hợp lệ
 
 ```json
 {
   "statusCode": 401,
-  "message": "Invalid or expired refresh token",
+  "message": "Invalid refresh token",
+  "error": "Unauthorized"
+}
+```
+
+- **401 Unauthorized**: Refresh token hết hạn
+
+```json
+{
+  "statusCode": 401,
+  "message": "Refresh token has expired",
   "error": "Unauthorized"
 }
 ```
@@ -302,163 +406,85 @@ Sử dụng refresh token để lấy access token mới khi token cũ hết h�
 #### cURL Example
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/refresh \
+curl -X POST http://localhost:3000/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{
-    "refreshToken": "your-refresh-token"
+    "refreshToken": "YOUR_REFRESH_TOKEN"
   }'
 ```
 
----
+#### Notes
 
-### 5. Get Active Sessions (Danh sách phiên đăng nhập)
-
-Lấy danh sách tất cả các thiết bị đang đăng nhập.
-
-**Endpoint**: `GET /api/v1/auth/sessions`
-
-**Authentication**: Required (Bearer Token)
-
-#### Headers
-
-```
-Authorization: Bearer {accessToken}
-```
-
-#### Request Body (Optional)
-
-```json
-{
-  "refreshToken": "current-refresh-token"
-}
-```
-
-Nếu cung cấp `refreshToken`, phiên hiện tại sẽ được đánh dấu trong response.
-
-#### Response
-
-**Success (200 OK)**
-
-```json
-{
-  "sessions": [
-    {
-      "id": "session-uuid-1",
-      "deviceInfo": {
-        "browser": "Chrome",
-        "os": "macOS",
-        "device": "Desktop"
-      },
-      "ipAddress": "192.168.1.1",
-      "lastUsed": "2025-11-06T10:30:00.000Z",
-      "createdAt": "2025-11-06T08:00:00.000Z",
-      "isCurrent": true
-    },
-    {
-      "id": "session-uuid-2",
-      "deviceInfo": {
-        "browser": "Safari",
-        "os": "iOS",
-        "device": "Mobile"
-      },
-      "ipAddress": "192.168.1.2",
-      "lastUsed": "2025-11-05T15:20:00.000Z",
-      "createdAt": "2025-11-05T15:20:00.000Z",
-      "isCurrent": false
-    }
-  ]
-}
-```
-
-#### cURL Example
-
-```bash
-curl -X GET http://localhost:3000/api/v1/auth/sessions \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
+- **Token Rotation**: Mỗi lần refresh, token cũ sẽ bị xóa và tạo token mới
+- Thông tin thiết bị (device info) được giữ nguyên từ phiên cũ
+- Nếu refresh token hết hạn, người dùng phải đăng nhập lại
+- AccessToken mới có thời gian sống 1 giờ
+- RefreshToken mới có thời gian sống 7 ngày
 
 ---
 
-### 6. Logout All Devices (Đăng xuất tất cả thiết bị)
+## Token Information
 
-Đăng xuất khỏi tất cả các thiết bị (vô hiệu hóa tất cả refresh tokens).
+### Access Token
 
-**Endpoint**: `DELETE /api/v1/auth/sessions`
+- **Thuật toán**: HS256 (HMAC with SHA-256)
+- **Thời gian sống**: 1 giờ
+- **Secret**: `JWT_SECRET` (environment variable)
+- **Payload**:
+  ```json
+  {
+    "sub": "userId",
+    "iat": 1699286400,
+    "exp": 1699290000
+  }
+  ```
 
-**Authentication**: Required (Bearer Token)
+### Refresh Token
 
-#### Headers
-
-```
-Authorization: Bearer {accessToken}
-```
-
-#### Response
-
-**Success (200 OK)**
-
-```json
-{
-  "message": "Logged out from all devices successfully",
-  "deletedSessions": 3
-}
-```
-
-**Error Responses**
-
-- **401 Unauthorized**: Access token không hợp lệ
-
-#### cURL Example
-
-```bash
-curl -X DELETE http://localhost:3000/api/v1/auth/sessions \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
+- **Thuật toán**: HS256 (HMAC with SHA-256)
+- **Thời gian sống**: 7 ngày
+- **Secret**: `JWT_REFRESH_SECRET` (environment variable)
+- **Lưu trữ**: Database (bảng Session)
+- **Token Rotation**: Được áp dụng khi refresh
 
 ---
 
-### 7. Logout Specific Device (Đăng xuất thiết bị cụ thể)
+## Security Features
 
-Đăng xuất khỏi một thiết bị cụ thể bằng tokenId.
+### Password Hashing
 
-**Endpoint**: `DELETE /api/v1/auth/sessions/:tokenId`
+- **Algorithm**: bcrypt
+- **Salt Rounds**: 12 (high security)
+- **Computation Time**: ~300-500ms per hash
 
-**Authentication**: Required (Bearer Token)
+### Rate Limiting
 
-#### Headers
+| Endpoint       | Limit                 |
+| -------------- | --------------------- |
+| POST /register | 5 requests / 15 phút  |
+| POST /login    | 10 requests / 15 phút |
+| POST /refresh  | Không giới hạn        |
+| POST /logout   | Không giới hạn        |
 
-```
-Authorization: Bearer {accessToken}
-```
+### Device Management
 
-#### URL Parameters
+- Số thiết bị đăng nhập đồng thời tối đa: Cấu hình trong `AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS`
+- Khi vượt quá giới hạn: Tự động đăng xuất thiết bị cũ nhất
+- Thông tin lưu trữ:
+  - Device name (tên thiết bị)
+  - Device type (loại thiết bị: Desktop, Mobile, Tablet)
+  - IP address
+  - User agent
+  - Last used timestamp
 
-| Parameter | Type   | Description                          |
-| --------- | ------ | ------------------------------------ |
-| tokenId   | string | ID của refresh token/session cần xóa |
+### Token Security
 
-#### Response
-
-**Success (200 OK)**
-
-```json
-{
-  "message": "Device logged out successfully"
-}
-```
-
-**Error Responses**
-
-- **401 Unauthorized**: Access token không hợp lệ
-- **403 Forbidden**: Không có quyền xóa session này
-- **404 Not Found**: Token ID không tồn tại
-
-#### cURL Example
-
-```bash
-curl -X DELETE http://localhost:3000/api/v1/auth/sessions/session-uuid-1 \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
+- **Access Token**: Chỉ lưu ở client (localStorage/memory)
+- **Refresh Token**:
+  - Lưu ở client (localStorage)
+  - Lưu hash ở database
+  - Token rotation khi refresh
+  - Tự động xóa khi hết hạn
 
 ---
 
@@ -470,8 +496,61 @@ curl -X DELETE http://localhost:3000/api/v1/auth/sessions/session-uuid-1 \
 | 201         | Created - Resource created successfully          |
 | 400         | Bad Request - Invalid input data                 |
 | 401         | Unauthorized - Invalid or missing authentication |
-| 403         | Forbidden - Access denied                        |
-| 404         | Not Found - Resource not found                   |
 | 409         | Conflict - Resource already exists               |
 | 429         | Too Many Requests - Rate limit exceeded          |
 | 500         | Internal Server Error - Server error             |
+
+---
+
+## Integration Guide
+
+### Client-side Storage
+
+**Khuyến nghị lưu trữ tokens:**
+
+```javascript
+// Sau khi login/register thành công
+localStorage.setItem('accessToken', response.accessToken);
+localStorage.setItem('refreshToken', response.refreshToken);
+
+// Khi gọi API
+const token = localStorage.getItem('accessToken');
+fetch('/api/protected-route', {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
+// Khi logout
+localStorage.removeItem('accessToken');
+localStorage.removeItem('refreshToken');
+```
+
+### Auto Token Refresh
+
+**Tự động làm mới token khi hết hạn:**
+
+```javascript
+// Axios interceptor example
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      const refreshToken = localStorage.getItem('refreshToken');
+      const response = await axios.post('/auth/refresh', { refreshToken });
+
+      localStorage.setItem('accessToken', response.data.accessToken);
+      localStorage.setItem('refreshToken', response.data.refreshToken);
+
+      originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
+      return axios(originalRequest);
+    }
+
+    return Promise.reject(error);
+  },
+);
+```
