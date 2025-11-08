@@ -157,21 +157,29 @@ curl -X POST http://localhost:3000/auth/resend-verification \
 
 Email xác thực được gửi tự động từ `MailService` với nội dung:
 
-**Subject**: "Verify your email address"
+**Subject**: "Verify Your Email Address"
 
 **Body** (HTML):
 
-```html
-<p>Thank you for registering!</p>
-<p>Please click the link below to verify your email address:</p>
-<a href="{FRONTEND_URL}/auth/verify-email?token={TOKEN}">Verify Email</a>
-<p>This link will expire in 48 hours.</p>
+Email có giao diện đẹp với styling inline CSS, bao gồm:
+- Header "Email Verification" màu xanh (#2563eb)
+- Nội dung chào mừng và hướng dẫn
+- Button "Verify Email Address" màu xanh
+- Link text dạng plain để copy/paste
+- Warning box cảnh báo link hết hạn sau 48 giờ
+
+**Link trong email**:
+
+```
+{FRONTEND_URL}/auth/verify-email?token={TOKEN}
 ```
 
 **Variables**:
 
-- `{FRONTEND_URL}`: Từ environment variable `FRONTEND_URL`
+- `{FRONTEND_URL}`: Từ environment variable `FRONTEND_URL` (ví dụ: `http://localhost:3001`)
 - `{TOKEN}`: Token xác thực 64 ký tự hex
+
+**Note**: Link trỏ đến **frontend application**, không phải backend API. Frontend page sẽ extract token và gọi backend API để xác thực.
 
 ---
 
@@ -225,16 +233,17 @@ sequenceDiagram
     M->>U: Email with verification link
     B->>F: 201 Created
 
-    Note over U,D: User clicks link in email
+    Note over U,D: User clicks link in email (FRONTEND_URL/auth/verify-email?token=...)
 
-    U->>F: GET /auth/verify-email?token=...
-    F->>B: token
+    U->>F: Navigate to verification page
+    F->>F: Extract token from URL
+    F->>B: GET /auth/verify-email?token=...
     B->>D: Find user with matching token
     B->>B: Verify token with bcrypt
     B->>D: Update isEmailVerified = true
     B->>D: Clear verification token
-    B->>F: 200 OK
-    F->>U: "Email verified successfully"
+    B->>F: 200 OK {message: "Email verified successfully"}
+    F->>U: Show success UI & redirect to login
 ```
 
 ---
@@ -293,23 +302,101 @@ sequenceDiagram
 
 ### For Frontend Developers
 
-1. **Handle verification link**:
+1. **Email verification page** (`/auth/verify-email`):
+
+   Tạo trang frontend để handle verification link từ email:
 
    ```typescript
-   // Extract token from URL
-   const params = new URLSearchParams(window.location.search);
-   const token = params.get('token');
+   // mimkat-client/src/app/auth/verify-email/page.tsx
+   import { useEffect, useState } from 'react';
+   import { useRouter, useSearchParams } from 'next/navigation';
+   import { useI18n } from '@/i18n/context';
+   import { authService } from '@/services/auth.service';
 
-   // Call verification API
-   const response = await fetch(`/auth/verify-email?token=${token}`);
+   function VerifyEmailContent() {
+     const { t } = useI18n();
+     const router = useRouter();
+     const searchParams = useSearchParams();
+     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+     const [message, setMessage] = useState('');
+
+     useEffect(() => {
+       const verifyEmail = async () => {
+         const token = searchParams.get('token');
+
+         if (!token) {
+           setStatus('error');
+           setMessage(t('auth.invalidToken'));
+           return;
+         }
+
+         try {
+           const response = await authService.verifyEmail(token);
+           setStatus('success');
+           setMessage(response.message || t('auth.emailVerifiedSuccessfully'));
+
+           // Redirect to login after 3 seconds
+           setTimeout(() => router.push('/auth'), 3000);
+         } catch (error: any) {
+           setStatus('error');
+           setMessage(error.message || t('auth.verificationError'));
+         }
+       };
+
+       verifyEmail();
+     }, [searchParams, router, t]);
+
+     // Render UI based on status (loading/success/error)
+     return (/* UI components */);
+   }
    ```
 
-2. **Show appropriate messages**:
-   - Loading state while verifying
-   - Success message with login redirect
-   - Error message with resend option
+2. **API Service method**:
 
-3. **Resend verification**:
+   ```typescript
+   // mimkat-client/src/services/auth.service.ts
+   async verifyEmail(token: string): Promise<VerifyEmailResponse> {
+     try {
+       const response = await authAxios.get<VerifyEmailResponse>(
+         `/auth/verify-email?token=${token}`
+       );
+       return response.data;
+     } catch (error) {
+       if (axios.isAxiosError(error) && error.response) {
+         throw new Error(error.response.data.message || 'Verification failed');
+       }
+       throw new Error('An unexpected error occurred');
+     }
+   }
+   ```
+
+3. **Show appropriate messages**:
+   - **Loading state**: Spinner + "Đang xác thực email..."
+   - **Success state**: Green checkmark + success message + auto-redirect to login (3 seconds)
+   - **Error state**: Red X + error message + link to login + resend instruction
+
+4. **i18n Support**:
+
+   Sử dụng `useI18n` hook để hỗ trợ đa ngôn ngữ (tiếng Việt/English):
+
+   ```json
+   // vi.json
+   {
+     "auth": {
+       "verifyingEmail": "Đang xác thực email...",
+       "verificationSuccess": "Xác thực thành công!",
+       "verificationFailed": "Xác thực thất bại",
+       "invalidToken": "Token xác thực không hợp lệ",
+       "emailVerifiedSuccessfully": "Email đã được xác thực thành công!",
+       "redirectingToLoginShortly": "Bạn sẽ được chuyển đến trang đăng nhập trong giây lát...",
+       "goToLogin": "Đến trang đăng nhập",
+       "backToLoginPage": "Quay lại trang đăng nhập",
+       "needResendVerification": "Cần gửi lại email xác thực? Vui lòng đăng nhập và chọn \"Gửi lại email xác thực\""
+     }
+   }
+   ```
+
+5. **Resend verification**:
    ```typescript
    const resendVerification = async (email: string) => {
      await fetch('/auth/resend-verification', {
@@ -320,12 +407,62 @@ sequenceDiagram
    };
    ```
 
+**Important Notes**:
+- Email link phải trỏ đến **FRONTEND_URL**, không phải backend API URL
+- Frontend page extract token từ URL query parameter
+- Frontend gọi backend API để verify token
+- Hiển thị UI thân thiện với user (loading/success/error states)
+- Auto-redirect về login page sau khi verify thành công
+
 ### For Backend Developers
 
-1. **Email service error handling**: Log errors nhưng không fail request
-2. **Token expiry**: Tự động cleanup expired tokens (sử dụng cleanup service)
-3. **Rate limiting**: Ngăn spam verification emails
-4. **Secure token generation**: Sử dụng crypto.randomBytes (không dùng Math.random())
+1. **Email verification URL configuration**:
+
+   ```typescript
+   // mimkat-api/src/mail/mail.service.ts
+   async sendVerificationEmail(email: string, token: string) {
+     // ✅ ĐÚNG: Sử dụng FRONTEND_URL để trỏ đến frontend page
+     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+     const verificationUrl = `${frontendUrl}/auth/verify-email?token=${token}`;
+
+     // ❌ SAI: Không dùng APP_URL (backend URL)
+     // const appUrl = this.configService.get<string>('APP_URL');
+     // const verificationUrl = `${appUrl}/auth/verify-email?token=${token}`;
+   }
+   ```
+
+   **Environment variables**:
+   ```env
+   # .env
+   APP_URL=http://localhost:3000           # Backend API URL
+   FRONTEND_URL=http://localhost:3001      # Frontend application URL (dùng cho email links)
+   ```
+
+2. **Email service error handling**: Log errors nhưng không fail request
+
+   ```typescript
+   try {
+     await this.mailerService.sendMail({
+       to: email,
+       subject: 'Verify Your Email Address',
+       html: this.getVerificationEmailTemplate(verificationUrl),
+     });
+     this.logger.log('Verification email sent successfully');
+   } catch (error) {
+     this.logger.error('Failed to send verification email', error.stack);
+     // Không throw error - không làm fail registration process
+   }
+   ```
+
+3. **Token expiry**: Tự động cleanup expired tokens (sử dụng cleanup service)
+4. **Rate limiting**: Ngăn spam verification emails (3 requests/hour)
+5. **Secure token generation**: Sử dụng crypto.randomBytes (không dùng Math.random())
+
+   ```typescript
+   // Secure token generation
+   const verificationToken = crypto.randomBytes(32).toString('hex'); // 64 hex chars
+   const hashedToken = await bcrypt.hash(verificationToken, 10);
+   ```
 
 ---
 

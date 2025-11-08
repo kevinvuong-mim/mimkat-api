@@ -36,7 +36,7 @@ Tài liệu này hướng dẫn cách lấy các biến môi trường cần thi
   - `http://localhost:3000` (cho development)
   - Domain production của bạn
 - Thêm "Authorized redirect URIs":
-  - `http://localhost:3000/api/v1/auth/google/callback` (cho development)
+  - `http://localhost:3000/auth/google/callback` (cho development)
   - URL production callback của bạn
 - Click "Create"
 
@@ -54,13 +54,13 @@ Tài liệu này hướng dẫn cách lấy các biến môi trường cần thi
 **Format:**
 
 ```
-GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 ```
 
 **Lưu ý:**
 
-- Đối với môi trường development: `http://localhost:3000/api/v1/auth/google/callback`
-- Đối với môi trường production: `https://yourdomain.com/api/v1/auth/google/callback`
+- Đối với môi trường development: `http://localhost:3000/auth/google/callback`
+- Đối với môi trường production: `https://yourdomain.com/auth/google/callback`
 - URL này phải khớp với "Authorized redirect URIs" đã cấu hình trong Google Cloud Console
 
 ---
@@ -390,7 +390,7 @@ JWT_REFRESH_SECRET="your-jwt-refresh-secret-key-at-least-32-chars"
 # Google OAuth
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
-GOOGLE_CALLBACK_URL="http://localhost:3000/api/v1/auth/google/callback"
+GOOGLE_CALLBACK_URL="http://localhost:3000/auth/google/callback"
 
 # Email
 MAIL_HOST="smtp.gmail.com"
@@ -398,7 +398,7 @@ MAIL_PORT=587
 MAIL_USER="your-email@gmail.com"
 MAIL_PASSWORD="your-app-password"
 MAIL_FROM="noreply@mimkat.com"
-APP_URL="http://localhost:3000/api/v1"
+APP_URL="http://localhost:3000"
 
 # CORS
 CORS_ORIGIN="http://localhost:3001, http://localhost:3002"

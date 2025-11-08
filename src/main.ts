@@ -19,9 +19,6 @@ async function bootstrap() {
     }),
   );
 
-  // Global API prefix
-  app.setGlobalPrefix('api/v1');
-
   // Enable CORS - Token-based authentication
   app.enableCors({
     origin: process.env.CORS_ORIGIN
