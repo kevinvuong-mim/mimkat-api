@@ -153,13 +153,13 @@ curl -X POST http://localhost:3000/auth/register \
 }
 ```
 
-| Field        | Type   | Description                                      |
-| ------------ | ------ | ------------------------------------------------ |
-| message      | string | Thông báo đăng nhập thành công                   |
-| user         | object | Thông tin cơ bản của người dùng                  |
-| accessToken  | string | JWT token để xác thực các API requests           |
-| refreshToken | string | Token để làm mới accessToken khi hết hạn         |
-| expiresIn    | number | Thời gian hết hạn của accessToken (giây) = 1 giờ |
+| Field        | Type   | Description                                           |
+| ------------ | ------ | ----------------------------------------------------- |
+| message      | string | Thông báo đăng nhập thành công                        |
+| user         | object | Thông tin cơ bản của người dùng                       |
+| accessToken  | string | JWT token để xác thực các API requests                |
+| refreshToken | string | Token để làm mới accessToken khi hết hạn              |
+| expiresIn    | number | Thời gian hết hạn của accessToken (3600 giây = 1 giờ) |
 
 **Error Responses**
 
@@ -237,10 +237,10 @@ curl -X POST http://localhost:3000/auth/login \
 #### Notes
 
 - Hệ thống tự động thu thập thông tin thiết bị (device info) từ request headers
-- Mỗi người dùng có giới hạn số thiết bị đăng nhập đồng thời (xem AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS)
+- Mỗi người dùng có giới hạn số phiên đăng nhập đồng thời (AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS)
 - Khi vượt quá giới hạn, phiên cũ nhất sẽ tự động bị đăng xuất
-- AccessToken có thời gian sống 1 giờ
-- RefreshToken có thời gian sống 7 ngày (xem AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION)
+- AccessToken có thời gian sống 1 giờ (AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION)
+- RefreshToken có thời gian sống 7 ngày (AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION)
 
 ---
 
@@ -468,8 +468,8 @@ curl -X POST http://localhost:3000/auth/refresh \
 
 ### Device Management
 
-- Số thiết bị đăng nhập đồng thời tối đa: Cấu hình trong `AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS`
-- Khi vượt quá giới hạn: Tự động đăng xuất thiết bị cũ nhất
+- Số phiên đăng nhập đồng thời tối đa: Cấu hình trong `AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS`
+- Khi vượt quá giới hạn: Tự động đăng xuất phiên cũ nhất
 - Thông tin lưu trữ:
   - Device name (tên thiết bị)
   - Device type (loại thiết bị: Desktop, Mobile, Tablet)
