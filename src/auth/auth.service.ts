@@ -123,7 +123,7 @@ export class AuthService {
     }
 
     // Check device limit
-    await this.enforceDeviceLimit(user.id);
+    await this.enforceSessionLimit(user.id);
 
     // Generate tokens
     const tokens = await this.generateTokens(user.id);
@@ -367,7 +367,7 @@ export class AuthService {
     };
   }
 
-  private async enforceDeviceLimit(userId: string): Promise<void> {
+  private async enforceSessionLimit(userId: string): Promise<void> {
     const activeTokens = await this.prisma.session.findMany({
       where: {
         userId,
@@ -642,7 +642,7 @@ export class AuthService {
     }
 
     // Check device limit
-    await this.enforceDeviceLimit(user.id);
+    await this.enforceSessionLimit(user.id);
 
     // Generate tokens
     const tokens = await this.generateTokens(user.id);

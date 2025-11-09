@@ -158,10 +158,10 @@ curl -X POST http://localhost:3000/auth/reset-password \
 #### Notes
 
 - Sau khi đặt lại mật khẩu thành công:
-  - Password cũ bị thay thế bằng password mới (hash bcrypt, salt rounds = 12)
-  - **Tất cả sessions hiện tại bị xóa** (security measure)
-  - Token reset bị xóa khỏi database
-  - User cần đăng nhập lại với mật khẩu mới
+- Password cũ bị thay thế bằng password mới (hash bcrypt, salt rounds = 12)
+- **Tất cả sessions hiện tại bị xóa** (security measure)
+- Token reset bị xóa khỏi database
+- User cần đăng nhập lại với mật khẩu mới
 
 ---
 

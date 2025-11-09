@@ -7,7 +7,6 @@ API backend cho ứng dụng Mimkat được xây dựng với NestJS framework.
 Mimkat API là một REST API server cung cấp các chức năng:
 
 - **Authentication & Authorization**: Hệ thống xác thực JWT với Google OAuth2
-- **Task Management**: Quản lý công việc và nhiệm vụ
 - **Email Service**: Gửi email thông báo
 - **Security**: Rate limiting, CORS, và các security headers
 - **Database**: Prisma ORM với PostgreSQL
@@ -69,6 +68,10 @@ CORS_ORIGIN="http://localhost:3001, http://localhost:3002"
 
 # Server
 PORT=3000
+NODE_ENV="development"
+
+# Frontend URLs
+FRONTEND_URL="http://localhost:3001"
 ```
 
 ## Chạy ứng dụng
@@ -117,7 +120,7 @@ npm run format
 mimkat-api/
 ├── src/
 │   ├── auth/           # Module xác thực (JWT, Google OAuth, Local)
-│   ├── tasks/          # Module quản lý công việc
+│   ├── tasks/          # Module quản lý cron job
 │   ├── mail/           # Module gửi email
 │   ├── prisma/         # Prisma service và module
 │   ├── common/         # Shared utilities, filters, guards
