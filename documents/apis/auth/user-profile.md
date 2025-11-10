@@ -2,7 +2,7 @@
 
 ## Overview
 
-API lấy thông tin profile của người dùng hiện tại dựa trên JWT token.
+API lấy thông tin profile đầy đủ của người dùng hiện tại dựa trên JWT token. Bao gồm thông tin về phương thức đăng nhập (`hasPassword`, `hasGoogleAuth`) để hỗ trợ logic frontend.
 
 **Base URL**: `/auth`
 
@@ -10,12 +10,11 @@ API lấy thông tin profile của người dùng hiện tại dựa trên JWT t
 
 ## Endpoint
 
-### Get Current User (Lấy thông tin người dùng hiện tại)
+### Get Current User Profile (Lấy thông tin profile đầy đủ)
 
-Lấy thông tin profile của user đang đăng nhập dựa trên access token.
+Lấy thông tin profile đầy đủ của user đang đăng nhập, bao gồm `hasPassword` và `hasGoogleAuth` để xác định phương thức đăng nhập.
 
 **Endpoint**: `GET /auth/me`
-
 **Authentication**: Required (Bearer Token)
 
 #### Headers
@@ -33,22 +32,36 @@ Authorization: Bearer {accessToken}
   "id": "clx1234567890abcdefghij",
   "email": "user@example.com",
   "fullName": "John Doe",
-  "username": null,
-  "isActive": true
+  "username": "johndoe",
+  "avatar": "https://example.com/avatar.jpg",
+  "isActive": true,
+  "isEmailVerified": true,
+  "hasPassword": true,
+  "hasGoogleAuth": false,
+  "createdAt": "2025-11-07T00:00:00.000Z",
+  "updatedAt": "2025-11-07T00:00:00.000Z"
 }
 ```
 
-| Field    | Type    | Description                                            |
-| -------- | ------- | ------------------------------------------------------ |
-| id       | string  | User ID (CUID)                                         |
-| email    | string  | Email address                                          |
-| fullName | string  | Tên đầy đủ của user (null nếu chưa set)                |
-| username | string  | Username (null nếu chưa set)                           |
-| isActive | boolean | Trạng thái tài khoản (true = active, false = disabled) |
+#### Response Schema
+
+| Field           | Type    | Description                             |
+| --------------- | ------- | --------------------------------------- |
+| id              | string  | User ID (CUID)                          |
+| email           | string  | Email address                           |
+| fullName        | string  | Tên đầy đủ của user (null nếu chưa set) |
+| username        | string  | Username (null nếu chưa set)            |
+| avatar          | string  | URL avatar (null nếu không có)          |
+| isActive        | boolean | Trạng thái tài khoản                    |
+| isEmailVerified | boolean | Email đã được xác thực chưa             |
+| hasPassword     | boolean | User có password được set hay không     |
+| hasGoogleAuth   | boolean | User có liên kết Google OAuth không     |
+| createdAt       | string  | Thời gian tạo tài khoản (ISO 8601)      |
+| updatedAt       | string  | Thời gian cập nhật cuối (ISO 8601)      |
 
 **Error Responses**
 
-- **401 Unauthorized**: Access token không hợp lệ hoặc hết hạn
+- **401 Unauthorized**: Token không hợp lệ hoặc hết hạn
 
 ```json
 {
@@ -58,18 +71,57 @@ Authorization: Bearer {accessToken}
 }
 ```
 
+- **401 Unauthorized**: User không tồn tại
+
+```json
+{
+  "statusCode": 401,
+  "message": "User not found",
+  "error": "Unauthorized"
+}
+```
+
 #### cURL Example
 
 ```bash
 curl -X GET http://localhost:3000/auth/me \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-#### Notes
+#### Use Cases
 
-- Thông tin được extract từ JWT token payload
-- Không cần query database nếu chỉ cần basic info từ token
-- Response không bao gồm sensitive data như password, tokens, etc.
+**Use Case 1: User đăng ký bằng email/password**
+
+```json
+{
+  "id": "clx123...",
+  "email": "user@example.com",
+  "hasPassword": true, // ← User cần nhập current password khi đổi
+  "hasGoogleAuth": false
+}
+```
+
+**Use Case 2: User đăng nhập bằng Google (chưa set password)**
+
+```json
+{
+  "id": "clx123...",
+  "email": "user@gmail.com",
+  "hasPassword": false, // ← User KHÔNG cần current password, có thể set lần đầu
+  "hasGoogleAuth": true
+}
+```
+
+**Use Case 3: User có cả 2 phương thức**
+
+```json
+{
+  "id": "clx123...",
+  "email": "user@gmail.com",
+  "hasPassword": true, // ← User cần nhập current password
+  "hasGoogleAuth": true
+}
+```
 
 ---
 
@@ -116,16 +168,22 @@ interface UserPayload {
 
 import { useEffect, useState } from 'react';
 
-interface User {
+interface UserProfile {
   id: string;
   email: string;
   fullName: string | null;
   username: string | null;
+  avatar: string | null;
   isActive: boolean;
+  isEmailVerified: boolean;
+  hasPassword: boolean;
+  hasGoogleAuth: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -167,6 +225,9 @@ export default function ProfilePage() {
       <p>Name: {user.fullName || 'Not set'}</p>
       <p>Username: {user.username || 'Not set'}</p>
       <p>Status: {user.isActive ? 'Active' : 'Disabled'}</p>
+      <p>Email Verified: {user.isEmailVerified ? 'Yes' : 'No'}</p>
+      <p>Has Password: {user.hasPassword ? 'Yes' : 'No (Google only)'}</p>
+      <p>Has Google Auth: {user.hasGoogleAuth ? 'Yes' : 'No'}</p>
     </div>
   );
 }
@@ -180,16 +241,22 @@ export default function ProfilePage() {
 
 import { createContext, useContext, useEffect, useState } from 'react';
 
-interface User {
+interface UserProfile {
   id: string;
   email: string;
   fullName: string | null;
   username: string | null;
+  avatar: string | null;
   isActive: boolean;
+  isEmailVerified: boolean;
+  hasPassword: boolean;
+  hasGoogleAuth: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: UserProfile | null;
   loading: boolean;
   refreshUser: () => Promise<void>;
 }
@@ -201,7 +268,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadUser = async () => {

@@ -11,6 +11,7 @@ import {
   UseGuards,
   Req,
   Res,
+  Put,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
@@ -20,6 +21,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { Public } from '@common/decorators/public.decorator';
 import {
   CurrentUser,
@@ -77,14 +79,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   @HttpCode(HttpStatus.OK)
-  getCurrentUser(@CurrentUser() user: UserPayload) {
-    return {
-      id: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      username: user.username,
-      isActive: user.isActive,
-    };
+  async getCurrentUser(@CurrentUser() user: UserPayload) {
+    // Return full profile with hasPassword and hasGoogleAuth flags
+    return this.authService.getUserProfile(user.id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -150,6 +147,22 @@ export class AuthController {
     return this.authService.resetPassword(
       resetPasswordDto.token,
       resetPasswordDto.password,
+    );
+  }
+
+  // Change password for authenticated users
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 requests per 1 hour
+  @Put('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @CurrentUser() user: UserPayload,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      user.id,
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
     );
   }
 

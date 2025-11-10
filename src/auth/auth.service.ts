@@ -299,7 +299,6 @@ export class AuthService {
     });
   }
 
-  // Session management methods
   async getActiveSessions(
     userId: string,
     currentToken?: string,
@@ -481,7 +480,6 @@ export class AuthService {
     };
   }
 
-  // Password Reset Methods
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -595,17 +593,12 @@ export class AuthService {
       throw new BadRequestException('No user from Google');
     }
 
-    // Check if user exists with Google ID
-    let user = await this.prisma.user.findUnique({
-      where: { googleId: googleUser.googleId },
+    // Check if user exists with Google ID or email
+    let user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ googleId: googleUser.googleId }, { email: googleUser.email }],
+      },
     });
-
-    // If not found by googleId, check by email
-    if (!user) {
-      user = await this.prisma.user.findUnique({
-        where: { email: googleUser.email },
-      });
-    }
 
     // If user exists by email but doesn't have Google linked yet
     if (user && !user.googleId) {
@@ -614,7 +607,7 @@ export class AuthService {
         where: { id: user.id },
         data: {
           googleId: googleUser.googleId,
-          avatar: googleUser.avatar || user.avatar,
+          avatar: user.avatar || googleUser.avatar,
           fullName:
             user.fullName || `${googleUser.firstName} ${googleUser.lastName}`,
           isEmailVerified: true, // Google login implies email is verified
@@ -662,6 +655,102 @@ export class AuthService {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       expiresIn: 3600, // 1 hour in seconds
+    };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string | undefined,
+    newPassword: string,
+  ) {
+    // Find user
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // If user has a password (traditional account or Google account with password set)
+    if (user.password) {
+      // Current password is required when user already has a password
+      if (!currentPassword) {
+        throw new BadRequestException(
+          'Current password is required to change password',
+        );
+      }
+
+      // Verify current password
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
+
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Current password is incorrect');
+      }
+    }
+    // If user doesn't have a password (Google-only account), allow setting password without current password
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    // Invalidate all existing sessions for security
+    await this.prisma.session.deleteMany({
+      where: { userId },
+    });
+
+    return {
+      message: user.password
+        ? 'Password changed successfully. All devices have been logged out for security.'
+        : 'Password set successfully. All devices have been logged out for security.',
+    };
+  }
+
+  async getUserProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        username: true,
+        avatar: true,
+        isActive: true,
+        isEmailVerified: true,
+        password: true, // We need this to check if user has password
+        googleId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Return user info with hasPassword flag (don't expose actual password)
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      username: user.username,
+      avatar: user.avatar,
+      isActive: user.isActive,
+      isEmailVerified: user.isEmailVerified,
+      hasPassword: !!user.password, // Boolean flag indicating if user has password
+      hasGoogleAuth: !!user.googleId,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 }
