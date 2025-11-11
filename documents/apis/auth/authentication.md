@@ -6,14 +6,6 @@ API xác thực người dùng cơ bản bao gồm đăng ký, đăng nhập, đ
 
 **Base URL**: `/auth`
 
-**Các API liên quan:**
-
-- [Email Verification](./email-verification.md) - Xác thực email
-- [Password Reset](./password-reset.md) - Quên mật khẩu và đặt lại mật khẩu
-- [Google OAuth](./google-oauth.md) - Đăng nhập bằng Google
-- [Session Management](./session-management.md) - Quản lý phiên đăng nhập
-- [User Profile](./user-profile.md) - Thông tin người dùng
-
 ---
 
 ## Endpoints
@@ -466,7 +458,7 @@ curl -X POST http://localhost:3000/auth/refresh \
 | POST /refresh  | Không giới hạn        |
 | POST /logout   | Không giới hạn        |
 
-### Device Management
+### Session Management
 
 - Số phiên đăng nhập đồng thời tối đa: Cấu hình trong `AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS`
 - Khi vượt quá giới hạn: Tự động đăng xuất phiên cũ nhất
@@ -499,58 +491,3 @@ curl -X POST http://localhost:3000/auth/refresh \
 | 409         | Conflict - Resource already exists               |
 | 429         | Too Many Requests - Rate limit exceeded          |
 | 500         | Internal Server Error - Server error             |
-
----
-
-## Integration Guide
-
-### Client-side Storage
-
-**Khuyến nghị lưu trữ tokens:**
-
-```javascript
-// Sau khi login/register thành công
-localStorage.setItem('accessToken', response.accessToken);
-localStorage.setItem('refreshToken', response.refreshToken);
-
-// Khi gọi API
-const token = localStorage.getItem('accessToken');
-fetch('/api/protected-route', {
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-});
-
-// Khi logout
-localStorage.removeItem('accessToken');
-localStorage.removeItem('refreshToken');
-```
-
-### Auto Token Refresh
-
-**Tự động làm mới token khi hết hạn:**
-
-```javascript
-// Axios interceptor example
-axios.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      const refreshToken = localStorage.getItem('refreshToken');
-      const response = await axios.post('/auth/refresh', { refreshToken });
-
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('refreshToken', response.data.refreshToken);
-
-      originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
-      return axios(originalRequest);
-    }
-
-    return Promise.reject(error);
-  },
-);
-```

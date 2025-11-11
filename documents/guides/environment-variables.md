@@ -236,8 +236,6 @@ MAIL_USER="your-email@gmail.com"
 MAIL_PASSWORD=abcd efgh ijkl mnop
 ```
 
-(Loại bỏ khoảng trắng: `abcdefghijklmnop`)
-
 **Lưu ý:**
 
 - Không sử dụng mật khẩu đăng nhập Gmail thông thường

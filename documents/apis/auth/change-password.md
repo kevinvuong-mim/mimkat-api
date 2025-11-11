@@ -234,47 +234,6 @@ curl -X PUT http://localhost:3000/auth/change-password \
 
 ---
 
-## Frontend Integration
-
-### TypeScript/JavaScript Example
-
-```typescript
-import { authService } from '@/services/auth.service';
-
-// Đối với người dùng đã có mật khẩu
-try {
-  const response = await authService.changePassword({
-    currentPassword: 'OldPassword123',
-    newPassword: 'NewPassword456',
-  });
-  console.log(response.message); // "Password changed successfully"
-} catch (error) {
-  console.error('Password change failed:', error.message);
-}
-
-// Đối với người dùng Google OAuth đặt mật khẩu
-try {
-  const response = await authService.changePassword({
-    newPassword: 'NewPassword456',
-  });
-  console.log(response.message); // "Password set successfully"
-} catch (error) {
-  console.error('Password setting failed:', error.message);
-}
-```
-
----
-
-## Related Endpoints
-
-- `POST /auth/forgot-password` - Yêu cầu email đặt lại mật khẩu
-- `POST /auth/reset-password` - Đặt lại mật khẩu bằng token từ email
-- `GET /auth/me` - Lấy thông tin người dùng hiện tại
-- `POST /auth/logout` - Đăng xuất phiên hiện tại
-- `DELETE /auth/sessions` - Đăng xuất tất cả thiết bị
-
----
-
 ## Notes
 
 - **QUAN TRỌNG**: Sau khi đổi mật khẩu thành công, TẤT CẢ các phiên đăng nhập trên mọi thiết bị sẽ bị xóa để đảm bảo bảo mật.

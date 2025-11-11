@@ -114,7 +114,6 @@ export class AuthController {
     return this.authService.logoutDevice(user.id, tokenId);
   }
 
-  // Email verification routes
   @Public()
   @Get('verify-email')
   @HttpCode(HttpStatus.OK)
@@ -130,7 +129,6 @@ export class AuthController {
     return this.authService.resendVerificationEmail(email);
   }
 
-  // Password reset routes
   @Public()
   @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per 1 hour
   @Post('forgot-password')
@@ -150,7 +148,6 @@ export class AuthController {
     );
   }
 
-  // Change password for authenticated users
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 requests per 1 hour
   @Put('change-password')
@@ -166,7 +163,6 @@ export class AuthController {
     );
   }
 
-  // Google OAuth routes
   @Public()
   @Get('google')
   @UseGuards(GoogleAuthGuard)

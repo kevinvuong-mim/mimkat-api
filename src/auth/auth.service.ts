@@ -43,7 +43,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Generate verification token
-    const verificationToken = this.generateVerificationToken();
+    const verificationToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = await bcrypt.hash(verificationToken, 10);
 
     // Token expires in 48 hours
@@ -122,7 +122,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // Check device limit
+    // Check session limit
     await this.enforceSessionLimit(user.id);
 
     // Generate tokens
@@ -396,10 +396,6 @@ export class AuthService {
     }
   }
 
-  private generateVerificationToken(): string {
-    return crypto.randomBytes(32).toString('hex');
-  }
-
   async verifyEmail(token: string) {
     // Find user with matching token that hasn't expired
     const users = await this.prisma.user.findMany({
@@ -456,7 +452,7 @@ export class AuthService {
     }
 
     // Generate new verification token
-    const verificationToken = this.generateVerificationToken();
+    const verificationToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = await bcrypt.hash(verificationToken, 10);
 
     // Token expires in 48 hours
@@ -502,7 +498,7 @@ export class AuthService {
     }
 
     // Generate password reset token
-    const resetToken = this.generateVerificationToken();
+    const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = await bcrypt.hash(resetToken, 10);
 
     // Token expires in 1 hour (shorter than email verification for security)
@@ -634,7 +630,7 @@ export class AuthService {
       throw new UnauthorizedException('Account has been disabled');
     }
 
-    // Check device limit
+    // Check session limit
     await this.enforceSessionLimit(user.id);
 
     // Generate tokens
