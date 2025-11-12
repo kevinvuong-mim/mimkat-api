@@ -13,8 +13,8 @@ Tất cả endpoints đều hỗ trợ cả 2 phương thức.
 
 **Cookie Configuration**:
 
-- `access_token`: HttpOnly, Secure (production), SameSite=strict, Expires 1h
-- `refresh_token`: HttpOnly, Secure (production), SameSite=strict, Expires 7d
+- `accessToken`: HttpOnly, Secure (production), SameSite=strict, Expires 1h
+- `refreshToken`: HttpOnly, Secure (production), SameSite=strict, Expires 7d
 
 ---
 
@@ -175,8 +175,8 @@ curl -X POST http://localhost:3000/auth/register \
 **Response Headers (Set-Cookie)**:
 
 ```
-Set-Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
-Set-Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
+Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
+Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
 ```
 
 | Field        | Type   | Description                                       |
@@ -382,8 +382,8 @@ Authorization: Bearer {accessToken}
 **Response Headers (Clear cookies)**:
 
 ```
-Set-Cookie: access_token=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT
-Set-Cookie: refresh_token=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+Set-Cookie: accessToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+Set-Cookie: refreshToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT
 ```
 
 **Error Responses**
@@ -487,8 +487,8 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 **Response Headers (Set new cookies)**:
 
 ```
-Set-Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
-Set-Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
+Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
+Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
 ```
 
 | Field        | Type   | Description                                    |
@@ -638,7 +638,7 @@ await fetch('/auth/refresh', {
 
 - **Thuật toán**: HS256 (HMAC with SHA-256)
 - **Thời gian sống**: 1 giờ
-- **Cookie Name**: `access_token`
+- **Cookie Name**: `accessToken`
 - **Secret**: `JWT_SECRET` (environment variable)
 - **Payload**:
   ```json
@@ -653,7 +653,7 @@ await fetch('/auth/refresh', {
 
 - **Thuật toán**: HS256 (HMAC with SHA-256)
 - **Thời gian sống**: 7 ngày
-- **Cookie Name**: `refresh_token`
+- **Cookie Name**: `refreshToken`
 - **Secret**: `JWT_REFRESH_SECRET` (environment variable)
 - **Lưu trữ**: Database (bảng Session)
 - **Token Rotation**: Được áp dụng khi refresh

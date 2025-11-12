@@ -49,7 +49,7 @@ export class AuthController {
     const result = await this.authService.login(loginDto, deviceInfo);
 
     // Set access token in httpOnly cookie
-    res.cookie('access_token', result.accessToken, {
+    res.cookie('accessToken', result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -57,7 +57,7 @@ export class AuthController {
     });
 
     // Set refresh token in httpOnly cookie
-    res.cookie('refresh_token', result.refreshToken, {
+    res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -78,13 +78,13 @@ export class AuthController {
   ) {
     // Get refresh token from cookie if not provided in body
     const refreshToken =
-      refreshTokenDto.refreshToken || req.cookies?.refresh_token;
+      refreshTokenDto.refreshToken || req.cookies?.refreshToken;
 
     await this.authService.logout(user.id, refreshToken);
 
     // Clear cookies
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
   }
 
   @Public()
@@ -99,7 +99,7 @@ export class AuthController {
 
     // Get refresh token from cookie if not provided in body
     const refreshToken =
-      refreshTokenDto.refreshToken || req.cookies?.refresh_token;
+      refreshTokenDto.refreshToken || req.cookies?.refreshToken;
 
     const result = await this.authService.refreshTokens(
       refreshToken,
@@ -107,7 +107,7 @@ export class AuthController {
     );
 
     // Set new access token in httpOnly cookie
-    res.cookie('access_token', result.accessToken, {
+    res.cookie('accessToken', result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -115,7 +115,7 @@ export class AuthController {
     });
 
     // Set new refresh token in httpOnly cookie
-    res.cookie('refresh_token', result.refreshToken, {
+    res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -146,7 +146,7 @@ export class AuthController {
     );
 
     // Set access token in httpOnly cookie
-    res.cookie('access_token', result.accessToken, {
+    res.cookie('accessToken', result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -154,7 +154,7 @@ export class AuthController {
     });
 
     // Set refresh token in httpOnly cookie
-    res.cookie('refresh_token', result.refreshToken, {
+    res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',

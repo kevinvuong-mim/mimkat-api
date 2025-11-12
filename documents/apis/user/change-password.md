@@ -22,7 +22,7 @@ API đổi mật khẩu cho người dùng đã đăng nhập. Hỗ trợ hai tr
 ### Request Headers
 
 ```
-Authorization: Bearer <access_token>
+Authorization: Bearer <accessToken>
 Content-Type: application/json
 ```
 

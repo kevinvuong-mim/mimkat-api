@@ -10,8 +10,8 @@ API xác thực người dùng thông qua Google OAuth 2.0. Hỗ trợ cả Bear
 
 **Cookie Configuration**:
 
-- `access_token`: HttpOnly, Secure (production), SameSite=strict, Expires 1h
-- `refresh_token`: HttpOnly, Secure (production), SameSite=strict, Expires 7d
+- `accessToken`: HttpOnly, Secure (production), SameSite=strict, Expires 1h
+- `refreshToken`: HttpOnly, Secure (production), SameSite=strict, Expires 7d
 
 ---
 
@@ -63,7 +63,7 @@ Xử lý callback từ Google sau khi user cấp quyền. Tự động set cooki
 
 Backend sẽ:
 
-1. Set HttpOnly cookies với access_token và refresh_token
+1. Set HttpOnly cookies với accessToken và refreshToken
 2. Redirect về frontend với success status
 
 ```
@@ -73,8 +73,8 @@ Backend sẽ:
 **Response Headers (Set-Cookie)**:
 
 ```
-Set-Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
-Set-Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
+Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
+Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
 ```
 
 **Error Responses**
