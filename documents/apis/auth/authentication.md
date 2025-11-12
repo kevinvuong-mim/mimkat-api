@@ -40,12 +40,12 @@ Tạo tài khoản người dùng mới với email và mật khẩu. Sau khi đ
 
 ```json
 {
-  "message": "Registration successful. Please check your email to verify your account.",
-  "user": {
-    "id": "clx1234567890abcdefghij",
-    "email": "user@example.com",
-    "createdAt": "2025-11-07T00:00:00.000Z"
-  }
+  "success": true,
+  "statusCode": 201,
+  "message": "Resource created successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/register"
 }
 ```
 
@@ -55,12 +55,22 @@ Tạo tài khoản người dùng mới với email và mật khẩu. Sau khi đ
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
-  "message": [
-    "email must be an email",
-    "password must be longer than or equal to 8 characters"
+  "message": "Validation failed",
+  "error": "Bad Request",
+  "errors": [
+    {
+      "field": "email",
+      "message": "email must be an email"
+    },
+    {
+      "field": "password",
+      "message": "password must be longer than or equal to 8 characters"
+    }
   ],
-  "error": "Bad Request"
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/register"
 }
 ```
 
@@ -68,9 +78,12 @@ Tạo tài khoản người dùng mới với email và mật khẩu. Sau khi đ
 
 ```json
 {
+  "success": false,
   "statusCode": 409,
   "message": "Email already in use",
-  "error": "Conflict"
+  "error": "Conflict",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/register"
 }
 ```
 
@@ -78,9 +91,12 @@ Tạo tài khoản người dùng mới với email và mật khẩu. Sau khi đ
 
 ```json
 {
+  "success": false,
   "statusCode": 429,
   "message": "Too many requests",
-  "error": "Too Many Requests"
+  "error": "Too Many Requests",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/register"
 }
 ```
 
@@ -134,14 +150,15 @@ curl -X POST http://localhost:3000/auth/register \
 
 ```json
 {
-  "message": "Login successful",
-  "user": {
-    "id": "clx1234567890abcdefghij",
-    "email": "user@example.com"
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   },
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresIn": 3600
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/login"
 }
 ```
 
@@ -159,9 +176,22 @@ curl -X POST http://localhost:3000/auth/register \
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
-  "message": ["email must be an email", "password should not be empty"],
-  "error": "Bad Request"
+  "message": "Validation failed",
+  "error": "Bad Request",
+  "errors": [
+    {
+      "field": "email",
+      "message": "email must be an email"
+    },
+    {
+      "field": "password",
+      "message": "password should not be empty"
+    }
+  ],
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/login"
 }
 ```
 
@@ -169,9 +199,12 @@ curl -X POST http://localhost:3000/auth/register \
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Invalid email or password",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/login"
 }
 ```
 
@@ -179,9 +212,12 @@ curl -X POST http://localhost:3000/auth/register \
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Please verify your email address before logging in. Check your inbox for the verification link.",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/login"
 }
 ```
 
@@ -189,9 +225,12 @@ curl -X POST http://localhost:3000/auth/register \
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "This account does not have a password set. Please use Google login or reset your password.",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/login"
 }
 ```
 
@@ -199,9 +238,12 @@ curl -X POST http://localhost:3000/auth/register \
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Account has been disabled",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/login"
 }
 ```
 
@@ -209,9 +251,12 @@ curl -X POST http://localhost:3000/auth/register \
 
 ```json
 {
+  "success": false,
   "statusCode": 429,
   "message": "Too many requests",
-  "error": "Too Many Requests"
+  "error": "Too Many Requests",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/login"
 }
 ```
 
@@ -268,7 +313,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
-  "message": "Logout successful"
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/logout"
 }
 ```
 
@@ -278,9 +328,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Refresh token not provided",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/logout"
 }
 ```
 
@@ -288,9 +341,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Unauthorized",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/logout"
 }
 ```
 
@@ -298,9 +354,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Invalid refresh token",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/logout"
 }
 ```
 
@@ -349,10 +408,15 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 
 ```json
 {
-  "message": "Token refresh successful",
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresIn": 3600
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/refresh"
 }
 ```
 
@@ -369,9 +433,12 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Refresh token not provided",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/refresh"
 }
 ```
 
@@ -379,9 +446,12 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Invalid refresh token",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/refresh"
 }
 ```
 
@@ -389,9 +459,12 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Refresh token has expired",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/refresh"
 }
 ```
 

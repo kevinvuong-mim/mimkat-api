@@ -29,17 +29,24 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
-  "id": "clx1234567890abcdefghij",
-  "email": "user@example.com",
-  "fullName": "John Doe",
-  "username": "johndoe",
-  "avatar": "https://example.com/avatar.jpg",
-  "isActive": true,
-  "isEmailVerified": true,
-  "hasPassword": true,
-  "hasGoogleAuth": false,
-  "createdAt": "2025-11-07T00:00:00.000Z",
-  "updatedAt": "2025-11-07T00:00:00.000Z"
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": {
+    "id": "clx1234567890abcdefghij",
+    "email": "user@example.com",
+    "fullName": "John Doe",
+    "username": "johndoe",
+    "avatar": "https://example.com/avatar.jpg",
+    "isActive": true,
+    "isEmailVerified": true,
+    "hasPassword": true,
+    "hasGoogleAuth": false,
+    "createdAt": "2025-11-07T00:00:00.000Z",
+    "updatedAt": "2025-11-07T00:00:00.000Z"
+  },
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/me"
 }
 ```
 
@@ -65,9 +72,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Unauthorized",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/me"
 }
 ```
 
@@ -75,9 +85,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "User not found",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/me"
 }
 ```
 

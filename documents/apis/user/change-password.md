@@ -69,7 +69,12 @@ Content-Type: application/json
 
 ```json
 {
-  "message": "Password changed successfully"
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
 }
 ```
 
@@ -77,7 +82,12 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
 
 ```json
 {
-  "message": "Password set successfully"
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
 }
 ```
 
@@ -87,9 +97,12 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Current password is required to change password",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
 }
 ```
 
@@ -97,9 +110,12 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Current password is incorrect",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
 }
 ```
 
@@ -107,9 +123,12 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "User not found",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
 }
 ```
 
@@ -117,12 +136,22 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
-  "message": [
-    "Password must be at least 8 characters long",
-    "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+  "message": "Validation failed",
+  "error": "Bad Request",
+  "errors": [
+    {
+      "field": "newPassword",
+      "message": "Password must be at least 8 characters long"
+    },
+    {
+      "field": "newPassword",
+      "message": "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    }
   ],
-  "error": "Bad Request"
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
 }
 ```
 
@@ -130,8 +159,12 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
 
 ```json
 {
+  "success": false,
   "statusCode": 429,
-  "message": "ThrottlerException: Too Many Requests"
+  "message": "ThrottlerException: Too Many Requests",
+  "error": "Too Many Requests",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
 }
 ```
 
@@ -159,7 +192,12 @@ curl -X PUT http://localhost:3000/users/password \
 
 ```json
 {
-  "message": "Password changed successfully"
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
 }
 ```
 
@@ -184,7 +222,12 @@ curl -X PUT http://localhost:3000/users/password \
 
 ```json
 {
-  "message": "Password set successfully"
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
 }
 ```
 
@@ -210,9 +253,12 @@ curl -X PUT http://localhost:3000/users/password \
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Current password is incorrect",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
 }
 ```
 

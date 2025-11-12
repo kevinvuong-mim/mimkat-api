@@ -3,6 +3,8 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from '@/app.module';
+import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
+import { ResponseInterceptor } from '@common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -40,6 +42,12 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Global exception filter - Format all error responses
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  // Global response interceptor - Format all success responses
+  app.useGlobalInterceptors(new ResponseInterceptor());
 
   // Request size limit - Express default là 100kb
   // Có thể config trong NestFactory.create nếu cần tăng:

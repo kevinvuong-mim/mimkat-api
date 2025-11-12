@@ -38,7 +38,14 @@ Gửi email chứa link đặt lại mật khẩu. Endpoint này không tiết l
 
 ```json
 {
-  "message": "If an account with that email exists, we sent a password reset link."
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": {
+    "message": "If an account with that email exists, we sent a password reset link."
+  },
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/forgot-password"
 }
 ```
 
@@ -53,9 +60,12 @@ Gửi email chứa link đặt lại mật khẩu. Endpoint này không tiết l
 
 ```json
 {
+  "success": false,
   "statusCode": 429,
   "message": "Too many requests",
-  "error": "Too Many Requests"
+  "error": "Too Many Requests",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/forgot-password"
 }
 ```
 
@@ -108,7 +118,12 @@ curl -X POST http://localhost:3000/verification/forgot-password \
 
 ```json
 {
-  "message": "Password reset successful. Please log in with your new password."
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/reset-password"
 }
 ```
 
@@ -118,9 +133,12 @@ curl -X POST http://localhost:3000/verification/forgot-password \
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Invalid or expired reset token",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/reset-password"
 }
 ```
 
@@ -128,9 +146,18 @@ curl -X POST http://localhost:3000/verification/forgot-password \
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
-  "message": ["password must be longer than or equal to 8 characters"],
-  "error": "Bad Request"
+  "message": "Validation failed",
+  "error": "Bad Request",
+  "errors": [
+    {
+      "field": "password",
+      "message": "password must be longer than or equal to 8 characters"
+    }
+  ],
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/reset-password"
 }
 ```
 
@@ -138,9 +165,12 @@ curl -X POST http://localhost:3000/verification/forgot-password \
 
 ```json
 {
+  "success": false,
   "statusCode": 429,
   "message": "Too many requests",
-  "error": "Too Many Requests"
+  "error": "Too Many Requests",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/reset-password"
 }
 ```
 
@@ -214,9 +244,12 @@ await prisma.session.deleteMany({
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Invalid or expired reset token",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/reset-password"
 }
 ```
 
@@ -230,7 +263,14 @@ await prisma.session.deleteMany({
 
 ```json
 {
-  "message": "If an account with that email exists, we sent a password reset link."
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": {
+    "message": "If an account with that email exists, we sent a password reset link."
+  },
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/forgot-password"
 }
 ```
 
@@ -246,8 +286,17 @@ await prisma.session.deleteMany({
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
-  "message": ["password must be longer than or equal to 8 characters"],
-  "error": "Bad Request"
+  "message": "Validation failed",
+  "error": "Bad Request",
+  "errors": [
+    {
+      "field": "password",
+      "message": "password must be longer than or equal to 8 characters"
+    }
+  ],
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/reset-password"
 }
 ```

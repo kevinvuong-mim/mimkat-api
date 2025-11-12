@@ -30,7 +30,12 @@ Xác thực email của người dùng thông qua token được gửi qua email
 
 ```json
 {
-  "message": "Email verified successfully. You can now log in."
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/email"
 }
 ```
 
@@ -40,9 +45,12 @@ Xác thực email của người dùng thông qua token được gửi qua email
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Invalid or expired verification token",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/email"
 }
 ```
 
@@ -96,7 +104,12 @@ Gửi lại email xác thực cho người dùng chưa xác thực email. Tạo 
 
 ```json
 {
-  "message": "Verification email sent successfully"
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/resend"
 }
 ```
 
@@ -106,9 +119,12 @@ Gửi lại email xác thực cho người dùng chưa xác thực email. Tạo 
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "User not found",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/resend"
 }
 ```
 
@@ -116,9 +132,12 @@ Gửi lại email xác thực cho người dùng chưa xác thực email. Tạo 
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Email is already verified",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/resend"
 }
 ```
 
@@ -126,9 +145,12 @@ Gửi lại email xác thực cho người dùng chưa xác thực email. Tạo 
 
 ```json
 {
+  "success": false,
   "statusCode": 429,
   "message": "Too many requests",
-  "error": "Too Many Requests"
+  "error": "Too Many Requests",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/resend"
 }
 ```
 
@@ -190,9 +212,12 @@ const hashedToken = await bcrypt.hash(verificationToken, 10);
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Invalid or expired verification token",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/email"
 }
 ```
 
@@ -206,9 +231,12 @@ const hashedToken = await bcrypt.hash(verificationToken, 10);
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Email is already verified",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/resend"
 }
 ```
 
@@ -222,8 +250,11 @@ const hashedToken = await bcrypt.hash(verificationToken, 10);
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "User not found",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/resend"
 }
 ```

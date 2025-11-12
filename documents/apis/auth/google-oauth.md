@@ -73,16 +73,15 @@ Backend sẽ redirect về frontend với authentication data encoded trong URL:
 
 ```json
 {
-  "message": "Google login successful",
-  "user": {
-    "id": "clx1234567890abcdefghij",
-    "email": "user@gmail.com",
-    "fullName": "John Doe",
-    "avatar": "https://lh3.googleusercontent.com/..."
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   },
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresIn": 3600
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/google/callback"
 }
 ```
 
@@ -104,9 +103,12 @@ Backend sẽ redirect về frontend với authentication data encoded trong URL:
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Google authentication failed",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/google/callback"
 }
 ```
 
@@ -114,9 +116,12 @@ Backend sẽ redirect về frontend với authentication data encoded trong URL:
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Account has been disabled",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/google/callback"
 }
 ```
 
@@ -269,9 +274,12 @@ Backend nhận được từ Google Profile API:
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Account has been disabled",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/google/callback"
 }
 ```
 

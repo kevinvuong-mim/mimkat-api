@@ -40,29 +40,35 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
-  "sessions": [
-    {
-      "id": "clx1234567890abcdefghij",
-      "deviceName": "Chrome on macOS",
-      "deviceType": "Desktop",
-      "ipAddress": "192.168.1.100",
-      "createdAt": "2025-11-07T08:00:00.000Z",
-      "lastUsedAt": "2025-11-07T10:30:00.000Z",
-      "expiresAt": "2025-11-14T08:00:00.000Z",
-      "isCurrent": true
-    },
-    {
-      "id": "clx0987654321zyxwvutsrq",
-      "deviceName": "Safari on iPhone",
-      "deviceType": "Mobile",
-      "ipAddress": "192.168.1.101",
-      "createdAt": "2025-11-06T15:20:00.000Z",
-      "lastUsedAt": "2025-11-06T18:45:00.000Z",
-      "expiresAt": "2025-11-13T15:20:00.000Z",
-      "isCurrent": false
-    }
-  ],
-  "total": 2
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": {
+    "sessions": [
+      {
+        "id": "clx1234567890abcdefghij",
+        "deviceName": "Chrome on macOS",
+        "deviceType": "Desktop",
+        "ipAddress": "192.168.1.100",
+        "createdAt": "2025-11-07T08:00:00.000Z",
+        "lastUsedAt": "2025-11-07T10:30:00.000Z",
+        "expiresAt": "2025-11-14T08:00:00.000Z",
+        "isCurrent": true
+      },
+      {
+        "id": "clx0987654321zyxwvutsrq",
+        "deviceName": "Safari on iPhone",
+        "deviceType": "Mobile",
+        "ipAddress": "192.168.1.101",
+        "createdAt": "2025-11-06T15:20:00.000Z",
+        "lastUsedAt": "2025-11-06T18:45:00.000Z",
+        "expiresAt": "2025-11-13T15:20:00.000Z",
+        "isCurrent": false
+      }
+    ]
+  },
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions"
 }
 ```
 
@@ -85,9 +91,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Unauthorized",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions"
 }
 ```
 
@@ -130,19 +139,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
-  "message": "Logged out from all devices successfully"
-}
-```
-
-**Error Responses**
-
-- **401 Unauthorized**: Access token không hợp lệ
-
-```json
-{
-  "statusCode": 401,
-  "message": "Unauthorized",
-  "error": "Unauthorized"
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions"
 }
 ```
 
@@ -191,7 +193,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
-  "message": "Device logged out successfully"
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": null,
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions/:tokenId"
 }
 ```
 
@@ -201,9 +208,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Session not found",
-  "error": "Bad Request"
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions/:tokenId"
 }
 ```
 
@@ -211,9 +221,12 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
+  "success": false,
   "statusCode": 401,
   "message": "Unauthorized",
-  "error": "Unauthorized"
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions/:tokenId"
 }
 ```
 
