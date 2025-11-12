@@ -15,7 +15,7 @@ API lấy thông tin profile đầy đủ của người dùng hiện tại dự
 Lấy thông tin profile đầy đủ của user đang đăng nhập, bao gồm `hasPassword` và `hasGoogleAuth` để xác định phương thức đăng nhập.
 
 **Endpoint**: `GET /users/me`
-**Authentication**: Required (Bearer Token)
+**Authentication**: Required (Bearer Token hoặc Cookie)
 
 #### Headers
 

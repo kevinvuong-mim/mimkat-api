@@ -16,7 +16,7 @@ Lấy danh sách tất cả các thiết bị đang đăng nhập của user hi�
 
 **Endpoint**: `GET /users/sessions`
 
-**Authentication**: Required (Bearer Token)
+**Authentication**: Required (Bearer Token hoặc Cookie)
 
 #### Headers
 
@@ -125,7 +125,7 @@ curl -X GET http://localhost:3000/users/sessions \
 
 **Endpoint**: `DELETE /users/sessions`
 
-**Authentication**: Required (Bearer Token)
+**Authentication**: Required (Bearer Token hoặc Cookie)
 
 #### Headers
 
@@ -173,7 +173,7 @@ curl -X DELETE http://localhost:3000/users/sessions \
 
 **Endpoint**: `DELETE /users/sessions/:tokenId`
 
-**Authentication**: Required (Bearer Token)
+**Authentication**: Required (Bearer Token hoặc Cookie)
 
 #### Headers
 

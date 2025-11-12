@@ -17,7 +17,7 @@ API đổi mật khẩu cho người dùng đã đăng nhập. Hỗ trợ hai tr
 
 **Rate Limit**: 5 requests / 1 giờ
 
-**Authentication**: Yêu cầu (JWT Bearer token)
+**Authentication**: Required (Bearer Token hoặc Cookie)
 
 ### Request Headers
 

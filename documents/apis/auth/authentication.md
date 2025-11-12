@@ -2,19 +2,9 @@
 
 ## Overview
 
-API xác thực người dùng hỗ trợ hai phương thức authentication:
-
-1. **Bearer Token** (Authorization header) - Phù hợp với mobile apps và API clients
-2. **HttpOnly Cookies** - Phù hợp với web applications (secure hơn)
-
-Tất cả endpoints đều hỗ trợ cả 2 phương thức.
+API xác thực người dùng, hỗ trợ cả Bearer tokens và HttpOnly cookies.
 
 **Base URL**: `/auth`
-
-**Cookie Configuration**:
-
-- `accessToken`: HttpOnly, Secure (production), SameSite=strict, Expires 1h
-- `refreshToken`: HttpOnly, Secure (production), SameSite=strict, Expires 7d
 
 ---
 
@@ -569,69 +559,6 @@ curl -X POST http://localhost:3000/auth/refresh \
 
 ---
 
-## Authentication Methods
-
-### Method 1: Bearer Token (Mobile/API)
-
-**For API requests and mobile applications:**
-
-```javascript
-// After login, store tokens
-const { accessToken, refreshToken } = response.data;
-localStorage.setItem('accessToken', accessToken);
-localStorage.setItem('refreshToken', refreshToken);
-
-// Use in protected requests
-const response = await fetch('/api/protected', {
-  headers: {
-    Authorization: `Bearer ${accessToken}`,
-    'Content-Type': 'application/json',
-  },
-});
-
-// Auto refresh when token expires
-if (response.status === 401) {
-  await refreshTokens();
-  // Retry original request
-}
-```
-
-### Method 2: HttpOnly Cookies (Web)
-
-**For web applications (recommended for security):**
-
-```javascript
-// Login automatically sets cookies
-await fetch('/auth/login', {
-  method: 'POST',
-  credentials: 'include', // Include cookies
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email, password }),
-});
-
-// Protected requests automatically include cookies
-const response = await fetch('/api/protected', {
-  credentials: 'include', // Cookies sent automatically
-});
-
-// Refresh tokens (uses cookie automatically)
-await fetch('/auth/refresh', {
-  method: 'POST',
-  credentials: 'include',
-});
-```
-
-### Cookie Security Features
-
-| Feature  | Value       | Description                        |
-| -------- | ----------- | ---------------------------------- |
-| HttpOnly | true        | Không thể truy cập từ JavaScript   |
-| Secure   | production  | Chỉ gửi qua HTTPS trong production |
-| SameSite | Strict      | Chống CSRF attacks                 |
-| Max-Age  | 3600/604800 | Access: 1h, Refresh: 7d            |
-
----
-
 ## Token Information
 
 ### Access Token
@@ -698,16 +625,6 @@ await fetch('/auth/refresh', {
 - **Token Sources**: Authorization header OR cookies
 - **Priority**: Header token được ưu tiên trước, fallback về cookie
 - **Validation**: Verify signature + check user exists & active
-  - Last used timestamp
-
-### Token Security
-
-- **Access Token**: Chỉ lưu ở client (localStorage/memory)
-- **Refresh Token**:
-  - Lưu ở client (localStorage)
-  - Lưu hash ở database
-  - Token rotation khi refresh
-  - Tự động xóa khi hết hạn
 
 ---
 
