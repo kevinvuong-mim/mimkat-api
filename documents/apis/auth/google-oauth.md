@@ -2,11 +2,16 @@
 
 ## Overview
 
-API xác thực người dùng thông qua Google OAuth 2.0. Hỗ trợ đăng ký mới và liên kết tài khoản hiện có.
+API xác thực người dùng thông qua Google OAuth 2.0. Hỗ trợ cả Bearer tokens và HttpOnly cookies.
 
 **Base URL**: `/auth`
 
 **OAuth Flow**: Authorization Code Flow with PKCE
+
+**Cookie Configuration**:
+
+- `access_token`: HttpOnly, Secure (production), SameSite=strict, Expires 1h
+- `refresh_token`: HttpOnly, Secure (production), SameSite=strict, Expires 7d
 
 ---
 
@@ -35,18 +40,11 @@ Endpoint này sẽ redirect người dùng đến Google OAuth consent screen. K
 3. User chọn tài khoản Google và cấp quyền
 4. Google redirect về `/auth/google/callback` với authorization code
 
-#### Frontend Integration
-
-```typescript
-// Redirect user to Google OAuth
-window.location.href = 'http://localhost:3000/auth/google';
-```
-
 ---
 
 ### 2. Google OAuth Callback (Xử lý callback từ Google)
 
-Xử lý callback từ Google sau khi user cấp quyền. Google sẽ tự động redirect đến endpoint này với authorization code.
+Xử lý callback từ Google sau khi user cấp quyền. Tự động set cookies và redirect về frontend.
 
 **Endpoint**: `GET /auth/google/callback`
 
@@ -63,39 +61,21 @@ Xử lý callback từ Google sau khi user cấp quyền. Google sẽ tự độ
 
 **Success (302 Redirect)**
 
-Backend sẽ redirect về frontend với authentication data encoded trong URL:
+Backend sẽ:
+
+1. Set HttpOnly cookies với access_token và refresh_token
+2. Redirect về frontend với success status
 
 ```
-{FRONTEND_URL}/auth/callback?authData={BASE64_ENCODED_DATA}
+{FRONTEND_URL}/auth/callback?success=true
 ```
 
-**Decoded authData**:
+**Response Headers (Set-Cookie)**:
 
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Data retrieved successfully",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  },
-  "timestamp": "2025-11-12T10:00:00.000Z",
-  "path": "/auth/google/callback"
-}
 ```
-
-| Field         | Type   | Description                               |
-| ------------- | ------ | ----------------------------------------- |
-| message       | string | Thông báo đăng nhập thành công            |
-| user          | object | Thông tin người dùng                      |
-| user.id       | string | User ID trong hệ thống                    |
-| user.email    | string | Email từ Google account                   |
-| user.fullName | string | Tên đầy đủ từ Google profile              |
-| user.avatar   | string | URL avatar từ Google                      |
-| accessToken   | string | JWT access token để xác thực API requests |
-| refreshToken  | string | Refresh token để làm mới access token     |
-| expiresIn     | number | Thời gian hết hạn của accessToken (giây)  |
+Set-Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
+Set-Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
+```
 
 **Error Responses**
 
@@ -122,6 +102,35 @@ Backend sẽ redirect về frontend với authentication data encoded trong URL:
   "error": "Unauthorized",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/auth/google/callback"
+}
+```
+
+## Authentication Methods
+
+### Method 1: Cookies (Web Apps)
+
+```javascript
+// After successful OAuth, cookies are automatically set
+// Use credentials: 'include' for all subsequent requests
+fetch('/api/protected', {
+  credentials: 'include',
+})
+  .then((response) => response.json())
+  .then((data) => console.log(data));
+```
+
+### Method 2: Manual Token Handling
+
+```javascript
+// For mobile apps or if tokens needed in localStorage
+// (Requires backend modification to return authData)
+const urlParams = new URLSearchParams(window.location.search);
+const authData = urlParams.get('authData');
+
+if (authData) {
+  const decoded = JSON.parse(atob(authData));
+  localStorage.setItem('accessToken', decoded.data.accessToken);
+  localStorage.setItem('refreshToken', decoded.data.refreshToken);
 }
 ```
 

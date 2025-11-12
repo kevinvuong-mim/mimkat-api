@@ -2,9 +2,19 @@
 
 ## Overview
 
-API xác thực người dùng cơ bản bao gồm đăng ký, đăng nhập, đăng xuất và làm mới token.
+API xác thực người dùng hỗ trợ hai phương thức authentication:
+
+1. **Bearer Token** (Authorization header) - Phù hợp với mobile apps và API clients
+2. **HttpOnly Cookies** - Phù hợp với web applications (secure hơn)
+
+Tất cả endpoints đều hỗ trợ cả 2 phương thức.
 
 **Base URL**: `/auth`
+
+**Cookie Configuration**:
+
+- `access_token`: HttpOnly, Secure (production), SameSite=strict, Expires 1h
+- `refresh_token`: HttpOnly, Secure (production), SameSite=strict, Expires 7d
 
 ---
 
@@ -122,7 +132,7 @@ curl -X POST http://localhost:3000/auth/register \
 
 ### 2. Login (Đăng nhập)
 
-Đăng nhập vào hệ thống với email và password. Hỗ trợ các tài khoản có password được set (local registration hoặc đã liên kết password).
+Đăng nhập vào hệ thống với email và password. Tự động set cookies và trả về tokens.
 
 **Endpoint**: `POST /auth/login`
 
@@ -162,13 +172,17 @@ curl -X POST http://localhost:3000/auth/register \
 }
 ```
 
-| Field        | Type   | Description                                           |
-| ------------ | ------ | ----------------------------------------------------- |
-| message      | string | Thông báo đăng nhập thành công                        |
-| user         | object | Thông tin cơ bản của người dùng                       |
-| accessToken  | string | JWT token để xác thực các API requests                |
-| refreshToken | string | Token để làm mới accessToken khi hết hạn              |
-| expiresIn    | number | Thời gian hết hạn của accessToken (3600 giây = 1 giờ) |
+**Response Headers (Set-Cookie)**:
+
+```
+Set-Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
+Set-Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
+```
+
+| Field        | Type   | Description                                       |
+| ------------ | ------ | ------------------------------------------------- |
+| accessToken  | string | JWT token để xác thực các API requests (1 giờ)    |
+| refreshToken | string | Token để làm mới accessToken khi hết hạn (7 ngày) |
 
 **Error Responses**
 
@@ -260,7 +274,36 @@ curl -X POST http://localhost:3000/auth/register \
 }
 ```
 
-#### cURL Example
+#### Authentication Methods
+
+**Method 1: Using Response Tokens (Mobile/API)**
+
+```javascript
+// Store tokens from response
+const { accessToken, refreshToken } = response.data;
+localStorage.setItem('accessToken', accessToken);
+localStorage.setItem('refreshToken', refreshToken);
+
+// Use in subsequent requests
+fetch('/api/protected', {
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+  },
+});
+```
+
+**Method 2: Using Cookies (Web)**
+
+```javascript
+// Cookies are automatically set by browser
+fetch('/api/protected', {
+  credentials: 'include', // Include cookies
+});
+```
+
+#### cURL Examples
+
+**With response tokens:**
 
 ```bash
 curl -X POST http://localhost:3000/auth/login \
@@ -271,25 +314,39 @@ curl -X POST http://localhost:3000/auth/login \
   }'
 ```
 
+**With cookies (save cookies):**
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePass123"
+  }'
+```
+
 #### Notes
 
-- Hệ thống tự động thu thập thông tin thiết bị (device info) từ request headers
-- Mỗi người dùng có giới hạn số phiên đăng nhập đồng thời (AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS)
+- **Dual Authentication Support**: Response tokens + HttpOnly cookies
+- **Web Apps**: Sử dụng cookies (secure hơn, tự động gửi)
+- **Mobile/APIs**: Sử dụng Authorization header
+- Hệ thống tự động thu thập thông tin thiết bị từ request headers
+- Mỗi người dùng có giới hạn số phiên đăng nhập đồng thời
 - Khi vượt quá giới hạn, phiên cũ nhất sẽ tự động bị đăng xuất
-- AccessToken có thời gian sống 1 giờ (AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION)
-- RefreshToken có thời gian sống 7 ngày (AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION)
+- AccessToken: 1 giờ, RefreshToken: 7 ngày
 
 ---
 
 ### 3. Logout (Đăng xuất)
 
-Đăng xuất khỏi thiết bị hiện tại bằng cách vô hiệu hóa refresh token.
+Đăng xuất khỏi thiết bị hiện tại, xóa session và clear cookies.
 
 **Endpoint**: `POST /auth/logout`
 
-**Authentication**: Required (Bearer Token)
+**Authentication**: Required (Bearer Token hoặc Cookie)
 
-#### Headers
+#### Headers (Option 1)
 
 ```
 Authorization: Bearer {accessToken}
@@ -303,9 +360,9 @@ Authorization: Bearer {accessToken}
 }
 ```
 
-| Field        | Type   | Required | Description                   |
-| ------------ | ------ | -------- | ----------------------------- |
-| refreshToken | string | Yes      | Refresh token cần vô hiệu hóa |
+| Field        | Type   | Required | Description                                 |
+| ------------ | ------ | -------- | ------------------------------------------- |
+| refreshToken | string | No       | Refresh token (optional nếu sử dụng cookie) |
 
 #### Response
 
@@ -315,23 +372,30 @@ Authorization: Bearer {accessToken}
 {
   "success": true,
   "statusCode": 200,
-  "message": "Data retrieved successfully",
+  "message": "Logout successful",
   "data": null,
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/auth/logout"
 }
 ```
 
+**Response Headers (Clear cookies)**:
+
+```
+Set-Cookie: access_token=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+Set-Cookie: refresh_token=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+```
+
 **Error Responses**
 
-- **400 Bad Request**: Thiếu refresh token
+- **401 Unauthorized**: Refresh token không được cung cấp
 
 ```json
 {
   "success": false,
-  "statusCode": 400,
+  "statusCode": 401,
   "message": "Refresh token not provided",
-  "error": "Bad Request",
+  "error": "Unauthorized",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/auth/logout"
 }
@@ -350,20 +414,9 @@ Authorization: Bearer {accessToken}
 }
 ```
 
-- **401 Unauthorized**: Refresh token không hợp lệ
+#### cURL Examples
 
-```json
-{
-  "success": false,
-  "statusCode": 401,
-  "message": "Invalid refresh token",
-  "error": "Unauthorized",
-  "timestamp": "2025-11-12T10:00:00.000Z",
-  "path": "/auth/logout"
-}
-```
-
-#### cURL Example
+**Using Authorization header:**
 
 ```bash
 curl -X POST http://localhost:3000/auth/logout \
@@ -374,17 +427,28 @@ curl -X POST http://localhost:3000/auth/logout \
   }'
 ```
 
+**Using cookies:**
+
+```bash
+curl -X POST http://localhost:3000/auth/logout \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -c cookies.txt
+```
+
 #### Notes
 
+- **Cookie Method**: Refresh token tự động lấy từ cookie
+- **Token Method**: Cần truyền refresh token trong body
 - Chỉ xóa phiên đăng nhập của thiết bị hiện tại
 - Các thiết bị khác vẫn giữ phiên đăng nhập
-- Để đăng xuất tất cả thiết bị, sử dụng [DELETE /auth/sessions](./session-management.md#2-logout-all-devices)
+- Cookies tự động được clear
 
 ---
 
 ### 4. Refresh Token (Làm mới token)
 
-Sử dụng refresh token để lấy cặp access token và refresh token mới khi token cũ sắp hết hạn. Hệ thống sử dụng **token rotation** - refresh token cũ sẽ bị xóa và tạo token mới để tăng cường bảo mật.
+Sử dụng refresh token để lấy cặp access token và refresh token mới. Hỗ trợ lấy refresh token từ cookie hoặc request body.
 
 **Endpoint**: `POST /auth/refresh`
 
@@ -398,9 +462,9 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 }
 ```
 
-| Field        | Type   | Required | Description          |
-| ------------ | ------ | -------- | -------------------- |
-| refreshToken | string | Yes      | Refresh token hợp lệ |
+| Field        | Type   | Required | Description                                 |
+| ------------ | ------ | -------- | ------------------------------------------- |
+| refreshToken | string | No       | Refresh token (optional nếu sử dụng cookie) |
 
 #### Response
 
@@ -410,7 +474,7 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 {
   "success": true,
   "statusCode": 200,
-  "message": "Data retrieved successfully",
+  "message": "Tokens refreshed successfully",
   "data": {
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -420,23 +484,28 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 }
 ```
 
+**Response Headers (Set new cookies)**:
+
+```
+Set-Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
+Set-Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
+```
+
 | Field        | Type   | Description                                    |
 | ------------ | ------ | ---------------------------------------------- |
-| message      | string | Thông báo làm mới token thành công             |
 | accessToken  | string | JWT token mới để xác thực các API requests     |
 | refreshToken | string | Refresh token mới (token cũ đã bị vô hiệu hóa) |
-| expiresIn    | number | Thời gian hết hạn của accessToken (giây)       |
 
 **Error Responses**
 
-- **400 Bad Request**: Thiếu refresh token
+- **401 Unauthorized**: Refresh token không được cung cấp
 
 ```json
 {
   "success": false,
-  "statusCode": 400,
+  "statusCode": 401,
   "message": "Refresh token not provided",
-  "error": "Bad Request",
+  "error": "Unauthorized",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/auth/refresh"
 }
@@ -468,7 +537,9 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 }
 ```
 
-#### cURL Example
+#### cURL Examples
+
+**Using request body:**
 
 ```bash
 curl -X POST http://localhost:3000/auth/refresh \
@@ -478,13 +549,86 @@ curl -X POST http://localhost:3000/auth/refresh \
   }'
 ```
 
+**Using cookies:**
+
+```bash
+curl -X POST http://localhost:3000/auth/refresh \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -c cookies.txt
+```
+
 #### Notes
 
+- **Hybrid Support**: Lấy refresh token từ cookie trước, fallback sang body
 - **Token Rotation**: Mỗi lần refresh, token cũ sẽ bị xóa và tạo token mới
-- Thông tin thiết bị (device info) được giữ nguyên từ phiên cũ
-- Nếu refresh token hết hạn, người dùng phải đăng nhập lại
-- AccessToken mới có thời gian sống 1 giờ
-- RefreshToken mới có thời gian sống 7 ngày
+- **Cookie Update**: Tự động set cookies mới cho web clients
+- **Response Tokens**: Vẫn trả về tokens trong response body
+- Thông tin thiết bị được giữ nguyên từ phiên cũ
+- AccessToken mới: 1 giờ, RefreshToken mới: 7 ngày
+
+---
+
+## Authentication Methods
+
+### Method 1: Bearer Token (Mobile/API)
+
+**For API requests and mobile applications:**
+
+```javascript
+// After login, store tokens
+const { accessToken, refreshToken } = response.data;
+localStorage.setItem('accessToken', accessToken);
+localStorage.setItem('refreshToken', refreshToken);
+
+// Use in protected requests
+const response = await fetch('/api/protected', {
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  },
+});
+
+// Auto refresh when token expires
+if (response.status === 401) {
+  await refreshTokens();
+  // Retry original request
+}
+```
+
+### Method 2: HttpOnly Cookies (Web)
+
+**For web applications (recommended for security):**
+
+```javascript
+// Login automatically sets cookies
+await fetch('/auth/login', {
+  method: 'POST',
+  credentials: 'include', // Include cookies
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email, password }),
+});
+
+// Protected requests automatically include cookies
+const response = await fetch('/api/protected', {
+  credentials: 'include', // Cookies sent automatically
+});
+
+// Refresh tokens (uses cookie automatically)
+await fetch('/auth/refresh', {
+  method: 'POST',
+  credentials: 'include',
+});
+```
+
+### Cookie Security Features
+
+| Feature  | Value       | Description                        |
+| -------- | ----------- | ---------------------------------- |
+| HttpOnly | true        | Không thể truy cập từ JavaScript   |
+| Secure   | production  | Chỉ gửi qua HTTPS trong production |
+| SameSite | Strict      | Chống CSRF attacks                 |
+| Max-Age  | 3600/604800 | Access: 1h, Refresh: 7d            |
 
 ---
 
@@ -494,6 +638,7 @@ curl -X POST http://localhost:3000/auth/refresh \
 
 - **Thuật toán**: HS256 (HMAC with SHA-256)
 - **Thời gian sống**: 1 giờ
+- **Cookie Name**: `access_token`
 - **Secret**: `JWT_SECRET` (environment variable)
 - **Payload**:
   ```json
@@ -508,6 +653,7 @@ curl -X POST http://localhost:3000/auth/refresh \
 
 - **Thuật toán**: HS256 (HMAC with SHA-256)
 - **Thời gian sống**: 7 ngày
+- **Cookie Name**: `refresh_token`
 - **Secret**: `JWT_REFRESH_SECRET` (environment variable)
 - **Lưu trữ**: Database (bảng Session)
 - **Token Rotation**: Được áp dụng khi refresh
@@ -531,6 +677,12 @@ curl -X POST http://localhost:3000/auth/refresh \
 | POST /refresh  | Không giới hạn        |
 | POST /logout   | Không giới hạn        |
 
+### CORS Configuration
+
+- **Credentials**: `true` (cho phép cookies cross-origin)
+- **Origins**: Cấu hình qua `CORS_ORIGIN` environment variable
+- **Headers**: `Content-Type`, `Authorization`, `X-Client-Type`
+
 ### Session Management
 
 - Số phiên đăng nhập đồng thời tối đa: Cấu hình trong `AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS`
@@ -540,6 +692,12 @@ curl -X POST http://localhost:3000/auth/refresh \
   - Device type (loại thiết bị: Desktop, Mobile, Tablet)
   - IP address
   - User agent
+
+### JWT Strategy
+
+- **Token Sources**: Authorization header OR cookies
+- **Priority**: Header token được ưu tiên trước, fallback về cookie
+- **Validation**: Verify signature + check user exists & active
   - Last used timestamp
 
 ### Token Security

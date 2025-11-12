@@ -40,9 +40,31 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 900000 } }) // 10 requests per 15 minutes
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto, @Req() req: Request) {
+  async login(
+    @Body() loginDto: LoginDto,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
-    return this.authService.login(loginDto, deviceInfo);
+    const result = await this.authService.login(loginDto, deviceInfo);
+
+    // Set access token in httpOnly cookie
+    res.cookie('access_token', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
+    // Set refresh token in httpOnly cookie
+    res.cookie('refresh_token', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -51,8 +73,18 @@ export class AuthController {
   async logout(
     @CurrentUser() user: UserPayload,
     @Body() refreshTokenDto: RefreshTokenDto,
+    @Req() req: Request,
+    @Res() res: Response,
   ) {
-    return this.authService.logout(user.id, refreshTokenDto.refreshToken);
+    // Get refresh token from cookie if not provided in body
+    const refreshToken =
+      refreshTokenDto.refreshToken || req.cookies?.refresh_token;
+
+    await this.authService.logout(user.id, refreshToken);
+
+    // Clear cookies
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
   }
 
   @Public()
@@ -61,12 +93,36 @@ export class AuthController {
   async refreshTokens(
     @Body() refreshTokenDto: RefreshTokenDto,
     @Req() req: Request,
+    @Res() res: Response,
   ) {
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
-    return this.authService.refreshTokens(
-      refreshTokenDto.refreshToken,
+
+    // Get refresh token from cookie if not provided in body
+    const refreshToken =
+      refreshTokenDto.refreshToken || req.cookies?.refresh_token;
+
+    const result = await this.authService.refreshTokens(
+      refreshToken,
       deviceInfo,
     );
+
+    // Set new access token in httpOnly cookie
+    res.cookie('access_token', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
+    // Set new refresh token in httpOnly cookie
+    res.cookie('refresh_token', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return result;
   }
 
   @Public()
@@ -88,6 +144,22 @@ export class AuthController {
       req.user as any,
       deviceInfo,
     );
+
+    // Set access token in httpOnly cookie
+    res.cookie('access_token', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
+    // Set refresh token in httpOnly cookie
+    res.cookie('refresh_token', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     // Encode all data (user + tokens) as base64 to safely pass in URL
     const authData = Buffer.from(JSON.stringify(result)).toString('base64');

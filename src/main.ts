@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import { AppModule } from '@/app.module';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
 import { ResponseInterceptor } from '@common/interceptors/response.interceptor';
@@ -21,15 +22,18 @@ async function bootstrap() {
     }),
   );
 
-  // Enable CORS - Token-based authentication
+  // Enable CORS - Support both Bearer token and cookies
   app.enableCors({
     origin: process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN.split(', ').filter(Boolean)
       : '*',
-    credentials: false, // No cookies - using Bearer token
+    credentials: true, // Allow cookies to be sent
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Type'],
   });
+
+  // Cookie parser middleware
+  app.use(cookieParser());
 
   // Global validation pipe với whitelist để tránh mass assignment
   app.useGlobalPipes(
