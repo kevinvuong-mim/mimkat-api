@@ -7,13 +7,13 @@ API đổi mật khẩu cho người dùng đã đăng nhập. Hỗ trợ hai tr
 1. **Người dùng đã có mật khẩu** (tài khoản email/password truyền thống): Phải cung cấp mật khẩu hiện tại
 2. **Người dùng Google OAuth chưa có mật khẩu**: Có thể đặt mật khẩu mà không cần mật khẩu hiện tại
 
-**Base URL**: `/auth`
+**Base URL**: `/users`
 
 ---
 
 ## Endpoint
 
-**Endpoint**: `PUT /auth/change-password`
+**Endpoint**: `PUT /users/password`
 
 **Rate Limit**: 5 requests / 1 giờ
 
@@ -146,7 +146,7 @@ Người dùng đã đăng ký bằng email/password muốn thay đổi mật kh
 **Request:**
 
 ```bash
-curl -X PUT http://localhost:3000/auth/change-password \
+curl -X PUT http://localhost:3000/users/password \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -172,7 +172,7 @@ Người dùng ban đầu đăng nhập bằng Google muốn đặt mật khẩu
 **Request:**
 
 ```bash
-curl -X PUT http://localhost:3000/auth/change-password \
+curl -X PUT http://localhost:3000/users/password \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -197,7 +197,7 @@ Người dùng cố gắng đổi mật khẩu nhưng nhập sai mật khẩu hi
 **Request:**
 
 ```bash
-curl -X PUT http://localhost:3000/auth/change-password \
+curl -X PUT http://localhost:3000/users/password \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{

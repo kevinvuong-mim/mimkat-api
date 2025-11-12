@@ -4,12 +4,7 @@ API backend cho ứng dụng Mimkat được xây dựng với NestJS framework.
 
 ## Mô tả
 
-Mimkat API là một REST API server cung cấp các chức năng:
-
-- **Authentication & Authorization**: Hệ thống xác thực JWT với Google OAuth2
-- **Email Service**: Gửi email thông báo
-- **Security**: Rate limiting, CORS, và các security headers
-- **Database**: Prisma ORM với PostgreSQL
+Mimkat API là một REST API server
 
 ## Công nghệ sử dụng
 
@@ -119,17 +114,47 @@ npm run format
 ```
 mimkat-api/
 ├── src/
-│   ├── auth/           # Module xác thực (JWT, Google OAuth, Local)
-│   ├── tasks/          # Module quản lý cron job
-│   ├── mail/           # Module gửi email
-│   ├── prisma/         # Prisma service và module
-│   ├── common/         # Shared utilities, filters, guards
-│   ├── app.module.ts   # Root module
-│   └── main.ts         # Entry point
+│   ├── auth/                    # Authentication & Authorization Module
+│   │   ├── constants/          # Auth constants (token expiration, etc.)
+│   │   ├── dto/                # Data Transfer Objects
+│   │   ├── guards/             # JWT & Google OAuth guards
+│   │   ├── strategies/         # Passport strategies (JWT, Google)
+│   │   ├── auth.controller.ts  # Auth endpoints (login, register, OAuth)
+│   │   ├── auth.service.ts     # Auth business logic
+│   │   └── auth.module.ts
+│   ├── user/                    # User Management Module
+│   │   ├── user.controller.ts  # User profile & session endpoints
+│   │   ├── user.service.ts     # User business logic
+│   │   └── user.module.ts
+│   ├── verification/            # Email Verification & Password Reset
+│   │   ├── verification.controller.ts
+│   │   ├── verification.service.ts
+│   │   └── verification.module.ts
+│   ├── mail/                    # Email Service Module
+│   │   ├── mail.service.ts     # Nodemailer integration
+│   │   └── mail.module.ts
+│   ├── tasks/                   # Background Tasks & Cron Jobs
+│   │   ├── cleanup.service.ts  # Cleanup unverified accounts & tokens
+│   │   └── tasks.module.ts
+│   ├── prisma/                  # Prisma ORM Module
+│   │   ├── prisma.service.ts   # Prisma client instance
+│   │   └── prisma.module.ts
+│   ├── common/                  # Shared utilities & decorators
+│   │   ├── decorators/         # Custom decorators (@Public, @CurrentUser)
+│   │   ├── filters/            # Exception filters
+│   │   └── utils/              # Utility functions (device detection)
+│   ├── app.module.ts            # Root module
+│   └── main.ts                  # Application entry point
 ├── prisma/
-│   └── schema.prisma   # Database schema
-├── test/               # E2E tests
-└── dist/               # Build output
+│   └── schema.prisma            # Database schema (User, Session models)
+├── documents/                   # API Documentation
+│   ├── apis/                   # API endpoint documentation
+│   │   ├── auth/               # Authentication APIs
+│   │   ├── user/               # User management APIs
+│   │   └── verification/       # Verification APIs
+│   └── guides/                 # Development guides
+├── test/                        # E2E tests
+└── dist/                        # Build output (gitignored)
 ```
 
 ## Security Features
@@ -159,6 +184,20 @@ npx prisma migrate reset
 # Open Prisma Studio
 npx prisma studio
 ```
+
+### Migration Workflow
+
+**Development:**
+
+1. Sửa `schema.prisma`
+2. Chạy `npx prisma migrate dev --name descriptive_name`
+3. Prisma sẽ tự động generate client và apply migration
+
+**Production:**
+
+1. Commit migration files vào Git
+2. Deploy code
+3. Chạy `npx prisma migrate deploy` trên production server
 
 ## Deployment
 

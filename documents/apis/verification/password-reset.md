@@ -4,7 +4,7 @@
 
 API đặt lại mật khẩu cho người dùng quên mật khẩu. Chỉ áp dụng cho tài khoản có password (tài khoản local hoặc tài khoản đã liên kết local login).
 
-**Base URL**: `/auth`
+**Base URL**: `/verification`
 
 ---
 
@@ -14,7 +14,7 @@ API đặt lại mật khẩu cho người dùng quên mật khẩu. Chỉ áp d
 
 Gửi email chứa link đặt lại mật khẩu. Endpoint này không tiết lộ thông tin về sự tồn tại của email (security best practice).
 
-**Endpoint**: `POST /auth/forgot-password`
+**Endpoint**: `POST /verification/forgot-password`
 
 **Rate Limit**: 3 requests / 1 giờ
 
@@ -62,7 +62,7 @@ Gửi email chứa link đặt lại mật khẩu. Endpoint này không tiết l
 #### cURL Example
 
 ```bash
-curl -X POST http://localhost:3000/auth/forgot-password \
+curl -X POST http://localhost:3000/verification/forgot-password \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com"
@@ -82,7 +82,7 @@ curl -X POST http://localhost:3000/auth/forgot-password \
 
 Đặt lại mật khẩu mới sử dụng token từ email.
 
-**Endpoint**: `POST /auth/reset-password`
+**Endpoint**: `POST /verification/reset-password`
 
 **Rate Limit**: 5 requests / 1 giờ
 
@@ -147,7 +147,7 @@ curl -X POST http://localhost:3000/auth/forgot-password \
 #### cURL Example
 
 ```bash
-curl -X POST http://localhost:3000/auth/reset-password \
+curl -X POST http://localhost:3000/verification/reset-password \
   -H "Content-Type: application/json" \
   -d '{
     "token": "YOUR_RESET_TOKEN",
@@ -220,7 +220,7 @@ await prisma.session.deleteMany({
 }
 ```
 
-**Solution**: Yêu cầu gửi lại email reset bằng `/auth/forgot-password`
+**Solution**: Yêu cầu gửi lại email reset bằng `/verification/forgot-password`
 
 ### OAuth Account
 

@@ -2,16 +2,12 @@ import {
   Controller,
   Post,
   Get,
-  Delete,
   Body,
-  Param,
-  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
   Req,
   Res,
-  Put,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
@@ -19,9 +15,6 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
 import { Public } from '@common/decorators/public.decorator';
 import {
   CurrentUser,
@@ -73,93 +66,6 @@ export class AuthController {
     return this.authService.refreshTokens(
       refreshTokenDto.refreshToken,
       deviceInfo,
-    );
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('me')
-  @HttpCode(HttpStatus.OK)
-  async getCurrentUser(@CurrentUser() user: UserPayload) {
-    // Return full profile with hasPassword and hasGoogleAuth flags
-    return this.authService.getUserProfile(user.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('sessions')
-  @HttpCode(HttpStatus.OK)
-  async getActiveSessions(
-    @CurrentUser() user: UserPayload,
-    @Body() refreshTokenDto?: RefreshTokenDto,
-  ) {
-    return this.authService.getActiveSessions(
-      user.id,
-      refreshTokenDto?.refreshToken,
-    );
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete('sessions')
-  @HttpCode(HttpStatus.OK)
-  async logoutAllDevices(@CurrentUser() user: UserPayload) {
-    return this.authService.logoutAllDevices(user.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete('sessions/:tokenId')
-  @HttpCode(HttpStatus.OK)
-  async logoutDevice(
-    @CurrentUser() user: UserPayload,
-    @Param('tokenId') tokenId: string,
-  ) {
-    return this.authService.logoutDevice(user.id, tokenId);
-  }
-
-  @Public()
-  @Get('verify-email')
-  @HttpCode(HttpStatus.OK)
-  async verifyEmail(@Query('token') token: string) {
-    return this.authService.verifyEmail(token);
-  }
-
-  @Public()
-  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per 1 hour
-  @Post('resend-verification')
-  @HttpCode(HttpStatus.OK)
-  async resendVerification(@Body('email') email: string) {
-    return this.authService.resendVerificationEmail(email);
-  }
-
-  @Public()
-  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per 1 hour
-  @Post('forgot-password')
-  @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(forgotPasswordDto.email);
-  }
-
-  @Public()
-  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 requests per 1 hour
-  @Post('reset-password')
-  @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(
-      resetPasswordDto.token,
-      resetPasswordDto.password,
-    );
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 requests per 1 hour
-  @Put('change-password')
-  @HttpCode(HttpStatus.OK)
-  async changePassword(
-    @CurrentUser() user: UserPayload,
-    @Body() changePasswordDto: ChangePasswordDto,
-  ) {
-    return this.authService.changePassword(
-      user.id,
-      changePasswordDto.currentPassword,
-      changePasswordDto.newPassword,
     );
   }
 

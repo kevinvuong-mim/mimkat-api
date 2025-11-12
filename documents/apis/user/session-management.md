@@ -4,7 +4,7 @@
 
 API quản lý phiên đăng nhập (sessions) trên nhiều thiết bị. Cho phép xem danh sách thiết bị đang đăng nhập và đăng xuất khỏi thiết bị cụ thể.
 
-**Base URL**: `/auth`
+**Base URL**: `/users`
 
 ---
 
@@ -14,7 +14,7 @@ API quản lý phiên đăng nhập (sessions) trên nhiều thiết bị. Cho p
 
 Lấy danh sách tất cả các thiết bị đang đăng nhập của user hiện tại.
 
-**Endpoint**: `GET /auth/sessions`
+**Endpoint**: `GET /users/sessions`
 
 **Authentication**: Required (Bearer Token)
 
@@ -94,7 +94,7 @@ Authorization: Bearer {accessToken}
 #### cURL Example
 
 ```bash
-curl -X GET http://localhost:3000/auth/sessions \
+curl -X GET http://localhost:3000/users/sessions \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -114,7 +114,7 @@ curl -X GET http://localhost:3000/auth/sessions \
 
 Đăng xuất khỏi tất cả các thiết bị bằng cách xóa tất cả sessions. User cần đăng nhập lại trên tất cả thiết bị.
 
-**Endpoint**: `DELETE /auth/sessions`
+**Endpoint**: `DELETE /users/sessions`
 
 **Authentication**: Required (Bearer Token)
 
@@ -149,7 +149,7 @@ Authorization: Bearer {accessToken}
 #### cURL Example
 
 ```bash
-curl -X DELETE http://localhost:3000/auth/sessions \
+curl -X DELETE http://localhost:3000/users/sessions \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -169,7 +169,7 @@ curl -X DELETE http://localhost:3000/auth/sessions \
 
 Đăng xuất khỏi một thiết bị cụ thể bằng session ID.
 
-**Endpoint**: `DELETE /auth/sessions/:tokenId`
+**Endpoint**: `DELETE /users/sessions/:tokenId`
 
 **Authentication**: Required (Bearer Token)
 
@@ -220,7 +220,7 @@ Authorization: Bearer {accessToken}
 #### cURL Example
 
 ```bash
-curl -X DELETE http://localhost:3000/auth/sessions/clx1234567890abcdefghij \
+curl -X DELETE http://localhost:3000/users/sessions/clx1234567890abcdefghij \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 

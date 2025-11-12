@@ -4,7 +4,7 @@
 
 API xác thực email người dùng sau khi đăng ký tài khoản. Email xác thực được gửi tự động sau khi đăng ký và có thể được gửi lại nếu cần.
 
-**Base URL**: `/auth`
+**Base URL**: `/verification`
 
 ---
 
@@ -14,7 +14,7 @@ API xác thực email người dùng sau khi đăng ký tài khoản. Email xác
 
 Xác thực email của người dùng thông qua token được gửi qua email. Token được hash và lưu trữ an toàn trong database.
 
-**Endpoint**: `GET /auth/verify-email`
+**Endpoint**: `GET /verification/email`
 
 **Authentication**: Không yêu cầu (Public)
 
@@ -49,13 +49,13 @@ Xác thực email của người dùng thông qua token được gửi qua email
 #### URL Example
 
 ```
-http://localhost:3000/auth/verify-email?token=a1b2c3d4e5f6...
+http://localhost:3000/verification/email?token=a1b2c3d4e5f6...
 ```
 
 #### cURL Example
 
 ```bash
-curl -X GET "http://localhost:3000/auth/verify-email?token=YOUR_VERIFICATION_TOKEN"
+curl -X GET "http://localhost:3000/verification/email?token=YOUR_VERIFICATION_TOKEN"
 ```
 
 #### Notes
@@ -72,7 +72,7 @@ curl -X GET "http://localhost:3000/auth/verify-email?token=YOUR_VERIFICATION_TOK
 
 Gửi lại email xác thực cho người dùng chưa xác thực email. Tạo token mới và gửi email xác thực.
 
-**Endpoint**: `POST /auth/resend-verification`
+**Endpoint**: `POST /verification/resend`
 
 **Rate Limit**: 3 requests / 1 giờ
 
@@ -135,7 +135,7 @@ Gửi lại email xác thực cho người dùng chưa xác thực email. Tạo 
 #### cURL Example
 
 ```bash
-curl -X POST http://localhost:3000/auth/resend-verification \
+curl -X POST http://localhost:3000/verification/resend \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com"
@@ -196,7 +196,7 @@ const hashedToken = await bcrypt.hash(verificationToken, 10);
 }
 ```
 
-**Solution**: Sử dụng endpoint `POST /auth/resend-verification`
+**Solution**: Sử dụng endpoint `POST /verification/resend`
 
 ### Email Already Verified
 

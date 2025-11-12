@@ -4,7 +4,7 @@
 
 API lấy thông tin profile đầy đủ của người dùng hiện tại dựa trên JWT token. Bao gồm thông tin về phương thức đăng nhập (`hasPassword`, `hasGoogleAuth`) để hỗ trợ logic frontend.
 
-**Base URL**: `/auth`
+**Base URL**: `/users`
 
 ---
 
@@ -14,7 +14,7 @@ API lấy thông tin profile đầy đủ của người dùng hiện tại dự
 
 Lấy thông tin profile đầy đủ của user đang đăng nhập, bao gồm `hasPassword` và `hasGoogleAuth` để xác định phương thức đăng nhập.
 
-**Endpoint**: `GET /auth/me`
+**Endpoint**: `GET /users/me`
 **Authentication**: Required (Bearer Token)
 
 #### Headers
@@ -84,7 +84,7 @@ Authorization: Bearer {accessToken}
 #### cURL Example
 
 ```bash
-curl -X GET http://localhost:3000/auth/me \
+curl -X GET http://localhost:3000/users/me \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
