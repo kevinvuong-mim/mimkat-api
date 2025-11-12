@@ -50,7 +50,7 @@ export class AuthService {
     verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 48);
 
     // Create new user with verification fields
-    const user = await this.prisma.user.create({
+    await this.prisma.user.create({
       data: {
         email,
         password: hashedPassword,
@@ -75,12 +75,6 @@ export class AuthService {
         error instanceof Error ? error.stack : String(error),
       );
     }
-
-    return {
-      message:
-        'Registration successful. Please check your email to verify your account.',
-      user,
-    };
   }
 
   async login(loginDto: LoginDto, deviceInfo?: DeviceInfo) {
@@ -132,14 +126,8 @@ export class AuthService {
 
     // Return tokens in response body for localStorage storage
     return {
-      message: 'Login successful',
-      user: {
-        id: user.id,
-        email: user.email,
-      },
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      expiresIn: 3600, // 1 hour in seconds
     };
   }
 
@@ -166,10 +154,6 @@ export class AuthService {
         id: tokenRecord.id,
       },
     });
-
-    return {
-      message: 'Logout successful',
-    };
   }
 
   async refreshTokens(refreshToken: string, deviceInfo?: DeviceInfo) {
@@ -231,10 +215,8 @@ export class AuthService {
 
     // Return tokens in response body for localStorage storage
     return {
-      message: 'Token refresh successful',
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      expiresIn: 3600, // 1 hour in seconds
     };
   }
 
@@ -385,16 +367,8 @@ export class AuthService {
 
     // Return tokens in response body for localStorage storage
     return {
-      message: 'Google login successful',
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        avatar: user.avatar,
-      },
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      expiresIn: 3600, // 1 hour in seconds
     };
   }
 }

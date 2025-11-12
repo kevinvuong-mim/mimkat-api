@@ -49,10 +49,6 @@ export class VerificationService {
         verificationTokenExpiry: null,
       },
     });
-
-    return {
-      message: 'Email verified successfully. You can now log in.',
-    };
   }
 
   async resendVerificationEmail(email: string) {
@@ -87,10 +83,6 @@ export class VerificationService {
 
     // Send verification email
     await this.mailService.sendVerificationEmail(email, verificationToken);
-
-    return {
-      message: 'Verification email sent successfully',
-    };
   }
 
   async forgotPassword(email: string) {
@@ -141,11 +133,6 @@ export class VerificationService {
         error instanceof Error ? error.stack : String(error),
       );
     }
-
-    return {
-      message:
-        'If an account with that email exists, we sent a password reset link.',
-    };
   }
 
   async resetPassword(token: string, newPassword: string) {
@@ -194,10 +181,5 @@ export class VerificationService {
     await this.prisma.session.deleteMany({
       where: { userId: matchedUserId },
     });
-
-    return {
-      message:
-        'Password reset successful. Please log in with your new password.',
-    };
   }
 }

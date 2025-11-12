@@ -8,8 +8,3 @@ export class SessionResponseDto {
   expiresAt: Date;
   isCurrent?: boolean;
 }
-
-export class ActiveSessionsResponseDto {
-  sessions: SessionResponseDto[];
-  total: number;
-}

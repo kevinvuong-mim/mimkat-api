@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@prisma/prisma.service';
-import { ActiveSessionsResponseDto } from '@auth/dto/session.dto';
 
 @Injectable()
 export class UserService {
@@ -99,18 +98,9 @@ export class UserService {
     await this.prisma.session.deleteMany({
       where: { userId },
     });
-
-    return {
-      message: user.password
-        ? 'Password changed successfully. All devices have been logged out for security.'
-        : 'Password set successfully. All devices have been logged out for security.',
-    };
   }
 
-  async getActiveSessions(
-    userId: string,
-    currentToken?: string,
-  ): Promise<ActiveSessionsResponseDto> {
+  async getActiveSessions(userId: string, currentToken?: string) {
     const sessions = await this.prisma.session.findMany({
       where: {
         userId,
@@ -136,24 +126,16 @@ export class UserService {
 
     return {
       sessions: sessionDtos,
-      total: sessionDtos.length,
     };
   }
 
-  async logoutAllDevices(userId: string): Promise<{ message: string }> {
+  async logoutAllDevices(userId: string) {
     await this.prisma.session.deleteMany({
       where: { userId },
     });
-
-    return {
-      message: 'Logged out from all devices successfully',
-    };
   }
 
-  async logoutDevice(
-    userId: string,
-    tokenId: string,
-  ): Promise<{ message: string }> {
+  async logoutDevice(userId: string, tokenId: string) {
     const token = await this.prisma.session.findFirst({
       where: {
         id: tokenId,
@@ -168,9 +150,5 @@ export class UserService {
     await this.prisma.session.delete({
       where: { id: tokenId },
     });
-
-    return {
-      message: 'Device logged out successfully',
-    };
   }
 }
