@@ -366,9 +366,6 @@ export class AuthService {
     await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
 
     // Return tokens in response body for localStorage storage
-    return {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-    };
+    return tokens;
   }
 }

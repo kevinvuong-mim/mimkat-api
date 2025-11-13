@@ -34,6 +34,11 @@ Tạo tài khoản người dùng mới với email và mật khẩu. Sau khi đ
 | email    | string | Yes      | Valid email format   | Email của người dùng |
 | password | string | Yes      | Minimum 8 characters | Mật khẩu             |
 
+**Password Requirements:**
+
+- Tối thiểu 8 ký tự
+- Không yêu cầu chữ hoa, chữ thường, hoặc số (validation đơn giản cho đăng ký)
+
 #### Response
 
 **Success (201 Created)**
@@ -362,7 +367,7 @@ Authorization: Bearer {accessToken}
 {
   "success": true,
   "statusCode": 200,
-  "message": "Logout successful",
+  "message": "Data retrieved successfully",
   "data": null,
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/auth/logout"
@@ -378,13 +383,26 @@ Set-Cookie: refreshToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Ja
 
 **Error Responses**
 
-- **401 Unauthorized**: Refresh token không được cung cấp
+- **400 Bad Request**: Refresh token không được cung cấp
+
+```json
+{
+  "success": false,
+  "statusCode": 400,
+  "message": "Refresh token not provided",
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/auth/logout"
+}
+```
+
+- **401 Unauthorized**: Refresh token không hợp lệ
 
 ```json
 {
   "success": false,
   "statusCode": 401,
-  "message": "Refresh token not provided",
+  "message": "Invalid refresh token",
   "error": "Unauthorized",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/auth/logout"
@@ -464,7 +482,7 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 {
   "success": true,
   "statusCode": 200,
-  "message": "Tokens refreshed successfully",
+  "message": "Data retrieved successfully",
   "data": {
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -488,14 +506,14 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 
 **Error Responses**
 
-- **401 Unauthorized**: Refresh token không được cung cấp
+- **400 Bad Request**: Refresh token không được cung cấp
 
 ```json
 {
   "success": false,
-  "statusCode": 401,
+  "statusCode": 400,
   "message": "Refresh token not provided",
-  "error": "Unauthorized",
+  "error": "Bad Request",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/auth/refresh"
 }

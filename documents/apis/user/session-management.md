@@ -83,7 +83,6 @@ Authorization: Bearer {accessToken}
 | sessions[].lastUsedAt | string  | Lần cuối sử dụng (ISO 8601)            |
 | sessions[].expiresAt  | string  | Thời điểm hết hạn (ISO 8601)           |
 | sessions[].isCurrent  | boolean | true nếu là thiết bị hiện tại          |
-| total                 | number  | Tổng số sessions                       |
 
 **Error Responses**
 

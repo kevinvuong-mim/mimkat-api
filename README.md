@@ -4,7 +4,14 @@ API backend cho ứng dụng Mimkat được xây dựng với NestJS framework.
 
 ## Mô tả
 
-Mimkat API là một REST API server
+Mimkat API là một REST API server cung cấp hệ thống xác thực và quản lý người dùng hoàn chỉnh, hỗ trợ:
+
+- 🔐 **Authentication**: Email/Password và Google OAuth 2.0
+- 👤 **User Management**: Profile, password change, session management
+- ✉️ **Email Verification**: Xác thực email và password reset
+- 🔒 **Security**: JWT tokens, bcrypt hashing, rate limiting
+- 📱 **Multi-Device**: Quản lý phiên đăng nhập đa thiết bị
+- 🍪 **Dual Auth Support**: Bearer tokens và HttpOnly cookies
 
 ## Công nghệ sử dụng
 
@@ -208,6 +215,30 @@ npm run build
 # Start production server
 npm run start:prod
 ```
+
+## Tài liệu API
+
+### 📚 Hướng dẫn tổng quan
+
+- [Environment Variables](./documents/guides/environment-variables.md) - Hướng dẫn cấu hình biến môi trường
+
+### 🔐 Authentication APIs
+
+- [Authentication](./documents/apis/auth/authentication.md) - Login, Register, Logout, Refresh Token
+- [Google OAuth](./documents/apis/auth/google-oauth.md) - Google OAuth 2.0 integration
+
+### 👤 User Management APIs
+
+- [User Profile](./documents/apis/user/user-profile.md) - Lấy thông tin profile
+- [Change Password](./documents/apis/user/change-password.md) - Đổi mật khẩu
+- [Session Management](./documents/apis/user/session-management.md) - Quản lý phiên đăng nhập
+
+### ✉️ Verification APIs
+
+- [Email Verification](./documents/apis/verification/email-verification.md) - Xác thực email
+- [Password Reset](./documents/apis/verification/password-reset.md) - Quên mật khẩu và reset
+
+---
 
 ## Tài liệu tham khảo
 

@@ -59,10 +59,20 @@ Xử lý callback từ Google sau khi user cấp quyền. Tự động set cooki
 Backend sẽ:
 
 1. Set HttpOnly cookies với accessToken và refreshToken
-2. Redirect về frontend với success status
+2. Encode tokens thành base64
+3. Redirect về frontend với authData trong query parameter
 
 ```
-{FRONTEND_URL}/auth/callback?success=true
+{FRONTEND_URL}/auth/callback?authData={base64_encoded_data}
+```
+
+**authData (sau khi decode base64) sẽ chứa:**
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
 ```
 
 **Response Headers (Set-Cookie)**:
@@ -74,14 +84,14 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 
 **Error Responses**
 
-- **401 Unauthorized**: Google authentication failed
+- **400 Bad Request**: Google authentication failed
 
 ```json
 {
   "success": false,
-  "statusCode": 401,
-  "message": "Google authentication failed",
-  "error": "Unauthorized",
+  "statusCode": 400,
+  "message": "No user from Google",
+  "error": "Bad Request",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/auth/google/callback"
 }
@@ -99,6 +109,111 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
   "path": "/auth/google/callback"
 }
 ```
+
+---
+
+## Frontend Integration
+
+### Handling the Callback
+
+Frontend cần xử lý authData từ query parameter:
+
+```javascript
+// In your /auth/callback page
+const urlParams = new URLSearchParams(window.location.search);
+const authData = urlParams.get('authData');
+
+if (authData) {
+  try {
+    // Decode base64 data
+    const decodedData = JSON.parse(atob(authData));
+
+    // Extract tokens
+    const { accessToken, refreshToken } = decodedData;
+
+    // Store in localStorage (optional - cookies already set)
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+
+    // Redirect to dashboard or home page
+    window.location.href = '/dashboard';
+  } catch (error) {
+    console.error('Failed to process auth data:', error);
+    // Handle error - redirect to login
+  }
+}
+```
+
+### Using the Tokens
+
+**Option 1: Use Cookies (Recommended for web)**
+
+```javascript
+// Cookies are automatically sent with requests
+fetch('/api/users/me', {
+  credentials: 'include', // Include cookies
+});
+```
+
+**Option 2: Use Authorization Header (Mobile/API)**
+
+```javascript
+// Use tokens from localStorage
+const accessToken = localStorage.getItem('accessToken');
+
+fetch('/api/users/me', {
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+  },
+});
+```
+
+---
+
+## Google OAuth Flow Details
+
+### 1. User Scenarios
+
+#### Scenario A: New User (First Time Login)
+
+1. User clicks "Login with Google"
+2. Google authentication successful
+3. Backend creates new user with:
+   - `email`: From Google
+   - `googleId`: Google user ID
+   - `fullName`: firstName + lastName from Google
+   - `avatar`: Google profile picture
+   - `isEmailVerified`: true (Google accounts are pre-verified)
+   - `password`: null (no password for OAuth-only accounts)
+4. Backend generates tokens and creates session
+5. Redirect to frontend with authData
+
+#### Scenario B: Existing Email User (Link Google)
+
+1. User registered with email/password previously
+2. User clicks "Login with Google" using same email
+3. Backend finds existing user by email
+4. Backend updates user with:
+   - `googleId`: Links Google account
+   - `avatar`: Updates if user doesn't have one
+   - `isEmailVerified`: Set to true
+5. User can now login with both email/password AND Google
+
+#### Scenario C: Returning Google User
+
+1. User logged in with Google before
+2. Backend finds user by `googleId`
+3. Generate tokens and create session
+4. Redirect to frontend
+
+### 2. Session Management
+
+- Google login creates a new session
+- Device info is automatically captured (browser, OS, IP)
+- Session limit applies (default: 5 concurrent sessions)
+- Oldest session removed if limit exceeded
+
+---
 
 ## Common Errors
 
