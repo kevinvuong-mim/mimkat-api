@@ -64,7 +64,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    return result;
+    return res.json(result);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -85,6 +85,8 @@ export class AuthController {
     // Clear cookies
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
+
+    return res.json();
   }
 
   @Public()
@@ -122,7 +124,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    return result;
+    return res.json(result);
   }
 
   @Public()
