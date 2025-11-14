@@ -118,21 +118,9 @@ Xử lý callback từ Google sau khi user cấp quyền. Tự động tạo/lin
 Backend sẽ:
 
 1. Set HttpOnly cookies với accessToken và refreshToken
-2. Encode tokens thành base64
-3. Redirect về frontend với authData trong query parameter
+2. Redirect về frontend
 
-```
-{FRONTEND_URL}/auth/callback?authData={base64_encoded_data}
-```
-
-**authData (sau khi decode base64) sẽ chứa:**
-
-```json
-{
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
+**Note**: Tokens được lưu trữ an toàn trong HttpOnly cookies, không cần truyền qua URL nữa.
 
 **Response Headers (Set-Cookie)**:
 
@@ -205,7 +193,7 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 3. Generate JWT access token (1h) và refresh token (7d)
 4. Create session với device info
 5. Set HttpOnly cookies
-6. Redirect to frontend with authData
+6. Redirect to frontend
 
 **Kết quả**: User mới được tạo và có thể login bằng Google
 
@@ -227,7 +215,7 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
    ```
 3. Generate JWT tokens
 4. Create session
-5. Set cookies và redirect
+5. Set cookies và redirect to frontend
 
 **Kết quả**: User có thể login bằng CẢ email/password VÀ Google
 
@@ -248,7 +236,7 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 2. Check `isActive = true`
 3. Generate JWT tokens
 4. Create session
-5. Set cookies và redirect
+5. Set cookies và redirect to frontend
 
 **Kết quả**: User login thành công như bình thường
 
@@ -317,7 +305,6 @@ does not match the ones authorized for the OAuth client.
 **Result**:
 
 - User bị redirect về một error page hoặc không redirect về app
-- Không có authData được truyền
 - Cookies không được set
 
 **Solution**:
@@ -396,7 +383,7 @@ does not match the ones authorized for the OAuth client.
 - [ ] NODE_ENV được set (development/production)
 - [ ] JWT secrets được configure
 - [ ] Database connection working
-- [ ] Frontend có route `/auth/callback` để handle redirect
+- [ ] Frontend có thể đọc HttpOnly cookies để xác định trạng thái đăng nhập
 - [ ] Browser cookies enabled
 - [ ] No ad blockers blocking OAuth flow
 - [ ] Network connection stable

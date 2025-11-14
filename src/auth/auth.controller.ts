@@ -163,11 +163,6 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    // Encode all data (user + tokens) as base64 to safely pass in URL
-    const authData = Buffer.from(JSON.stringify(result)).toString('base64');
-
-    // Redirect with auth data - frontend will extract and store in localStorage
-    const callbackUrl = `${process.env.FRONTEND_URL}/auth/callback?authData=${authData}`;
-    res.redirect(callbackUrl);
+    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3001');
   }
 }
