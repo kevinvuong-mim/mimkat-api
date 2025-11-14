@@ -7,6 +7,7 @@ export interface UserPayload {
   username?: string;
   fullName?: string;
   isActive: boolean;
+  sessionId?: string;
 }
 
 declare module 'express' {

@@ -5,6 +5,7 @@ import { PrismaService } from '@prisma/prisma.service';
 
 interface JwtPayload {
   sub: string;
+  sessionId?: string;
 }
 
 @Injectable()
@@ -41,6 +42,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       );
     }
 
-    return user;
+    return {
+      ...user,
+      sessionId: payload.sessionId,
+    };
   }
 }

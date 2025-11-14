@@ -564,13 +564,14 @@ curl -X POST http://localhost:3000/auth/refresh \
 #### Notes
 
 - **Hybrid Support**: Lấy refresh token từ cookie trước, fallback sang body
-- **Token Rotation**: Mỗi lần refresh, token cũ sẽ bị xóa và tạo token mới (security best practice)
+- **Token Rotation**: Mỗi lần refresh, token cũ sẽ được update với token mới (session giữ nguyên ID)
+- **Session Preservation**: Session ID được giữ nguyên khi refresh, chỉ update `refreshToken` và `lastUsedAt`
 - **Cookie Update**: Tự động set cookies mới cho web clients
 - **Response Tokens**: Vẫn trả về tokens trong response body cho mobile/API clients
-- Thông tin thiết bị được giữ nguyên từ phiên cũ (nếu không có deviceInfo mới)
+- Thông tin thiết bị được giữ nguyên hoặc cập nhật nếu có deviceInfo mới
 - Token cũ được verify với JWT và database trước khi refresh
-- Session cũ được xóa, session mới được tạo với expiresAt mới
 - AccessToken mới: 1 giờ, RefreshToken mới: 7 ngày
+- Both new tokens contain the same `sessionId` as the old one
 
 ---
 
@@ -586,6 +587,7 @@ curl -X POST http://localhost:3000/auth/refresh \
   ```json
   {
     "sub": "userId",
+    "sessionId": "clx1234567890abcdefghij",
     "iat": 1699286400,
     "exp": 1699290000
   }
@@ -599,6 +601,22 @@ curl -X POST http://localhost:3000/auth/refresh \
 - **Secret**: `JWT_REFRESH_SECRET` (environment variable)
 - **Lưu trữ**: Database (bảng Session)
 - **Token Rotation**: Được áp dụng khi refresh
+- **Payload**:
+  ```json
+  {
+    "sub": "userId",
+    "sessionId": "clx1234567890abcdefghij",
+    "iat": 1699286400,
+    "exp": 1700150400
+  }
+  ```
+
+**Session ID trong JWT**:
+
+- Session ID được tự động embed vào cả access token và refresh token
+- Sử dụng để identify session hiện tại khi gọi API (VD: GET /users/sessions)
+- Không cần truyền refresh token riêng để xác định "current session"
+- Session ID được tạo khi login hoặc OAuth, và giữ nguyên khi refresh token
 
 ---
 
@@ -661,17 +679,21 @@ curl -X POST http://localhost:3000/auth/refresh \
   2. Verify JWT signature với `JWT_SECRET`
   3. Check token expiration
   4. Validate payload structure (must have `sub` field)
-  5. Find user by ID từ payload
-  6. Check user exists và `isActive = true`
+  5. Extract `sessionId` from payload (if present)
+  6. Find user by ID từ payload
+  7. Check user exists và `isActive = true`
+  8. Return user object with `sessionId` attached
 - **Payload Structure**:
   ```json
   {
     "sub": "user-id-uuid",
+    "sessionId": "session-id-uuid",
     "iat": 1699286400,
     "exp": 1699290000
   }
   ```
 - **Guards**: `JwtAuthGuard` sử dụng strategy này để protect routes
+- **Current User Decorator**: `@CurrentUser()` returns user object với `sessionId` field
 
 ---
 

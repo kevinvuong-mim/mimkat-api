@@ -34,24 +34,29 @@ Cookie: accessToken=<token>
 
 #### Query Parameters
 
-Không có query parameters. Endpoint này tự động lấy thông tin từ JWT token để identify user.
+Không có query parameters. Endpoint này tự động lấy thông tin từ JWT token để identify user và session hiện tại.
 
 #### Request Body
 
-**⚠️ WARNING**: GET requests không nên có request body theo HTTP standards.
+**Không có request body** - Đây là GET request và tuân thủ HTTP standards.
 
-Tuy nhiên, nếu muốn identify current session, có thể gửi refresh token qua:
+Session hiện tại được tự động xác định thông qua **`sessionId`** trong JWT access token payload:
 
-- **Option 1 (Recommended)**: Cookie `refreshToken` (tự động gửi)
-- **Option 2**: Request body (không chuẩn nhưng được support)
-
-```json
+```typescript
+// JWT Payload structure
 {
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "sub": "userId",
+  "sessionId": "clx1234567890abcdefghij",  // Session ID included in token
+  "iat": 1699430400,
+  "exp": 1699434000
 }
 ```
 
-**Note**: Nếu cung cấp `refreshToken`, phiên hiện tại sẽ được đánh dấu `isCurrent: true` trong response. Nếu không, tất cả sessions sẽ có `isCurrent: false`.
+**Note**:
+
+- `sessionId` được tự động thêm vào JWT khi user login/refresh token
+- Session hiện tại sẽ có `isCurrent: true` dựa trên `sessionId` trong access token
+- Không cần gửi refresh token qua body, cookie, hoặc header nữa
 
 #### Response
 
@@ -127,32 +132,26 @@ curl -X GET http://localhost:3000/users/sessions \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-**Using cookies (recommended for web):**
+**Using cookies:**
 
 ```bash
 curl -X GET http://localhost:3000/users/sessions \
-  -b "accessToken=YOUR_TOKEN;refreshToken=YOUR_REFRESH_TOKEN"
-```
-
-**With refresh token in body (not recommended for GET):**
-
-```bash
-curl -X GET http://localhost:3000/users/sessions \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "refreshToken": "YOUR_REFRESH_TOKEN"
-  }'
+  -b "accessToken=YOUR_TOKEN"
 ```
 
 #### Notes
 
 - Chỉ hiển thị sessions chưa hết hạn (`expiresAt >= now`)
 - Sessions được sắp xếp theo `lastUsedAt` giảm dần (mới nhất trước)
-- `isCurrent` được set `true` nếu:
-  - Có refresh token trong cookie, HOẶC
-  - Có refresh token trong request body (không khuyến khích)
-  - Refresh token match với session.refreshToken
+- `isCurrent` được set `true` tự động dựa trên `sessionId` trong JWT access token
+- JWT payload structure:
+  ```json
+  {
+    "sub": "userId",
+    "sessionId": "clx1234567890abcdefghij"
+  }
+  ```
+- Session matching `sessionId` trong token sẽ có `isCurrent: true`
 - Default values nếu không có data:
   - `deviceName`: "Unknown"
   - `deviceType`: "Unknown"
@@ -339,7 +338,14 @@ Sessions được tạo tự động khi:
 
 - User đăng nhập (POST /auth/login)
 - User đăng nhập bằng Google (GET /auth/google/callback)
-- Refresh token (POST /auth/refresh) - token rotation
+- Refresh token (POST /auth/refresh) - token rotation with same session
+
+**Session ID in JWT**:
+
+- Khi tạo session mới, backend generate session ID
+- Session ID được embed vào cả access token và refresh token payload
+- Frontend không cần lưu hoặc quản lý session ID riêng
+- Access token tự động chứa session ID để identify current session
 
 ### Session Expiry
 
@@ -441,12 +447,16 @@ Sessions được tạo tự động khi:
 
 ### Problem: `isCurrent` luôn là `false`
 
-**Cause**: Không gửi refresh token
+**Cause**:
+
+- Access token không chứa `sessionId` (token cũ từ trước khi implement feature này)
+- Session đã bị xóa nhưng token vẫn còn valid
 
 **Solution**:
 
-- Ensure cookies được gửi (`credentials: 'include'`)
-- Hoặc gửi refresh token trong request body (không khuyến khích)
+- Logout và login lại để get token mới với `sessionId`
+- Refresh token để get access token mới
+- Check JWT payload có field `sessionId` không
 
 ### Problem: Sessions không hiển thị
 
@@ -492,10 +502,31 @@ Sessions được tạo tự động khi:
 
 ### Session Security
 
-1. **Refresh token rotation**: Token mới khi refresh, token cũ bị xóa
-2. **Device limit**: Ngăn unlimited sessions
-3. **IP tracking**: Phát hiện suspicious activity
-4. **Last used tracking**: Identify inactive sessions
+1. **Session ID in JWT**: Session ID được embed trong token payload để track current session
+2. **Refresh token rotation**: Token mới khi refresh, nhưng giữ nguyên session ID
+3. **Device limit**: Ngăn unlimited sessions
+4. **IP tracking**: Phát hiện suspicious activity
+5. **Last used tracking**: Identify inactive sessions
+
+### JWT Payload Structure
+
+Access Token và Refresh Token đều chứa:
+
+```json
+{
+  "sub": "userId", // User ID
+  "sessionId": "sessionId", // Session ID (NEW)
+  "iat": 1699430400, // Issued at
+  "exp": 1699434000 // Expiration
+}
+```
+
+**Benefits của Session ID trong JWT**:
+
+- Không cần gửi refresh token để identify current session
+- Frontend không cần track session ID riêng
+- GET request không cần body (tuân thủ HTTP standards)
+- Secure và stateless
 
 ### Privacy Protection
 

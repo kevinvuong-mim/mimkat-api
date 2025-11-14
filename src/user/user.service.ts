@@ -100,7 +100,7 @@ export class UserService {
     });
   }
 
-  async getActiveSessions(userId: string, currentToken?: string) {
+  async getActiveSessions(userId: string, currentSessionId?: string) {
     const sessions = await this.prisma.session.findMany({
       where: {
         userId,
@@ -121,7 +121,7 @@ export class UserService {
       createdAt: session.createdAt,
       lastUsedAt: session.lastUsedAt,
       expiresAt: session.expiresAt,
-      isCurrent: currentToken ? session.refreshToken === currentToken : false,
+      isCurrent: currentSessionId ? session.id === currentSessionId : false,
     }));
 
     return {

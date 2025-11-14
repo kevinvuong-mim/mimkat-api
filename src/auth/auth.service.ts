@@ -118,11 +118,17 @@ export class AuthService {
     // Check session limit
     await this.enforceSessionLimit(user.id);
 
-    // Generate tokens
-    const tokens = await this.generateTokens(user.id);
+    // Create session first to get session ID
+    const session = await this.createSession(user.id, deviceInfo);
 
-    // Save refresh token to database with device info
-    await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
+    // Generate tokens with session ID
+    const tokens = await this.generateTokens(user.id, session.id);
+
+    // Update session with refresh token
+    await this.prisma.session.update({
+      where: { id: session.id },
+      data: { refreshToken: tokens.refreshToken },
+    });
 
     // Return tokens in response body for localStorage storage
     return {
@@ -192,26 +198,26 @@ export class AuthService {
     }
 
     // Generate new tokens
-    const tokens = await this.generateTokens(tokenRecord.user.id);
-
-    // Delete old refresh token and save new token (token rotation)
-    await this.prisma.session.delete({
-      where: { id: tokenRecord.id },
-    });
-
-    // Preserve device info from old token if not provided
-    const deviceInfoToSave = deviceInfo || {
-      deviceName: tokenRecord.deviceName ?? 'Unknown',
-      deviceType: tokenRecord.deviceType ?? 'Unknown',
-      ipAddress: tokenRecord.ipAddress ?? 'Unknown',
-      userAgent: tokenRecord.userAgent ?? 'Unknown',
-    };
-
-    await this.saveSession(
+    const tokens = await this.generateTokens(
       tokenRecord.user.id,
-      tokens.refreshToken,
-      deviceInfoToSave,
+      tokenRecord.id,
     );
+
+    // Update session with new refresh token
+    await this.prisma.session.update({
+      where: { id: tokenRecord.id },
+      data: {
+        refreshToken: tokens.refreshToken,
+        lastUsedAt: new Date(),
+        // Update device info if provided
+        ...(deviceInfo && {
+          deviceName: deviceInfo.deviceName,
+          deviceType: deviceInfo.deviceType,
+          ipAddress: deviceInfo.ipAddress,
+          userAgent: deviceInfo.userAgent,
+        }),
+      },
+    });
 
     // Return tokens in response body for localStorage storage
     return {
@@ -220,8 +226,8 @@ export class AuthService {
     };
   }
 
-  private async generateTokens(userId: string) {
-    const payload = { sub: userId };
+  private async generateTokens(userId: string, sessionId: string) {
+    const payload = { sub: userId, sessionId };
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_SECRET,
@@ -239,13 +245,9 @@ export class AuthService {
     };
   }
 
-  private async saveSession(
-    userId: string,
-    refreshToken: string,
-    deviceInfo?: DeviceInfo,
-  ) {
-    const expiresIn = AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION;
+  private async createSession(userId: string, deviceInfo?: DeviceInfo) {
     const expiresAt = new Date();
+    const expiresIn = AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION;
 
     // Parse expiration time (e.g., 7d, 24h, 60m)
     const match = expiresIn.match(/^(\d+)([dhm])$/);
@@ -266,9 +268,9 @@ export class AuthService {
       }
     }
 
-    await this.prisma.session.create({
+    return this.prisma.session.create({
       data: {
-        refreshToken,
+        refreshToken: '', // Will be updated after token generation
         userId,
         expiresAt,
         deviceName: deviceInfo?.deviceName,
@@ -359,11 +361,17 @@ export class AuthService {
     // Check session limit
     await this.enforceSessionLimit(user.id);
 
-    // Generate tokens
-    const tokens = await this.generateTokens(user.id);
+    // Create session first to get session ID
+    const session = await this.createSession(user.id, deviceInfo);
 
-    // Save refresh token to database with device info
-    await this.saveSession(user.id, tokens.refreshToken, deviceInfo);
+    // Generate tokens with session ID
+    const tokens = await this.generateTokens(user.id, session.id);
+
+    // Update session with refresh token
+    await this.prisma.session.update({
+      where: { id: session.id },
+      data: { refreshToken: tokens.refreshToken },
+    });
 
     // Return tokens in response body for localStorage storage
     return tokens;

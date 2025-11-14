@@ -102,11 +102,14 @@ Xử lý callback từ Google sau khi user cấp quyền. Tự động tạo/lin
 5. AuthService.googleLogin() processes user:
    - Check if user exists (by googleId or email)
    - Create new user OR link Google to existing user
-   - Generate JWT tokens
-   - Create session with device info
+   - Create session first to get session ID
+   - Generate JWT tokens with session ID embedded
+   - Update session with refresh token
 6. Set HttpOnly cookies
 7. Encode tokens as base64
 8. Redirect to frontend with authData
+
+**JWT Tokens**: Both access and refresh tokens contain `sessionId` in payload for session tracking
 
 #### Response
 

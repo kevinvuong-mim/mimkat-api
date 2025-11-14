@@ -12,7 +12,6 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { UserService } from './user.service';
 import { ChangePasswordDto } from '@auth/dto/change-password.dto';
-import { RefreshTokenDto } from '@auth/dto/refresh-token.dto';
 import {
   CurrentUser,
   type UserPayload,
@@ -47,14 +46,8 @@ export class UserController {
 
   @Get('sessions')
   @HttpCode(HttpStatus.OK)
-  async getActiveSessions(
-    @CurrentUser() user: UserPayload,
-    @Body() refreshTokenDto?: RefreshTokenDto,
-  ) {
-    return this.userService.getActiveSessions(
-      user.id,
-      refreshTokenDto?.refreshToken,
-    );
+  async getActiveSessions(@CurrentUser() user: UserPayload) {
+    return this.userService.getActiveSessions(user.id, user.sessionId);
   }
 
   @Delete('sessions')
