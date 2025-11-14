@@ -121,47 +121,47 @@ npm run format
 ```
 mimkat-api/
 ├── src/
-│   ├── auth/                    # Authentication & Authorization Module
-│   │   ├── constants/          # Auth constants (token expiration, etc.)
-│   │   ├── dto/                # Data Transfer Objects
-│   │   ├── guards/             # JWT & Google OAuth guards
-│   │   ├── strategies/         # Passport strategies (JWT, Google)
-│   │   ├── auth.controller.ts  # Auth endpoints (login, register, OAuth)
-│   │   ├── auth.service.ts     # Auth business logic
+│   ├── auth/                                       # Authentication & Authorization Module
+│   │   ├── constants/                              # Auth constants (token expiration, etc.)
+│   │   ├── dto/                                    # Data Transfer Objects
+│   │   ├── guards/                                 # JWT & Google OAuth guards
+│   │   ├── strategies/                             # Passport strategies (JWT, Google)
+│   │   ├── auth.controller.ts                      # Auth endpoints (login, register, OAuth)
+│   │   ├── auth.service.ts                         # Auth business logic
 │   │   └── auth.module.ts
-│   ├── user/                    # User Management Module
-│   │   ├── user.controller.ts  # User profile & session endpoints
-│   │   ├── user.service.ts     # User business logic
+│   ├── user/                                       # User Management Module
+│   │   ├── user.controller.ts                      # User profile & session endpoints
+│   │   ├── user.service.ts                         # User business logic
 │   │   └── user.module.ts
-│   ├── verification/            # Email Verification & Password Reset
+│   ├── verification/                               # Email Verification & Password Reset
 │   │   ├── verification.controller.ts
 │   │   ├── verification.service.ts
 │   │   └── verification.module.ts
-│   ├── mail/                    # Email Service Module
-│   │   ├── mail.service.ts     # Nodemailer integration
+│   ├── mail/                                       # Email Service Module
+│   │   ├── mail.service.ts                         # Nodemailer integration
 │   │   └── mail.module.ts
-│   ├── tasks/                   # Background Tasks & Cron Jobs
-│   │   ├── cleanup.service.ts  # Cleanup unverified accounts & tokens
+│   ├── tasks/                                      # Background Tasks & Cron Jobs
+│   │   ├── cleanup.service.ts                      # Cleanup unverified accounts & tokens
 │   │   └── tasks.module.ts
-│   ├── prisma/                  # Prisma ORM Module
-│   │   ├── prisma.service.ts   # Prisma client instance
+│   ├── prisma/                                     # Prisma ORM Module
+│   │   ├── prisma.service.ts                       # Prisma client instance
 │   │   └── prisma.module.ts
-│   ├── common/                  # Shared utilities & decorators
-│   │   ├── decorators/         # Custom decorators (@Public, @CurrentUser)
-│   │   ├── filters/            # Exception filters
-│   │   └── utils/              # Utility functions (device detection)
-│   ├── app.module.ts            # Root module
-│   └── main.ts                  # Application entry point
+│   ├── common/                                     # Shared utilities & decorators
+│   │   ├── decorators/                             # Custom decorators (@Public, @CurrentUser)
+│   │   ├── filters/                                # Exception filters
+│   │   └── utils/                                  # Utility functions (device detection)
+│   ├── app.module.ts                               # Root module
+│   └── main.ts                                     # Application entry point
 ├── prisma/
-│   └── schema.prisma            # Database schema (User, Session models)
-├── documents/                   # API Documentation
-│   ├── apis/                   # API endpoint documentation
-│   │   ├── auth/               # Authentication APIs
-│   │   ├── user/               # User management APIs
-│   │   └── verification/       # Verification APIs
-│   └── guides/                 # Development guides
-├── test/                        # E2E tests
-└── dist/                        # Build output (gitignored)
+│   └── schema.prisma                               # Database schema (User, Session models)
+├── documents/                                      # API Documentation
+│   ├── apis/                                       # API endpoint documentation
+│   │   ├── auth/                                   # Authentication APIs
+│   │   ├── user/                                   # User management APIs
+│   │   └── verification/                           # Verification APIs
+│   └── guides/                                     # Development guides
+├── test/                                           # E2E tests
+└── dist/                                           # Build output (gitignored)
 ```
 
 ## Security Features

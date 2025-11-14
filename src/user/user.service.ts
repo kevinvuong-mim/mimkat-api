@@ -135,10 +135,10 @@ export class UserService {
     });
   }
 
-  async logoutDevice(userId: string, tokenId: string) {
+  async logoutDevice(userId: string, sessionId: string) {
     const token = await this.prisma.session.findFirst({
       where: {
-        id: tokenId,
+        id: sessionId,
         userId,
       },
     });
@@ -148,7 +148,7 @@ export class UserService {
     }
 
     await this.prisma.session.delete({
-      where: { id: tokenId },
+      where: { id: sessionId },
     });
   }
 }

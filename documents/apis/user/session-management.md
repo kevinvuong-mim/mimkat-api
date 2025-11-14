@@ -32,32 +32,6 @@ Authorization: Bearer {accessToken}
 Cookie: accessToken=<token>
 ```
 
-#### Query Parameters
-
-Không có query parameters. Endpoint này tự động lấy thông tin từ JWT token để identify user và session hiện tại.
-
-#### Request Body
-
-**Không có request body** - Đây là GET request và tuân thủ HTTP standards.
-
-Session hiện tại được tự động xác định thông qua **`sessionId`** trong JWT access token payload:
-
-```typescript
-// JWT Payload structure
-{
-  "sub": "userId",
-  "sessionId": "clx1234567890abcdefghij",  // Session ID included in token
-  "iat": 1699430400,
-  "exp": 1699434000
-}
-```
-
-**Note**:
-
-- `sessionId` được tự động thêm vào JWT khi user login/refresh token
-- Session hiện tại sẽ có `isCurrent: true` dựa trên `sessionId` trong access token
-- Không cần gửi refresh token qua body, cookie, hoặc header nữa
-
 #### Response
 
 **Success (200 OK)**
@@ -232,7 +206,7 @@ curl -X DELETE http://localhost:3000/users/sessions \
 
 Đăng xuất khỏi một thiết bị cụ thể bằng session ID.
 
-**Endpoint**: `DELETE /users/sessions/:tokenId`
+**Endpoint**: `DELETE /users/sessions/:sessionId`
 
 **Authentication**: Required (Bearer Token hoặc Cookie)
 
@@ -254,7 +228,7 @@ Cookie: accessToken=<token>
 
 | Parameter | Type   | Description                   |
 | --------- | ------ | ----------------------------- |
-| tokenId   | string | Session ID (từ GET /sessions) |
+| sessionId | string | Session ID (từ GET /sessions) |
 
 #### Response
 
@@ -267,7 +241,7 @@ Cookie: accessToken=<token>
   "message": "Data retrieved successfully",
   "data": null,
   "timestamp": "2025-11-12T10:00:00.000Z",
-  "path": "/users/sessions/:tokenId"
+  "path": "/users/sessions/:sessionId"
 }
 ```
 
@@ -282,7 +256,7 @@ Cookie: accessToken=<token>
   "message": "Session not found",
   "error": "Bad Request",
   "timestamp": "2025-11-12T10:00:00.000Z",
-  "path": "/users/sessions/:tokenId"
+  "path": "/users/sessions/:sessionId"
 }
 ```
 
@@ -295,7 +269,7 @@ Cookie: accessToken=<token>
   "message": "Unauthorized",
   "error": "Unauthorized",
   "timestamp": "2025-11-12T10:00:00.000Z",
-  "path": "/users/sessions/:tokenId"
+  "path": "/users/sessions/:sessionId"
 }
 ```
 
@@ -317,7 +291,7 @@ curl -X DELETE http://localhost:3000/users/sessions/clx1234567890abcdefghij \
 
 #### Notes
 
-- Chỉ xóa session được chỉ định (gọi `prisma.session.delete({ where: { id: tokenId } })`)
+- Chỉ xóa session được chỉ định (gọi `prisma.session.delete({ where: { id: sessionId } })`)
 - Không ảnh hưởng đến thiết bị khác
 - Validate session thuộc về user hiện tại (check `userId`)
 - User có thể logout thiết bị hiện tại (sẽ cần đăng nhập lại)

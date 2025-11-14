@@ -56,12 +56,12 @@ export class UserController {
     return this.userService.logoutAllDevices(user.id);
   }
 
-  @Delete('sessions/:tokenId')
+  @Delete('sessions/:sessionId')
   @HttpCode(HttpStatus.OK)
   async logoutDevice(
     @CurrentUser() user: UserPayload,
-    @Param('tokenId') tokenId: string,
+    @Param('sessionId') sessionId: string,
   ) {
-    return this.userService.logoutDevice(user.id, tokenId);
+    return this.userService.logoutDevice(user.id, sessionId);
   }
 }

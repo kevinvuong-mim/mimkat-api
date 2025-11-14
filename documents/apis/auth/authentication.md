@@ -2,10 +2,7 @@
 
 ## Overview
 
-API xác thực người dùng, hỗ trợ cả Bearer tokens và HttpOnly cookies. Hệ thống hỗ trợ 2 phương thức đăng nhập:
-
-1. **Email/Password Authentication**: Đăng ký với email và password, yêu cầu xác thực email
-2. **Google OAuth 2.0**: Đăng nhập nhanh bằng tài khoản Google, tự động verify email
+API xác thực người dùng, hỗ trợ cả Bearer tokens và HttpOnly cookies.
 
 **Base URL**: `/auth`
 

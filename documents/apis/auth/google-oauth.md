@@ -2,7 +2,7 @@
 
 ## Overview
 
-API xác thực người dùng thông qua Google OAuth 2.0. Hỗ trợ cả Bearer tokens và HttpOnly cookies. Cho phép người dùng đăng nhập nhanh chóng bằng tài khoản Google của họ mà không cần tạo password riêng.
+API xác thực người dùng thông qua Google OAuth 2.0. Cho phép người dùng đăng nhập nhanh chóng bằng tài khoản Google của họ mà không cần tạo password riêng.
 
 **Base URL**: `/auth`
 
