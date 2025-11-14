@@ -18,13 +18,32 @@ Lấy danh sách tất cả các thiết bị đang đăng nhập của user hi�
 
 **Authentication**: Required (Bearer Token hoặc Cookie)
 
+**Rate Limit**: Không giới hạn
+
 #### Headers
 
 ```
 Authorization: Bearer {accessToken}
 ```
 
-#### Request Body (Optional)
+**Or using cookies:**
+
+```
+Cookie: accessToken=<token>
+```
+
+#### Query Parameters
+
+Không có query parameters. Endpoint này tự động lấy thông tin từ JWT token để identify user.
+
+#### Request Body
+
+**⚠️ WARNING**: GET requests không nên có request body theo HTTP standards.
+
+Tuy nhiên, nếu muốn identify current session, có thể gửi refresh token qua:
+
+- **Option 1 (Recommended)**: Cookie `refreshToken` (tự động gửi)
+- **Option 2**: Request body (không chuẩn nhưng được support)
 
 ```json
 {
@@ -32,7 +51,7 @@ Authorization: Bearer {accessToken}
 }
 ```
 
-**Note**: Nếu cung cấp `refreshToken`, phiên hiện tại sẽ được đánh dấu `isCurrent: true` trong response.
+**Note**: Nếu cung cấp `refreshToken`, phiên hiện tại sẽ được đánh dấu `isCurrent: true` trong response. Nếu không, tất cả sessions sẽ có `isCurrent: false`.
 
 #### Response
 
@@ -101,6 +120,22 @@ Authorization: Bearer {accessToken}
 
 #### cURL Example
 
+**Using Authorization header:**
+
+```bash
+curl -X GET http://localhost:3000/users/sessions \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**Using cookies (recommended for web):**
+
+```bash
+curl -X GET http://localhost:3000/users/sessions \
+  -b "accessToken=YOUR_TOKEN;refreshToken=YOUR_REFRESH_TOKEN"
+```
+
+**With refresh token in body (not recommended for GET):**
+
 ```bash
 curl -X GET http://localhost:3000/users/sessions \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
@@ -114,7 +149,15 @@ curl -X GET http://localhost:3000/users/sessions \
 
 - Chỉ hiển thị sessions chưa hết hạn (`expiresAt >= now`)
 - Sessions được sắp xếp theo `lastUsedAt` giảm dần (mới nhất trước)
-- `isCurrent` chỉ được set nếu cung cấp `refreshToken` trong request body
+- `isCurrent` được set `true` nếu:
+  - Có refresh token trong cookie, HOẶC
+  - Có refresh token trong request body (không khuyến khích)
+  - Refresh token match với session.refreshToken
+- Default values nếu không có data:
+  - `deviceName`: "Unknown"
+  - `deviceType`: "Unknown"
+  - `ipAddress`: "Unknown"
+- Response luôn bao gồm array `sessions` (có thể empty nếu không có session nào)
 
 ---
 
@@ -126,10 +169,18 @@ curl -X GET http://localhost:3000/users/sessions \
 
 **Authentication**: Required (Bearer Token hoặc Cookie)
 
+**Rate Limit**: Không giới hạn
+
 #### Headers
 
 ```
 Authorization: Bearer {accessToken}
+```
+
+**Or using cookies:**
+
+```
+Cookie: accessToken=<token>
 ```
 
 #### Response
@@ -149,20 +200,32 @@ Authorization: Bearer {accessToken}
 
 #### cURL Example
 
+**Using Authorization header:**
+
 ```bash
 curl -X DELETE http://localhost:3000/users/sessions \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
+**Using cookies:**
+
+```bash
+curl -X DELETE http://localhost:3000/users/sessions \
+  -b "accessToken=YOUR_TOKEN"
+```
+
 #### Notes
 
-- Xóa **TẤT CẢ** sessions của user
-- Bao gồm cả thiết bị hiện tại
-- User cần đăng nhập lại
+- Xóa **TẤT CẢ** sessions của user (gọi `prisma.session.deleteMany({ where: { userId } })`)
+- Bao gồm cả thiết bị hiện tại đang gọi API
+- User cần đăng nhập lại trên tất cả thiết bị
+- Access tokens hiện tại vẫn valid cho đến khi hết hạn (1h), nhưng không thể refresh
+- Response data luôn là `null`
 - Hữu ích khi:
   - Nghi ngờ tài khoản bị xâm nhập
   - Muốn đăng xuất khỏi tất cả thiết bị cũ
-  - Đổi mật khẩu và muốn force re-login
+  - Đổi mật khẩu và muốn force re-login (tương tự behavior của PUT /users/password)
+  - Phát hiện activity đáng ngờ
 
 ---
 
@@ -174,10 +237,18 @@ curl -X DELETE http://localhost:3000/users/sessions \
 
 **Authentication**: Required (Bearer Token hoặc Cookie)
 
+**Rate Limit**: Không giới hạn
+
 #### Headers
 
 ```
 Authorization: Bearer {accessToken}
+```
+
+**Or using cookies:**
+
+```
+Cookie: accessToken=<token>
 ```
 
 #### URL Parameters
@@ -231,20 +302,32 @@ Authorization: Bearer {accessToken}
 
 #### cURL Example
 
+**Using Authorization header:**
+
 ```bash
 curl -X DELETE http://localhost:3000/users/sessions/clx1234567890abcdefghij \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
+**Using cookies:**
+
+```bash
+curl -X DELETE http://localhost:3000/users/sessions/clx1234567890abcdefghij \
+  -b "accessToken=YOUR_TOKEN"
+```
+
 #### Notes
 
-- Chỉ xóa session được chỉ định
+- Chỉ xóa session được chỉ định (gọi `prisma.session.delete({ where: { id: tokenId } })`)
 - Không ảnh hưởng đến thiết bị khác
+- Validate session thuộc về user hiện tại (check `userId`)
 - User có thể logout thiết bị hiện tại (sẽ cần đăng nhập lại)
+- Response data luôn là `null`
 - Hữu ích khi:
   - Thấy thiết bị lạ trong danh sách
   - Muốn đăng xuất khỏi thiết bị cũ không còn sử dụng
   - Remote logout từ thiết bị khác
+  - Quên đăng xuất ở máy public/shared
 
 ---
 
@@ -266,9 +349,142 @@ Sessions được tạo tự động khi:
 
 ### Session Limit
 
-- **Max concurrent sessions**: Cấu hình trong `AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS`
+- **Max concurrent sessions**: 5 (cấu hình trong `AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS`)
 - **Enforcement**: Khi đạt limit, session cũ nhất (oldest `lastUsedAt`) bị xóa tự động
 - **Example**: Nếu limit = 5, login lần thứ 6 sẽ xóa session cũ nhất
+- **Automatic cleanup**: Xảy ra trong `auth.service.ts` method `enforceSessionLimit()`
+
+---
+
+## Use Cases
+
+### Use Case 1: User kiểm tra thiết bị đang đăng nhập
+
+**Scenario**: User muốn xem có bao nhiêu thiết bị đang đăng nhập tài khoản của họ.
+
+**Steps**:
+
+1. User vào Settings > Security > Active Devices
+2. Frontend gọi `GET /users/sessions`
+3. Hiển thị danh sách devices với thông tin:
+   - Device name và type (icon)
+   - IP address
+   - Last active time
+   - "Current device" badge
+
+**Expected Result**: User thấy list tất cả active sessions, với current device được highlight.
+
+---
+
+### Use Case 2: User phát hiện thiết bị lạ
+
+**Scenario**: User thấy một device không nhận ra trong danh sách.
+
+**Steps**:
+
+1. User xem session list, thấy "Chrome on Windows" nhưng họ không có Windows PC
+2. User click "Logout" button trên session đó
+3. Frontend gọi `DELETE /users/sessions/{sessionId}`
+4. Session bị xóa, device kia bị logout
+5. Frontend refresh list, thiết bị lạ không còn
+
+**Expected Result**: Thiết bị lạ bị logout, user account an toàn.
+
+---
+
+### Use Case 3: User bị mất điện thoại
+
+**Scenario**: User mất phone và muốn logout khỏi tất cả devices để bảo mật.
+
+**Steps**:
+
+1. User login từ computer
+2. Vào Settings > Security
+3. Click "Logout All Devices"
+4. Confirm dialog warning: "This will logout all devices including this one"
+5. Frontend gọi `DELETE /users/sessions`
+6. Tất cả sessions bị xóa
+7. User tự động logout và redirect về login page
+
+**Expected Result**: Mọi device bị logout, kể cả lost phone. User phải login lại.
+
+---
+
+### Use Case 4: User đổi mật khẩu
+
+**Scenario**: User đổi password và muốn force re-login everywhere.
+
+**Steps**:
+
+1. User gọi `PUT /users/password` với current và new password
+2. Backend xử lý:
+   - Validate và update password
+   - Tự động gọi `prisma.session.deleteMany({ where: { userId } })`
+3. Tất cả sessions bị xóa (giống như logout all)
+4. User phải login lại với password mới
+
+**Expected Result**: Security enhanced, tất cả devices phải re-authenticate.
+
+---
+
+## Related Endpoints
+
+- **POST /auth/login**: Tạo session mới khi login
+- **POST /auth/refresh**: Rotate session (token rotation)
+- **POST /auth/logout**: Logout current device
+- **PUT /users/password**: Tự động logout all devices sau khi đổi password
+- **GET /users/me**: Get user profile (không liên quan trực tiếp nhưng useful)
+
+---
+
+## Troubleshooting
+
+### Problem: `isCurrent` luôn là `false`
+
+**Cause**: Không gửi refresh token
+
+**Solution**:
+
+- Ensure cookies được gửi (`credentials: 'include'`)
+- Hoặc gửi refresh token trong request body (không khuyến khích)
+
+### Problem: Sessions không hiển thị
+
+**Cause**:
+
+- Token hết hạn
+- User chưa login
+- Tất cả sessions đã expired
+
+**Solution**:
+
+- Check access token còn valid
+- Login lại nếu cần
+- Check `expiresAt` của sessions
+
+### Problem: Cannot delete session
+
+**Cause**:
+
+- Session ID không tồn tại
+- Session không thuộc về user hiện tại
+- Session đã bị xóa
+
+**Solution**:
+
+- Verify session ID đúng
+- Refresh session list
+- Check authorization
+
+### Problem: "Session not found" error
+
+**Cause**: Session đã bị xóa (expired, logout, hoặc replaced do session limit)
+
+**Solution**:
+
+- Refresh session list
+- Accept rằng session không còn tồn tại
+- User có thể đã logout từ device đó
 
 ---
 

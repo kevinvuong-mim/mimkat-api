@@ -15,7 +15,7 @@ API đổi mật khẩu cho người dùng đã đăng nhập. Hỗ trợ hai tr
 
 **Endpoint**: `PUT /users/password`
 
-**Rate Limit**: 5 requests / 1 giờ
+**Rate Limit**: 5 requests / 1 giờ (3600 seconds)
 
 **Authentication**: Required (Bearer Token hoặc Cookie)
 
@@ -23,6 +23,13 @@ API đổi mật khẩu cho người dùng đã đăng nhập. Hỗ trợ hai tr
 
 ```
 Authorization: Bearer <accessToken>
+Content-Type: application/json
+```
+
+**Or using cookies:**
+
+```
+Cookie: accessToken=<token>
 Content-Type: application/json
 ```
 
@@ -47,12 +54,10 @@ Content-Type: application/json
 
 ### Request Body Schema
 
-### Request Body Schema
-
-| Field           | Type   | Required | Validation           | Description                                                                                                 |
-| --------------- | ------ | -------- | -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| currentPassword | string | Optional | -                    | Mật khẩu hiện tại. Bắt buộc nếu user đã có password. Không bắt buộc cho user Google OAuth chưa có password. |
-| newPassword     | string | Yes      | Minimum 8 characters | Mật khẩu mới. Phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số.                                   |
+| Field           | Type   | Required                | Validation                                                        | Description                                                                                            |
+| --------------- | ------ | ----------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| currentPassword | string | Conditional (see notes) | -                                                                 | Mật khẩu hiện tại. **Bắt buộc** nếu user đã có password. **Không bắt buộc** cho user chưa có password. |
+| newPassword     | string | Yes                     | MinLength: 8, Must match regex: `^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)` | Mật khẩu mới. Phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số.                              |
 
 ### Password Requirements
 
@@ -60,6 +65,25 @@ Content-Type: application/json
 - Ít nhất một chữ hoa (A-Z)
 - Ít nhất một chữ thường (a-z)
 - Ít nhất một chữ số (0-9)
+- Regex validation: `^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)`
+
+### Business Logic
+
+1. **Find user**: Tìm user bằng userId từ JWT token
+2. **Check if user has password**:
+   - Nếu `user.password !== null` → User đã có password
+   - Nếu `user.password === null` → User chưa có password (Google-only account)
+3. **Validate current password** (nếu user đã có password):
+   - Check `currentPassword` được cung cấp
+   - Verify bằng `bcrypt.compare()`
+   - Throw error nếu không match
+4. **Allow password setting** (nếu user chưa có password):
+   - Không cần `currentPassword`
+   - Cho phép set password lần đầu
+5. **Hash new password**: Sử dụng `bcrypt.hash()` với 12 salt rounds
+6. **Update database**: Lưu hashed password vào `user.password`
+7. **Invalidate all sessions**: Xóa tất cả sessions của user để security
+8. **Return success**: User phải login lại với password mới
 
 ---
 
@@ -91,9 +115,13 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
 }
 ```
 
+**Note**: Response data luôn là `null`. Không trả về thông tin user hay password.
+
 ### Error Responses
 
 **400 Bad Request - Yêu cầu mật khẩu hiện tại**
+
+Trả về khi user đã có password nhưng không cung cấp `currentPassword`.
 
 ```json
 {
@@ -108,6 +136,8 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
 
 **401 Unauthorized - Mật khẩu hiện tại không đúng**
 
+Trả về khi `currentPassword` không match với password đã lưu trong database.
+
 ```json
 {
   "success": false,
@@ -121,6 +151,8 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
 
 **401 Unauthorized - Không tìm thấy người dùng**
 
+Trả về khi userId từ JWT token không tồn tại trong database (user bị xóa).
+
 ```json
 {
   "success": false,
@@ -133,6 +165,8 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
 ```
 
 **400 Bad Request - Mật khẩu không hợp lệ**
+
+Trả về khi `newPassword` không đáp ứng các yêu cầu validation.
 
 ```json
 {
@@ -154,6 +188,12 @@ Hoặc khi user Google đặt mật khẩu lần đầu:
   "path": "/users/password"
 }
 ```
+
+**Possible validation errors**:
+
+- `"New password is required"` - Thiếu newPassword
+- `"Password must be at least 8 characters long"` - Dưới 8 ký tự
+- `"Password must contain at least one uppercase letter, one lowercase letter, and one number"` - Không đủ yêu cầu
 
 **429 Too Many Requests - Vượt quá rate limit**
 
@@ -278,11 +318,70 @@ curl -X PUT http://localhost:3000/users/password \
 
 6. **Người dùng Google OAuth**: Người dùng đăng nhập bằng Google mà chưa có mật khẩu có thể đặt mật khẩu mà không cần mật khẩu hiện tại, cho phép họ sử dụng đăng nhập email/password trong tương lai.
 
+7. **JWT Token Required**: Endpoint yêu cầu valid access token để identify user. Token có thể được gửi qua Authorization header hoặc cookie.
+
+---
+
+## Common Errors and Solutions
+
+### Error: "Current password is required"
+
+**Cause**: User đã có password nhưng không cung cấp `currentPassword`
+
+**Solution**:
+
+- Check `user.hasPassword` flag từ profile API
+- Nếu `true`, require current password field
+- Validate trước khi submit
+
+### Error: "Current password is incorrect"
+
+**Cause**: User nhập sai current password
+
+**Solution**:
+
+- Show clear error message
+- Allow retry (trong rate limit)
+- Suggest "Forgot Password" nếu user không nhớ
+
+### Error: Rate limit exceeded
+
+**Cause**: Quá 5 attempts trong 1 giờ
+
+**Solution**:
+
+- Show remaining time cho user
+- Implement exponential backoff
+- Consider using forgot password flow instead
+
+### Error: Validation failed
+
+**Cause**: New password không meet requirements
+
+**Solution**:
+
+- Show real-time validation
+- Highlight which requirements are missing
+- Provide clear password rules upfront
+
+---
+
+## Related Endpoints
+
+- **GET /users/me**: Get user profile (includes `hasPassword` flag)
+- **POST /auth/forgot-password**: Reset password via email (alternative to change password)
+- **GET /users/sessions**: View active sessions
+- **DELETE /users/sessions**: Logout all devices (similar effect to password change)
+
 ---
 
 ## Notes
 
-- **QUAN TRỌNG**: Sau khi đổi mật khẩu thành công, TẤT CẢ các phiên đăng nhập trên mọi thiết bị sẽ bị xóa để đảm bảo bảo mật.
+- **QUAN TRỌNG**: Sau khi đổi mật khẩu thành công, TẤT CẢ các phiên đăng nhập trên mọi thiết bị sẽ bị xóa để đảm bảo bảo mật (gọi `prisma.session.deleteMany({ where: { userId } })`).
 - Người dùng sẽ cần đăng nhập lại bằng mật khẩu mới trên tất cả thiết bị.
 - Hành vi này giống với endpoint `POST /auth/reset-password` để đảm bảo tính nhất quán về bảo mật.
-- Validation mật khẩu tuân theo các quy tắc giống như đăng ký.
+- Validation mật khẩu tuân theo các quy tắc giống như đăng ký (MinLength: 8, Regex: uppercase + lowercase + number).
+- **Google OAuth Users**: Có thể set password lần đầu mà không cần current password. Sau đó có thể login bằng cả Google VÀ email/password.
+- **Dual Login Method**: Sau khi Google user set password, họ có 2 options: login bằng Google OAuth hoặc email/password.
+- Rate limit: 5 attempts per hour (3600000ms) để prevent brute force.
+- Password được hash bằng bcrypt với 12 salt rounds trước khi lưu database.

@@ -40,9 +40,9 @@ Tài liệu này hướng dẫn cách lấy các biến môi trường cần thi
   - URL production callback của bạn
 - Click "Create"
 
-**Bước 6: Lấy credentials**
+**Bước 5: Lấy credentials**
 
-- Sau khi tạo xong, một popup sẽ hiện ra với:
+- Sau khi tạo xong, một popup sẽ hiển thị với:
   - **Client ID** → Sao chép và dán vào `GOOGLE_CLIENT_ID`
   - **Client Secret** → Sao chép và dán vào `GOOGLE_CLIENT_SECRET`
 - Bạn cũng có thể xem lại credentials này bất cứ lúc nào trong "Credentials" tab
@@ -179,8 +179,8 @@ Cổng SMTP server.
 
 **Các port phổ biến:**
 
-- `587`: TLS/STARTTLS (khuyến nghị)
-- `465`: SSL
+- `587`: TLS/STARTTLS (khuyến nghị) - sử dụng `secure: false` trong config
+- `465`: SSL - sử dụng `secure: true` trong config
 - `25`: Không mã hóa (không khuyến nghị)
 
 **Ví dụ:**
@@ -188,6 +188,12 @@ Cổng SMTP server.
 ```
 MAIL_PORT=587
 ```
+
+**Lưu ý:**
+
+- Port 587 là lựa chọn tốt nhất cho hầu hết các trường hợp
+- Code hiện tại dùng `secure: false` nên phù hợp với port 587
+- Nếu muốn dùng port 465, cần thay đổi `secure: true` trong `mail.module.ts`
 
 ### MAIL_USER
 
@@ -261,7 +267,9 @@ MAIL_FROM="noreply@mimkat.com"
 
 ### APP_URL
 
-URL của ứng dụng, dùng để tạo các link trong email (reset password, verify email, v.v.)
+URL của backend API, dùng làm base URL cho các operations backend.
+
+**Lưu ý:** Biến này hiện không được sử dụng trong code, nhưng có thể cần cho future features.
 
 **Ví dụ:**
 
@@ -353,7 +361,11 @@ NODE_ENV="development"
 
 ### FRONTEND_URL
 
-URL của ứng dụng frontend, dùng để tạo các link redirect từ email hoặc API.
+URL của ứng dụng frontend, **cực kỳ quan trọng** vì được sử dụng để:
+
+- Tạo verification email link (`/auth/verify-email?token=...`)
+- Tạo password reset link (`/auth/reset-password?token=...`)
+- Redirect sau Google OAuth callback
 
 **Ví dụ:**
 
@@ -367,9 +379,15 @@ FRONTEND_URL="https://app.mimkat.com"
 
 **Lưu ý:**
 
-- URL này thường khác với APP_URL (backend)
-- Được sử dụng để redirect người dùng từ email về trang frontend
+- URL này phải trỏ đến frontend app (Next.js client)
+- **Khác với backend API URL** (backend chạy ở port 3000, frontend ở 3001)
 - Không có dấu `/` ở cuối URL
+- Nếu sai, verification links và reset password links sẽ không work
+
+**Sự khác biệt giữa APP_URL và FRONTEND_URL:**
+
+- `APP_URL`: Backend API URL (hiện không dùng trong code)
+- `FRONTEND_URL`: Frontend client URL (được dùng trong emails và OAuth callback)
 
 ---
 
@@ -411,7 +429,236 @@ FRONTEND_URL="http://localhost:3001"
 
 **Lưu ý quan trọng:**
 
-- File `.env` chứa thông tin nhạy cảm, không commit lên Git
+- File `.env` chứa thông tin nhạy cảm, **KHÔNG BAO GIỜ commit lên Git**
 - Đảm bảo `.env` đã được thêm vào `.gitignore`
 - Sử dụng file `.env.example` để chia sẻ template với team
 - Mỗi môi trường (dev, staging, production) nên có file `.env` riêng với các giá trị khác nhau
+
+---
+
+## Troubleshooting - Các lỗi thường gặp
+
+**Lưu ý quan trọng:**
+
+- File `.env` chứa thông tin nhạy cảm, **KHÔNG BAO GIỜ commit lên Git**
+- Đảm bảo `.env` đã được thêm vào `.gitignore`
+- Sử dụng file `.env.example` để chia sẻ template với team
+- Mỗi môi trường (dev, staging, production) nên có file `.env` riêng với các giá trị khác nhau
+
+---
+
+## Troubleshooting - Các lỗi thường gặp
+
+### 1. Lỗi Database Connection
+
+**Lỗi:** `Error: Can't reach database server`
+
+**Nguyên nhân:**
+
+- PostgreSQL chưa chạy
+- DATABASE_URL sai format
+- Port/host/credentials không đúng
+
+**Giải pháp:**
+
+```bash
+# Kiểm tra PostgreSQL đang chạy
+# macOS
+brew services list
+
+# Hoặc
+ps aux | grep postgres
+
+# Start PostgreSQL nếu chưa chạy
+brew services start postgresql
+
+# Test connection
+psql -U postgres -d mimkat
+```
+
+### 2. Google OAuth không work
+
+**Lỗi:** `Redirect URI mismatch` hoặc không redirect về
+
+**Nguyên nhân:**
+
+- GOOGLE_CALLBACK_URL không match với "Authorized redirect URIs" trong Google Console
+- FRONTEND_URL sai
+
+**Giải pháp:**
+
+- Kiểm tra GOOGLE_CALLBACK_URL phải giống y hệt trong Google Console
+- Đảm bảo FRONTEND_URL chính xác (không có `/` cuối)
+- Re-check Google Client ID và Secret
+
+### 3. Email không gửi được
+
+**Lỗi:** `Failed to send verification email`
+
+**Nguyên nhân:**
+
+- Gmail App Password sai
+- Chưa bật 2FA
+- SMTP config sai
+
+**Giải pháp:**
+
+```bash
+# Test SMTP connection
+curl smtp://smtp.gmail.com:587 --user "your-email@gmail.com:app-password" -v
+
+# Kiểm tra:
+# 1. Đã bật 2FA chưa?
+# 2. App Password có đúng không? (16 ký tự, không spaces)
+# 3. MAIL_PORT=587 và secure: false
+```
+
+### 4. CORS Error trong browser
+
+**Lỗi:** `Access to fetch at ... has been blocked by CORS policy`
+
+**Nguyên nhân:**
+
+- CORS_ORIGIN không include frontend URL
+- Format sai (thiếu protocol http:// hoặc có `/` cuối)
+
+**Giải pháp:**
+
+```env
+# Đảm bảo format đúng
+CORS_ORIGIN="http://localhost:3001, http://localhost:3002"
+
+# Không được:
+# - Thiếu protocol: "localhost:3001"
+# - Có slash cuối: "http://localhost:3001/"
+# - Sai separator: "http://localhost:3001,http://localhost:3002" (thiếu space)
+```
+
+### 5. JWT Token không work
+
+**Lỗi:** `Unauthorized` hoặc token invalid
+
+**Nguyên nhân:**
+
+- JWT_SECRET hoặc JWT_REFRESH_SECRET chưa set
+- Secret quá ngắn
+- Hai secrets giống nhau
+
+**Giải pháp:**
+
+```bash
+# Generate proper secrets
+openssl rand -base64 32  # For JWT_SECRET
+openssl rand -base64 32  # For JWT_REFRESH_SECRET (khác với trên)
+
+# Đảm bảo:
+# - Mỗi secret >= 32 characters
+# - JWT_SECRET ≠ JWT_REFRESH_SECRET
+```
+
+### 6. Verification/Reset links không work
+
+**Lỗi:** Link trong email redirect sai trang hoặc 404
+
+**Nguyên nhân:**
+
+- FRONTEND_URL sai
+- Frontend routes chưa setup
+
+**Giải pháp:**
+
+```env
+# Development
+FRONTEND_URL="http://localhost:3001"  # Port của Next.js app
+
+# Production
+FRONTEND_URL="https://app.mimkat.com"  # Domain của frontend
+
+# Đảm bảo frontend có routes:
+# - /auth/verify-email
+# - /auth/reset-password
+# - /auth/callback (cho Google OAuth)
+```
+
+### 7. Port already in use
+
+**Lỗi:** `Error: listen EADDRINUSE: address already in use :::3000`
+
+**Nguyên nhân:** Port 3000 đã được process khác sử dụng
+
+**Giải pháp:**
+
+```bash
+# Tìm process đang dùng port 3000
+lsof -i :3000
+
+# Kill process
+kill -9 <PID>
+
+# Hoặc đổi PORT trong .env
+PORT=3001
+```
+
+### 8. Environment variables không load
+
+**Lỗi:** `undefined` khi access `process.env.XXX`
+
+**Nguyên nhân:**
+
+- File `.env` không ở root folder
+- Chưa install `@nestjs/config`
+- Chưa import ConfigModule
+
+**Giải pháp:**
+
+```bash
+# Kiểm tra file .env ở đúng vị trí
+ls -la .env
+
+# Restart server
+npm run start:dev
+
+# Verify variables loaded
+# Trong code, log ra xem:
+console.log(process.env.JWT_SECRET);
+```
+
+### 9. Database migration lỗi
+
+**Lỗi:** `Prisma migration failed`
+
+**Nguyên nhân:**
+
+- DATABASE_URL chưa đúng
+- Database chưa được tạo
+
+**Giải pháp:**
+
+```bash
+# Tạo database trước
+psql -U postgres
+CREATE DATABASE mimkat;
+\q
+
+# Run migration
+npx prisma migrate dev
+
+# Hoặc reset database
+npx prisma migrate reset
+```
+
+### 10. Production deployment issues
+
+**Lỗi:** Works local nhưng không work khi deploy
+
+**Giải pháp checklist:**
+
+- [ ] Tất cả env variables đã set trên production server
+- [ ] NODE_ENV="production"
+- [ ] CORS_ORIGIN có production domain
+- [ ] FRONTEND_URL trỏ đến production frontend
+- [ ] Google OAuth callback URL có production URL
+- [ ] Database accessible từ production server
+- [ ] Cookies `secure: true` requires HTTPS
+
+---

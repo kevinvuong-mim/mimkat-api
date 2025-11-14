@@ -18,6 +18,8 @@ Xác thực email của người dùng thông qua token được gửi qua email
 
 **Authentication**: Không yêu cầu (Public)
 
+**Rate Limit**: Không giới hạn (vì đây là one-time link từ email)
+
 #### Query Parameters
 
 | Parameter | Type   | Required | Description                            |
@@ -68,11 +70,21 @@ curl -X GET "http://localhost:3000/verification/email?token=YOUR_VERIFICATION_TO
 
 #### Notes
 
-- Token được tạo bằng `crypto.randomBytes(32).toString('hex')` (64 ký tự)
-- Token được hash bằng bcrypt trước khi lưu vào database
-- Token có hiệu lực 48 giờ
-- Sau khi xác thực thành công, token sẽ bị xóa khỏi database
-- Email đã xác thực không thể xác thực lại
+- Token được tạo bằng `crypto.randomBytes(32).toString('hex')` (64 ký tự hex)
+- Token được hash bằng bcrypt (10 salt rounds) trước khi lưu vào database
+- Token có hiệu lực 48 giờ (2880 phút)
+- Sau khi xác thực thành công, `isEmailVerified = true` và token bị xóa (`verificationToken = null`, `verificationTokenExpiry = null`)
+- Email đã xác thực không thể xác thực lại (check `isEmailVerified = false` trong query)
+- **Security**: Backend loop qua tất cả unverified users để compare token bằng bcrypt (không thể query directly vì token được hash)
+
+### Business Logic
+
+1. **Query unverified users**: Tìm tất cả users có `isEmailVerified = false` và `verificationTokenExpiry >= now`
+2. **Loop and compare**: Với mỗi user, dùng `bcrypt.compare(token, user.verificationToken)` để check
+3. **Find match**: Nếu tìm thấy matching user, lưu `matchedUserId`
+4. **Validate**: Nếu không tìm thấy match → throw "Invalid or expired verification token"
+5. **Update user**: Set `isEmailVerified = true`, clear `verificationToken` và `verificationTokenExpiry`
+6. **Return success**: User có thể login ngay
 
 ---
 
@@ -82,7 +94,7 @@ Gửi lại email xác thực cho người dùng chưa xác thực email. Tạo 
 
 **Endpoint**: `POST /verification/resend`
 
-**Rate Limit**: 3 requests / 1 giờ
+**Rate Limit**: 3 requests / 1 giờ (3600 seconds)
 
 **Authentication**: Không yêu cầu (Public)
 
@@ -167,9 +179,23 @@ curl -X POST http://localhost:3000/verification/resend \
 #### Notes
 
 - Tạo token mới mỗi lần gửi lại (token cũ bị thay thế)
-- Token mới có hiệu lực 48 giờ
-- Rate limit ngăn spam email
-- Nếu gửi email thất bại, không ném lỗi nhưng sẽ log error
+- Token mới có hiệu lực 48 giờ từ thời điểm tạo
+- Rate limit (3 requests/hour) ngăn spam email
+- Nếu gửi email thất bại, throw exception (không silent fail như register)
+- Response luôn trả về success để không reveal user existence (security)
+- Token được hash với bcrypt 10 salt rounds trước khi lưu
+
+### Business Logic
+
+1. **Find user**: Query user bằng email
+2. **Check exists**: Nếu không tồn tại → throw "User not found"
+3. **Check verified**: Nếu `isEmailVerified = true` → throw "Email is already verified"
+4. **Generate token**: Tạo random 32-byte token (64 hex chars)
+5. **Hash token**: Hash bằng bcrypt với 10 salt rounds
+6. **Set expiry**: 48 hours from now
+7. **Update database**: Lưu hashed token và expiry
+8. **Send email**: Gửi verification email với plain token
+9. **Return success**: Response không chứa token vì security
 
 ---
 
@@ -258,3 +284,159 @@ const hashedToken = await bcrypt.hash(verificationToken, 10);
   "path": "/verification/resend"
 }
 ```
+
+---
+
+## Email Template
+
+### Verification Email Content
+
+**Subject**: "Verify Your Email Address"
+
+**Email Body** (simplified):
+
+```
+Hi there,
+
+Thanks for signing up! Please verify your email address by clicking the link below:
+
+{FRONTEND_URL}/verify-email?token={VERIFICATION_TOKEN}
+
+This link will expire in 48 hours.
+
+If you didn't create an account, you can safely ignore this email.
+
+Thanks,
+The Team
+```
+
+**Variables**:
+
+- `{FRONTEND_URL}`: From `process.env.FRONTEND_URL`
+- `{VERIFICATION_TOKEN}`: 64-character hex string (plain text, not hashed)
+
+---
+
+## Use Cases
+
+### Use Case 1: Normal Registration Flow
+
+1. User đăng ký với email + password
+2. Backend tạo user với `isEmailVerified = false`
+3. Backend gửi verification email với token
+4. User nhận email và click link
+5. Frontend extract token và call `/verification/email?token=...`
+6. Backend verify token → set `isEmailVerified = true`
+7. User được redirect đến login page
+8. User có thể login thành công
+
+---
+
+### Use Case 2: Token Expired
+
+1. User đăng ký nhưng không verify trong 48 giờ
+2. User click verification link
+3. Backend check: token expired
+4. Return error "Invalid or expired verification token"
+5. Frontend hiển thị error với "Resend" button
+6. User click "Resend Verification Email"
+7. Frontend call `POST /verification/resend`
+8. Backend tạo token mới và gửi email
+9. User nhận email mới và verify thành công
+
+---
+
+### Use Case 3: Tried Login Without Verification
+
+1. User đăng ký nhưng skip email verification
+2. User cố gắng login
+3. Backend check: `isEmailVerified = false`
+4. Return error "Please verify your email address before logging in"
+5. Frontend show verification prompt với email address
+6. User click "Resend Verification Email"
+7. Call resend endpoint
+8. User verify email và login thành công
+
+---
+
+### Use Case 4: Lost Verification Email
+
+1. User đăng ký nhưng không tìm thấy verification email
+2. User vào resend verification page
+3. Nhập email address
+4. Call `POST /verification/resend`
+5. Check spam folder
+6. Receive new email và verify
+
+---
+
+## Troubleshooting
+
+### Problem: Verification email không đến
+
+**Causes**:
+
+- Email trong spam folder
+- Email service down
+- Invalid email address
+- Email sending failed
+
+**Solutions**:
+
+- Check spam/junk folder
+- Use resend verification
+- Verify email address correct
+- Check server logs cho email errors
+
+### Problem: Token không work
+
+**Causes**:
+
+- Token expired (> 48h)
+- Token đã được sử dụng
+- Token incorrect (copy/paste error)
+- User đã verified
+
+**Solutions**:
+
+- Use resend verification để get new token
+- Check token trong URL (không có extra spaces/characters)
+- Verify user chưa verified
+
+### Problem: "Email is already verified"
+
+**Cause**: User đã verify nhưng cố verify lại
+
+**Solution**: User có thể login trực tiếp, không cần verify lại
+
+### Problem: Rate limit exceeded
+
+**Cause**: Resend quá 3 lần trong 1 giờ
+
+**Solution**:
+
+- Đợi 1 giờ
+- Check spam folder thay vì resend
+- Contact support nếu cần
+
+---
+
+## Related Endpoints
+
+- **POST /auth/register**: Tạo user và gửi verification email tự động
+- **POST /auth/login**: Check `isEmailVerified` trước khi cho phép login
+- **GET /users/me**: Return `isEmailVerified` status
+
+---
+
+## Notes
+
+- **Automatic Sending**: Verification email được gửi tự động sau register
+- **Required for Login**: User phải verify email trước khi login
+- **Token Format**: 64 hex characters (32 bytes random)
+- **Token Storage**: Hashed với bcrypt 10 salt rounds
+- **Expiry**: 48 hours from creation
+- **Security**: Token rotation (mỗi lần resend tạo token mới)
+- **Performance**: Loop through users để compare (có thể optimize bằng index hoặc alternative approach)
+- **Email Service**: Sử dụng MailService (Nodemailer hoặc SendGrid)
+- **Error Handling**: Some errors không reveal user existence để security

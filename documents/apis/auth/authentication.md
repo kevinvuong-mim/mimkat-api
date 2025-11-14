@@ -2,9 +2,27 @@
 
 ## Overview
 
-API xác thực người dùng, hỗ trợ cả Bearer tokens và HttpOnly cookies.
+API xác thực người dùng, hỗ trợ cả Bearer tokens và HttpOnly cookies. Hệ thống hỗ trợ 2 phương thức đăng nhập:
+
+1. **Email/Password Authentication**: Đăng ký với email và password, yêu cầu xác thực email
+2. **Google OAuth 2.0**: Đăng nhập nhanh bằng tài khoản Google, tự động verify email
 
 **Base URL**: `/auth`
+
+**Authentication Methods**:
+
+- Web Applications: HttpOnly Cookies (tự động, secure hơn)
+- Mobile/API Clients: Bearer Token trong Authorization header
+
+**Security Features**:
+
+- Bcrypt password hashing (12 rounds)
+- JWT tokens (HS256)
+- Token rotation on refresh
+- Session management với device tracking
+- Rate limiting
+- HttpOnly cookies với SameSite=Strict
+- Maximum 5 concurrent sessions per user
 
 ---
 
@@ -12,11 +30,11 @@ API xác thực người dùng, hỗ trợ cả Bearer tokens và HttpOnly cooki
 
 ### 1. Register (Đăng ký)
 
-Tạo tài khoản người dùng mới với email và mật khẩu. Sau khi đăng ký thành công, hệ thống sẽ gửi email xác thực đến địa chỉ email đã đăng ký.
+Tạo tài khoản người dùng mới với email và mật khẩu. Sau khi đăng ký thành công, hệ thống sẽ gửi email xác thực đến địa chỉ email đã đăng ký. Người dùng phải xác thực email trước khi có thể đăng nhập.
 
 **Endpoint**: `POST /auth/register`
 
-**Rate Limit**: 5 requests / 15 phút
+**Rate Limit**: 5 requests / 15 phút (900 seconds)
 
 **Authentication**: Không yêu cầu (Public)
 
@@ -120,18 +138,19 @@ curl -X POST http://localhost:3000/auth/register \
 
 - Mật khẩu được hash bằng bcrypt với salt rounds = 12
 - Token xác thực email có hiệu lực 48 giờ
-- Email xác thực được gửi tự động sau khi đăng ký
-- Người dùng cần xác thực email trước khi có thể đăng nhập
+- Email xác thực được gửi tự động sau khi đăng ký (nếu gửi thất bại, user vẫn được tạo)
+- Người dùng **bắt buộc** phải xác thực email trước khi có thể đăng nhập
+- Token xác thực cũng được hash bằng bcrypt (salt rounds = 10) trước khi lưu vào database
 
 ---
 
 ### 2. Login (Đăng nhập)
 
-Đăng nhập vào hệ thống với email và password. Tự động set cookies và trả về tokens.
+Đăng nhập vào hệ thống với email và password. Tự động set cookies và trả về tokens trong response body.
 
 **Endpoint**: `POST /auth/login`
 
-**Rate Limit**: 10 requests / 15 phút
+**Rate Limit**: 10 requests / 15 phút (900 seconds)
 
 **Authentication**: Không yêu cầu (Public)
 
@@ -170,8 +189,8 @@ curl -X POST http://localhost:3000/auth/register \
 **Response Headers (Set-Cookie)**:
 
 ```
-Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
-Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
+Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600; Path=/
+Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/
 ```
 
 | Field        | Type   | Description                                       |
@@ -269,33 +288,6 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 }
 ```
 
-#### Authentication Methods
-
-**Method 1: Using Response Tokens (Mobile/API)**
-
-```javascript
-// Store tokens from response
-const { accessToken, refreshToken } = response.data;
-localStorage.setItem('accessToken', accessToken);
-localStorage.setItem('refreshToken', refreshToken);
-
-// Use in subsequent requests
-fetch('/api/protected', {
-  headers: {
-    Authorization: `Bearer ${accessToken}`,
-  },
-});
-```
-
-**Method 2: Using Cookies (Web)**
-
-```javascript
-// Cookies are automatically set by browser
-fetch('/api/protected', {
-  credentials: 'include', // Include cookies
-});
-```
-
 #### cURL Examples
 
 **With response tokens:**
@@ -325,11 +317,13 @@ curl -X POST http://localhost:3000/auth/login \
 
 - **Dual Authentication Support**: Response tokens + HttpOnly cookies
 - **Web Apps**: Sử dụng cookies (secure hơn, tự động gửi)
-- **Mobile/APIs**: Sử dụng Authorization header
+- **Mobile/APIs**: Sử dụng Authorization header với tokens từ response body
+- **Secure Cookie**: Chỉ được bật trong production mode (NODE_ENV=production)
 - Hệ thống tự động thu thập thông tin thiết bị từ request headers
-- Mỗi người dùng có giới hạn số phiên đăng nhập đồng thời
-- Khi vượt quá giới hạn, phiên cũ nhất sẽ tự động bị đăng xuất
+- Mỗi người dùng có giới hạn **5 phiên đăng nhập đồng thời** (MAX_CONCURRENT_SESSIONS)
+- Khi vượt quá giới hạn, phiên cũ nhất (theo lastUsedAt) sẽ tự động bị đăng xuất
 - AccessToken: 1 giờ, RefreshToken: 7 ngày
+- Password được verify bằng bcrypt.compare()
 
 ---
 
@@ -377,8 +371,8 @@ Authorization: Bearer {accessToken}
 **Response Headers (Clear cookies)**:
 
 ```
-Set-Cookie: accessToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT
-Set-Cookie: refreshToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+Set-Cookie: accessToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
+Set-Cookie: refreshToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
 ```
 
 **Error Responses**
@@ -446,11 +440,12 @@ curl -X POST http://localhost:3000/auth/logout \
 
 #### Notes
 
-- **Cookie Method**: Refresh token tự động lấy từ cookie
+- **Cookie Method**: Refresh token tự động lấy từ cookie nếu không có trong body
 - **Token Method**: Cần truyền refresh token trong body
-- Chỉ xóa phiên đăng nhập của thiết bị hiện tại
+- Chỉ xóa phiên đăng nhập của thiết bị hiện tại (dựa vào refresh token)
 - Các thiết bị khác vẫn giữ phiên đăng nhập
-- Cookies tự động được clear
+- Cookies tự động được clear (cả accessToken và refreshToken)
+- Session record được xóa khỏi database
 
 ---
 
@@ -495,8 +490,8 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 **Response Headers (Set new cookies)**:
 
 ```
-Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
-Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
+Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600; Path=/
+Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/
 ```
 
 | Field        | Type   | Description                                    |
@@ -569,10 +564,12 @@ curl -X POST http://localhost:3000/auth/refresh \
 #### Notes
 
 - **Hybrid Support**: Lấy refresh token từ cookie trước, fallback sang body
-- **Token Rotation**: Mỗi lần refresh, token cũ sẽ bị xóa và tạo token mới
+- **Token Rotation**: Mỗi lần refresh, token cũ sẽ bị xóa và tạo token mới (security best practice)
 - **Cookie Update**: Tự động set cookies mới cho web clients
-- **Response Tokens**: Vẫn trả về tokens trong response body
-- Thông tin thiết bị được giữ nguyên từ phiên cũ
+- **Response Tokens**: Vẫn trả về tokens trong response body cho mobile/API clients
+- Thông tin thiết bị được giữ nguyên từ phiên cũ (nếu không có deviceInfo mới)
+- Token cũ được verify với JWT và database trước khi refresh
+- Session cũ được xóa, session mới được tạo với expiresAt mới
 - AccessToken mới: 1 giờ, RefreshToken mới: 7 ngày
 
 ---
@@ -622,27 +619,59 @@ curl -X POST http://localhost:3000/auth/refresh \
 | POST /refresh  | Không giới hạn        |
 | POST /logout   | Không giới hạn        |
 
+**Note**: TTL = 900000ms (15 phút = 900 seconds)
+
 ### CORS Configuration
 
 - **Credentials**: `true` (cho phép cookies cross-origin)
-- **Origins**: Cấu hình qua `CORS_ORIGIN` environment variable
-- **Headers**: `Content-Type`, `Authorization`, `X-Client-Type`
+- **Origins**: Cấu hình qua `CORS_ORIGIN` environment variable (phải match chính xác)
+- **Allowed Headers**: `Content-Type`, `Authorization`, `X-Client-Type`
+- **Methods**: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`
+
+### Cookie Configuration
+
+- **HttpOnly**: `true` (không thể truy cập qua JavaScript)
+- **Secure**: `true` trong production (chỉ gửi qua HTTPS)
+- **SameSite**: `strict` (bảo vệ CSRF)
+- **Path**: `/` (available cho tất cả routes)
+- **Domain**: Không set (default to current domain)
 
 ### Session Management
 
-- Số phiên đăng nhập đồng thời tối đa: Cấu hình trong `AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS`
-- Khi vượt quá giới hạn: Tự động đăng xuất phiên cũ nhất
-- Thông tin lưu trữ:
-  - Device name (tên thiết bị)
-  - Device type (loại thiết bị: Desktop, Mobile, Tablet)
-  - IP address
-  - User agent
+- **Số phiên đăng nhập đồng thời tối đa**: 5 sessions (AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS)
+- **Khi vượt quá giới hạn**: Tự động đăng xuất phiên cũ nhất (dựa theo `lastUsedAt` field)
+- **Thông tin lưu trữ trong Session table**:
+  - `refreshToken`: JWT refresh token (unique, indexed)
+  - `userId`: User ID (foreign key)
+  - `expiresAt`: Thời gian hết hạn của session
+  - `deviceName`: Tên thiết bị (extracted from User-Agent)
+  - `deviceType`: Loại thiết bị (Desktop, Mobile, Tablet)
+  - `ipAddress`: IP address của request
+  - `userAgent`: Full User-Agent string
+  - `lastUsedAt`: Timestamp lần cuối sử dụng token
+  - `createdAt`: Timestamp tạo session
+- **Session Cleanup**: Tự động xóa sessions hết hạn khi refresh token
 
 ### JWT Strategy
 
-- **Token Sources**: Authorization header OR cookies
+- **Token Sources**: Authorization header (`Bearer {token}`) OR cookies (`accessToken`)
 - **Priority**: Header token được ưu tiên trước, fallback về cookie
-- **Validation**: Verify signature + check user exists & active
+- **Validation Steps**:
+  1. Extract token từ header hoặc cookie
+  2. Verify JWT signature với `JWT_SECRET`
+  3. Check token expiration
+  4. Validate payload structure (must have `sub` field)
+  5. Find user by ID từ payload
+  6. Check user exists và `isActive = true`
+- **Payload Structure**:
+  ```json
+  {
+    "sub": "user-id-uuid",
+    "iat": 1699286400,
+    "exp": 1699290000
+  }
+  ```
+- **Guards**: `JwtAuthGuard` sử dụng strategy này để protect routes
 
 ---
 
@@ -657,3 +686,37 @@ curl -X POST http://localhost:3000/auth/refresh \
 | 409         | Conflict - Resource already exists               |
 | 429         | Too Many Requests - Rate limit exceeded          |
 | 500         | Internal Server Error - Server error             |
+
+---
+
+## Troubleshooting
+
+### "Invalid email or password"
+
+- Check email and password are correct
+- Ensure email is verified (check `isEmailVerified` status)
+- Check if account uses password login (not Google-only)
+
+### "Account has been disabled"
+
+- Contact administrator to re-enable account
+- Check `isActive` field in database
+
+### "Refresh token has expired"
+
+- User needs to login again
+- Refresh tokens expire after 7 days of inactivity
+- Clear stored tokens and redirect to login
+
+### "Too many requests"
+
+- Wait 15 minutes before retrying
+- Register: 5 attempts limit
+- Login: 10 attempts limit
+
+### Cookies not being set
+
+- Check `CORS_ORIGIN` matches frontend URL exactly
+- Ensure `credentials: 'include'` in fetch/axios
+- Verify `NODE_ENV=production` for secure cookies in production
+- Check SameSite policy compatibility with your setup

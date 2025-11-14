@@ -15,12 +15,21 @@ API lấy thông tin profile đầy đủ của người dùng hiện tại dự
 Lấy thông tin profile đầy đủ của user đang đăng nhập, bao gồm `hasPassword` và `hasGoogleAuth` để xác định phương thức đăng nhập.
 
 **Endpoint**: `GET /users/me`
+
 **Authentication**: Required (Bearer Token hoặc Cookie)
+
+**Rate Limit**: Không giới hạn
 
 #### Headers
 
 ```
 Authorization: Bearer {accessToken}
+```
+
+**Or using cookies:**
+
+```
+Cookie: accessToken=<token>
 ```
 
 #### Response
@@ -52,19 +61,26 @@ Authorization: Bearer {accessToken}
 
 #### Response Schema
 
-| Field           | Type    | Description                             |
-| --------------- | ------- | --------------------------------------- |
-| id              | string  | User ID (CUID)                          |
-| email           | string  | Email address                           |
-| fullName        | string  | Tên đầy đủ của user (null nếu chưa set) |
-| username        | string  | Username (null nếu chưa set)            |
-| avatar          | string  | URL avatar (null nếu không có)          |
-| isActive        | boolean | Trạng thái tài khoản                    |
-| isEmailVerified | boolean | Email đã được xác thực chưa             |
-| hasPassword     | boolean | User có password được set hay không     |
-| hasGoogleAuth   | boolean | User có liên kết Google OAuth không     |
-| createdAt       | string  | Thời gian tạo tài khoản (ISO 8601)      |
-| updatedAt       | string  | Thời gian cập nhật cuối (ISO 8601)      |
+| Field           | Type         | Description                                                        |
+| --------------- | ------------ | ------------------------------------------------------------------ |
+| id              | string       | User ID (CUID format)                                              |
+| email           | string       | Email address (unique, required)                                   |
+| fullName        | string\|null | Tên đầy đủ của user (null nếu chưa set)                            |
+| username        | string\|null | Username (null nếu chưa set)                                       |
+| avatar          | string\|null | URL avatar (null nếu không có)                                     |
+| isActive        | boolean      | Trạng thái tài khoản (true = active, false = disabled)             |
+| isEmailVerified | boolean      | Email đã được xác thực chưa (true = verified)                      |
+| hasPassword     | boolean      | User có password được set hay không (computed from password field) |
+| hasGoogleAuth   | boolean      | User có liên kết Google OAuth không (computed from googleId field) |
+| createdAt       | string       | Thời gian tạo tài khoản (ISO 8601 format)                          |
+| updatedAt       | string       | Thời gian cập nhật cuối (ISO 8601 format)                          |
+
+**Important Notes**:
+
+- `hasPassword` = `!!user.password` - Boolean flag, không expose actual password
+- `hasGoogleAuth` = `!!user.googleId` - Indicates nếu Google account được linked
+- `fullName`, `username`, `avatar` có thể null nếu user chưa set
+- Response không bao gồm sensitive fields: `password`, `googleId`, `verificationToken`, etc.
 
 **Error Responses**
 
@@ -96,42 +112,112 @@ Authorization: Bearer {accessToken}
 
 #### cURL Example
 
+**Using Authorization header:**
+
 ```bash
 curl -X GET http://localhost:3000/users/me \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-#### Use Cases
+**Using cookies:**
 
-**Use Case 1: User đăng ký bằng email/password**
-
-```json
-{
-  "id": "clx123...",
-  "email": "user@example.com",
-  "hasPassword": true, // ← User cần nhập current password khi đổi
-  "hasGoogleAuth": false
-}
+```bash
+curl -X GET http://localhost:3000/users/me \
+  -b "accessToken=YOUR_TOKEN"
 ```
 
-**Use Case 2: User đăng nhập bằng Google (chưa set password)**
+---
 
-```json
-{
-  "id": "clx123...",
-  "email": "user@gmail.com",
-  "hasPassword": false, // ← User KHÔNG cần current password, có thể set lần đầu
-  "hasGoogleAuth": true
-}
-```
+## Business Logic
 
-**Use Case 3: User có cả 2 phương thức**
+1. **Extract userId**: Lấy userId từ JWT token payload (`sub` field)
+2. **Query database**: Tìm user với Prisma `findUnique({ where: { id: userId } })`
+3. **Check user exists**: Throw `UnauthorizedException` nếu user không tồn tại
+4. **Select fields**: Chỉ select các fields cần thiết (bao gồm `password` và `googleId` để check)
+5. **Compute flags**:
+   - `hasPassword = !!user.password`
+   - `hasGoogleAuth = !!user.googleId`
+6. **Return safe data**: Exclude sensitive fields, return computed flags
+7. **Auto-wrap response**: Response được wrap trong standard format bởi `ResponseInterceptor`
 
-```json
-{
-  "id": "clx123...",
-  "email": "user@gmail.com",
-  "hasPassword": true, // ← User cần nhập current password
-  "hasGoogleAuth": true
-}
-```
+---
+
+## Related Endpoints
+
+- **PUT /users/password**: Change password (uses `hasPassword` để decide logic)
+- **GET /users/sessions**: View active sessions
+- **POST /auth/login**: Login endpoint
+- **POST /auth/register**: Create account
+- **GET /auth/google**: Link Google account
+
+---
+
+## Troubleshooting
+
+### Problem: "User not found" error
+
+**Cause**:
+
+- User đã bị xóa từ database
+- Token chứa invalid userId
+
+**Solution**:
+
+- Logout user và redirect to login
+- Clear stored tokens
+- User cần đăng ký lại
+
+### Problem: Profile data không update
+
+**Cause**:
+
+- Frontend cache stale data
+- Không refetch sau updates
+
+**Solution**:
+
+- Call refetch() sau mỗi update
+- Implement cache invalidation
+- Use SWR or React Query cho auto-revalidation
+
+### Problem: Avatar không hiển thị
+
+**Cause**:
+
+- URL invalid hoặc expired
+- CORS issues
+- Google avatar URL expired
+
+**Solution**:
+
+- Check `user.avatar !== null`
+- Use fallback image
+- Handle image load errors:
+  ```typescript
+  <img
+    src={user.avatar}
+    onError={(e) => e.currentTarget.src = '/default-avatar.png'}
+  />
+  ```
+
+### Problem: `hasPassword` và `hasGoogleAuth` đều false
+
+**Cause**: Data inconsistency (không nên xảy ra)
+
+**Solution**:
+
+- Check database integrity
+- User cần reset hoặc set password
+- Contact support
+
+---
+
+## Notes
+
+- **Read-only endpoint**: Chỉ GET, không modify data
+- **No rate limiting**: Có thể call nhiều lần không giới hạn
+- **Automatic wrapping**: Response được wrap bởi `ResponseInterceptor`
+- **JWT required**: Không thể anonymous access
+- **User-specific**: Chỉ return data của user hiện tại, không thể xem profile người khác
+- **Computed fields**: `hasPassword` và `hasGoogleAuth` được compute runtime, không store trong DB
+- **Nullable fields**: `fullName`, `username`, `avatar` có thể null - handle gracefully in frontend
