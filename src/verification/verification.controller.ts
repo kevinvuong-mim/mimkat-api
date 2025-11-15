@@ -6,8 +6,10 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import type { Response } from 'express';
 import { VerificationService } from './verification.service';
 import { ForgotPasswordDto } from '@auth/dto/forgot-password.dto';
 import { ResetPasswordDto } from '@auth/dto/reset-password.dto';
@@ -44,10 +46,17 @@ export class VerificationController {
   @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 requests per 1 hour
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.verificationService.resetPassword(
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.verificationService.resetPassword(
       resetPasswordDto.token,
       resetPasswordDto.password,
     );
+
+    // Clear cookies
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
   }
 }

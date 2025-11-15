@@ -232,13 +232,15 @@ curl -X POST http://localhost:3000/verification/reset-password \
 4. **Hash New Password**: Hash password mới với bcrypt (12 salt rounds)
 5. **Update User**: Set `password` = new hash, clear `passwordResetToken` và `passwordResetTokenExpiry`
 6. **Invalidate Sessions**: Delete ALL sessions của user (`Session.deleteMany`)
-7. **Return**: Success (null data)
+7. **Clear Cookies**: Xóa accessToken và refreshToken cookies từ response
+8. **Return**: Success (null data)
 
 #### Notes
 
 - Sau khi đặt lại mật khẩu thành công:
   - Password cũ bị thay thế bằng password mới (hash bcrypt, salt rounds = 12)
   - **Tất cả sessions hiện tại bị xóa** (security measure)
+  - **Cookies bị xóa** (accessToken và refreshToken cleared từ response)
   - Token reset bị xóa khỏi database
   - User cần đăng nhập lại với mật khẩu mới
 - **Token Security**:
@@ -283,9 +285,13 @@ Sau khi đặt lại mật khẩu:
 await prisma.session.deleteMany({
   where: { userId: matchedUserId },
 });
+
+// Clear authentication cookies
+res.clearCookie('accessToken');
+res.clearCookie('refreshToken');
 ```
 
-**Rationale**: Ngăn attacker sử dụng sessions cũ nếu họ đã chiếm quyền truy cập
+**Rationale**: Ngăn attacker sử dụng sessions cũ nếu họ đã chiếm quyền truy cập và force logout ngay lập tức
 
 ---
 

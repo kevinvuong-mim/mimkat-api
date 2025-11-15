@@ -83,7 +83,8 @@ Content-Type: application/json
 5. **Hash new password**: Sử dụng `bcrypt.hash()` với 12 salt rounds
 6. **Update database**: Lưu hashed password vào `user.password`
 7. **Invalidate all sessions**: Xóa tất cả sessions của user để security
-8. **Return success**: User phải login lại với password mới
+8. **Clear cookies**: Xóa accessToken và refreshToken cookies từ response
+9. **Return success**: User phải login lại với password mới
 
 ---
 
@@ -314,11 +315,13 @@ curl -X PUT http://localhost:3000/users/password \
 
 4. **Yêu cầu Token**: Yêu cầu JWT access token hợp lệ, đảm bảo chỉ người dùng đã xác thực mới có thể đổi mật khẩu.
 
-5. **Vô hiệu hóa tất cả phiên**: Sau khi đổi mật khẩu, tất cả phiên đăng nhập trên mọi thiết bị sẽ bị xóa để bảo mật. Người dùng cần đăng nhập lại với mật khẩu mới.
+5. **Session Invalidation**: Đặt lại mật khẩu, tất cả phiên đăng nhập trên mọi thiết bị sẽ bị xóa để bảo mật. Người dùng cần đăng nhập lại với mật khẩu mới.
 
-6. **Người dùng Google OAuth**: Người dùng đăng nhập bằng Google mà chưa có mật khẩu có thể đặt mật khẩu mà không cần mật khẩu hiện tại, cho phép họ sử dụng đăng nhập email/password trong tương lai.
+6. **Cookie Clearing**: Sau khi thay đổi mật khẩu thành công, server sẽ clear accessToken và refreshToken cookies để force logout ngay lập tức trên browser hiện tại.
 
-7. **JWT Token Required**: Endpoint yêu cầu valid access token để identify user. Token có thể được gửi qua Authorization header hoặc cookie.
+7. **Người dùng Google OAuth**: Người dùng đăng nhập bằng Google mà chưa có mật khẩu có thể đặt mật khẩu mà không cần mật khẩu hiện tại, cho phép họ sử dụng đăng nhập email/password trong tương lai.
+
+8. **JWT Token Required**: Endpoint yêu cầu valid access token để identify user. Token có thể được gửi qua Authorization header hoặc cookie.
 
 ---
 
@@ -378,8 +381,9 @@ curl -X PUT http://localhost:3000/users/password \
 ## Notes
 
 - **QUAN TRỌNG**: Sau khi đổi mật khẩu thành công, TẤT CẢ các phiên đăng nhập trên mọi thiết bị sẽ bị xóa để đảm bảo bảo mật (gọi `prisma.session.deleteMany({ where: { userId } })`).
+- **Cookies Authentication**: accessToken và refreshToken cookies sẽ bị xóa khỏi response để force logout ngay lập tức.
 - Người dùng sẽ cần đăng nhập lại bằng mật khẩu mới trên tất cả thiết bị.
-- Hành vi này giống với endpoint `POST /auth/reset-password` để đảm bảo tính nhất quán về bảo mật.
+- Hành vi này giống với endpoint `POST /verification/reset-password` để đảm bảo tính nhất quán về bảo mật.
 - Validation mật khẩu tuân theo các quy tắc giống như đăng ký (MinLength: 8, Regex: uppercase + lowercase + number).
 - **Google OAuth Users**: Có thể set password lần đầu mà không cần current password. Sau đó có thể login bằng cả Google VÀ email/password.
 - **Dual Login Method**: Sau khi Google user set password, họ có 2 options: login bằng Google OAuth hoặc email/password.

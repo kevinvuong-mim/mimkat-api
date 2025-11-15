@@ -43,7 +43,7 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Req() req: Request,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
     const result = await this.authService.login(loginDto, deviceInfo);
@@ -64,7 +64,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    return res.json(result);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -74,7 +74,7 @@ export class AuthController {
     @CurrentUser() user: UserPayload,
     @Body() refreshTokenDto: RefreshTokenDto,
     @Req() req: Request,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ) {
     // Get refresh token from cookie if not provided in body
     const refreshToken =
@@ -85,8 +85,6 @@ export class AuthController {
     // Clear cookies
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
-
-    return res.json();
   }
 
   @Public()
@@ -95,7 +93,7 @@ export class AuthController {
   async refreshTokens(
     @Body() refreshTokenDto: RefreshTokenDto,
     @Req() req: Request,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ) {
     try {
       const deviceInfo = DeviceUtil.extractDeviceInfo(req);
@@ -125,7 +123,7 @@ export class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
-      return res.json(result);
+      return result;
     } catch (error) {
       // Clear invalid cookies
       res.clearCookie('accessToken');

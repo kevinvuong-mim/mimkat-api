@@ -8,8 +8,10 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Res,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import type { Response } from 'express';
 import { UserService } from './user.service';
 import { ChangePasswordDto } from '@auth/dto/change-password.dto';
 import {
@@ -36,12 +38,17 @@ export class UserController {
   async changePassword(
     @CurrentUser() user: UserPayload,
     @Body() changePasswordDto: ChangePasswordDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.userService.changePassword(
+    await this.userService.changePassword(
       user.id,
       changePasswordDto.currentPassword,
       changePasswordDto.newPassword,
     );
+
+    // Clear cookies
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
   }
 
   @Get('sessions')
