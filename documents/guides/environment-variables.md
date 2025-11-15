@@ -363,8 +363,8 @@ NODE_ENV="development"
 
 URL của ứng dụng frontend, **cực kỳ quan trọng** vì được sử dụng để:
 
-- Tạo verification email link (`/auth/verify-email?token=...`)
-- Tạo password reset link (`/auth/reset-password?token=...`)
+- Tạo verification email link (`/verify-email?token=...`)
+- Tạo password reset link (`/reset-password?token=...`)
 - Redirect sau Google OAuth callback
 
 **Ví dụ:**
@@ -575,9 +575,8 @@ FRONTEND_URL="http://localhost:3001"  # Port của Next.js app
 FRONTEND_URL="https://app.mimkat.com"  # Domain của frontend
 
 # Đảm bảo frontend có routes:
-# - /auth/verify-email
-# - /auth/reset-password
-# - /auth/callback (cho Google OAuth)
+# - /verify-email
+# - /reset-password
 ```
 
 ### 7. Port already in use

@@ -97,34 +97,42 @@ export class AuthController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const deviceInfo = DeviceUtil.extractDeviceInfo(req);
+    try {
+      const deviceInfo = DeviceUtil.extractDeviceInfo(req);
 
-    // Get refresh token from cookie if not provided in body
-    const refreshToken =
-      refreshTokenDto.refreshToken || req.cookies?.refreshToken;
+      // Get refresh token from cookie if not provided in body
+      const refreshToken =
+        refreshTokenDto.refreshToken || req.cookies?.refreshToken;
 
-    const result = await this.authService.refreshTokens(
-      refreshToken,
-      deviceInfo,
-    );
+      const result = await this.authService.refreshTokens(
+        refreshToken,
+        deviceInfo,
+      );
 
-    // Set new access token in httpOnly cookie
-    res.cookie('accessToken', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 1000, // 1 hour
-    });
+      // Set new access token in httpOnly cookie
+      res.cookie('accessToken', result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 1000, // 1 hour
+      });
 
-    // Set new refresh token in httpOnly cookie
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+      // Set new refresh token in httpOnly cookie
+      res.cookie('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
 
-    return res.json(result);
+      return res.json(result);
+    } catch (error) {
+      // Clear invalid cookies
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
+
+      throw error; // Re-throw để NestJS handle
+    }
   }
 
   @Public()

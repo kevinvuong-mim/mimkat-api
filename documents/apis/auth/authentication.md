@@ -537,6 +537,13 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 }
 ```
 
+**Response Headers (Clear cookies khi có lỗi)**:
+
+```
+Set-Cookie: accessToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
+Set-Cookie: refreshToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
+```
+
 #### cURL Examples
 
 **Using request body:**
@@ -565,8 +572,11 @@ curl -X POST http://localhost:3000/auth/refresh \
 - **Session Preservation**: Session ID được giữ nguyên khi refresh, chỉ update `refreshToken` và `lastUsedAt`
 - **Cookie Update**: Tự động set cookies mới cho web clients
 - **Response Tokens**: Vẫn trả về tokens trong response body cho mobile/API clients
-- Thông tin thiết bị được giữ nguyên hoặc cập nhật nếu có deviceInfo mới
-- Token cũ được verify với JWT và database trước khi refresh
+- **Device Info Update**: Thông tin thiết bị được cập nhật nếu có deviceInfo mới trong request
+- **Token Validation**: Token cũ được verify với cả JWT và database trước khi refresh
+- **Error Handling**: Khi có lỗi (invalid/expired token), cookies sẽ được tự động clear
+- **Expired Session Cleanup**: Session hết hạn được tự động xóa khỏi database
+- **Database First**: Check database trước, sau đó mới verify JWT signature
 - AccessToken mới: 1 giờ, RefreshToken mới: 7 ngày
 - Both new tokens contain the same `sessionId` as the old one
 
@@ -614,6 +624,18 @@ curl -X POST http://localhost:3000/auth/refresh \
 - Sử dụng để identify session hiện tại khi gọi API (VD: GET /users/sessions)
 - Không cần truyền refresh token riêng để xác định "current session"
 - Session ID được tạo khi login hoặc OAuth, và giữ nguyên khi refresh token
+
+**Refresh Token Validation Flow**:
+
+1. **Input Source**: Lấy refresh token từ cookie hoặc request body (cookie được ưu tiên)
+2. **Database Check**: Tìm session trong database dựa trên refresh token
+3. **Expiration Check**: Kiểm tra `expiresAt` field trong database
+4. **JWT Verification**: Verify JWT signature với `JWT_REFRESH_SECRET`
+5. **Token Generation**: Tạo cặp access/refresh token mới với cùng `sessionId`
+6. **Session Update**: Cập nhật session với refresh token mới và thông tin device
+7. **Cookie Setting**: Set cookies mới cho client (web browsers)
+8. **Response**: Trả về tokens trong response body (mobile/API clients)
+9. **Error Cleanup**: Nếu có lỗi, tự động clear cookies và xóa invalid sessions
 
 ---
 
