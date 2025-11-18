@@ -60,7 +60,6 @@ Endpoint này sẽ redirect người dùng đến Google OAuth consent screen. K
 - Sử dụng Passport Google OAuth 2.0 Strategy
 - Strategy name: `'google'`
 - Scope được request: `['email', 'profile']`
-- Không cần PKCE vì sử dụng client secret (server-side flow)
 
 ---
 

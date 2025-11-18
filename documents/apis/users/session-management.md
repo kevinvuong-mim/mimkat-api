@@ -489,7 +489,7 @@ Access Token và Refresh Token đều chứa:
 ```json
 {
   "sub": "userId", // User ID
-  "sessionId": "sessionId", // Session ID (NEW)
+  "sessionId": "sessionId", // Session ID
   "iat": 1699430400, // Issued at
   "exp": 1699434000 // Expiration
 }

@@ -287,8 +287,8 @@ await prisma.session.deleteMany({
 });
 
 // Clear authentication cookies
-res.clearCookie('accessToken');
-res.clearCookie('refreshToken');
+res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
+res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
 ```
 
 **Rationale**: Ngăn attacker sử dụng sessions cũ nếu họ đã chiếm quyền truy cập và force logout ngay lập tức

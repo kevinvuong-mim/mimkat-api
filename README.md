@@ -122,46 +122,112 @@ npm run format
 mimkat-api/
 ├── src/
 │   ├── auth/                                       # Authentication & Authorization Module
-│   │   ├── constants/                              # Auth constants (token expiration, etc.)
-│   │   ├── dto/                                    # Data Transfer Objects
-│   │   ├── guards/                                 # JWT & Google OAuth guards
-│   │   ├── strategies/                             # Passport strategies (JWT, Google)
-│   │   ├── auth.controller.ts                      # Auth endpoints (login, register, OAuth)
+│   │   ├── constants/
+│   │   │   └── auth.constants.ts                   # Auth constants (token expiration, cookie settings)
+│   │   ├── dto/
+│   │   │   ├── change-password.dto.ts              # Change password validation
+│   │   │   ├── forgot-password.dto.ts              # Forgot password validation
+│   │   │   ├── google-auth.dto.ts                  # Google OAuth data transfer
+│   │   │   ├── login.dto.ts                        # Login validation
+│   │   │   ├── refresh-token.dto.ts                # Refresh token validation
+│   │   │   ├── register.dto.ts                     # Registration validation
+│   │   │   ├── reset-password.dto.ts               # Reset password validation
+│   │   │   └── session.dto.ts                      # Session data transfer
+│   │   ├── guards/
+│   │   │   ├── google-auth.guard.ts                # Google OAuth guard
+│   │   │   └── jwt-auth.guard.ts                   # JWT authentication guard with @Public support
+│   │   ├── strategies/
+│   │   │   ├── google.strategy.ts                  # Passport Google OAuth2 strategy
+│   │   │   └── jwt.strategy.ts                     # Passport JWT strategy
+│   │   ├── auth.controller.ts                      # Auth endpoints (login, register, OAuth, logout)
 │   │   ├── auth.service.ts                         # Auth business logic
 │   │   └── auth.module.ts
 │   ├── user/                                       # User Management Module
-│   │   ├── user.controller.ts                      # User profile & session endpoints
+│   │   ├── user.controller.ts                      # User profile, password change, session management
 │   │   ├── user.service.ts                         # User business logic
 │   │   └── user.module.ts
-│   ├── verification/                               # Email Verification & Password Reset
-│   │   ├── verification.controller.ts
-│   │   ├── verification.service.ts
+│   ├── verification/                               # Email Verification & Password Reset Module
+│   │   ├── verification.controller.ts              # Verification endpoints
+│   │   ├── verification.service.ts                 # Email verification & password reset logic
 │   │   └── verification.module.ts
 │   ├── mail/                                       # Email Service Module
-│   │   ├── mail.service.ts                         # Nodemailer integration
+│   │   ├── mail.service.ts                         # Nodemailer integration for sending emails
 │   │   └── mail.module.ts
-│   ├── tasks/                                      # Background Tasks & Cron Jobs
-│   │   ├── cleanup.service.ts                      # Cleanup unverified accounts & tokens
+│   ├── tasks/                                      # Background Tasks & Cron Jobs Module
+│   │   ├── cleanup.service.ts                      # Auto-cleanup unverified accounts & expired tokens
 │   │   └── tasks.module.ts
 │   ├── prisma/                                     # Prisma ORM Module
-│   │   ├── prisma.service.ts                       # Prisma client instance
+│   │   ├── prisma.service.ts                       # Prisma client singleton instance
 │   │   └── prisma.module.ts
-│   ├── common/                                     # Shared utilities & decorators
-│   │   ├── decorators/                             # Custom decorators (@Public, @CurrentUser)
-│   │   ├── filters/                                # Exception filters
-│   │   └── utils/                                  # Utility functions (device detection)
-│   ├── app.module.ts                               # Root module
-│   └── main.ts                                     # Application entry point
+│   ├── common/                                     # Shared utilities, decorators & filters
+│   │   ├── decorators/
+│   │   │   ├── current-user.decorator.ts           # @CurrentUser() decorator to extract user from JWT
+│   │   │   └── public.decorator.ts                 # @Public() decorator to bypass JWT guard
+│   │   ├── filters/
+│   │   │   └── http-exception.filter.ts            # Global HTTP exception filter
+│   │   ├── interceptors/
+│   │   │   └── response.interceptor.ts             # Response transformation interceptor
+│   │   ├── interfaces/
+│   │   │   └── response.interface.ts               # Standard API response interface
+│   │   ├── utils/
+│   │   │   ├── device.util.ts                      # Device info extraction (browser, OS, IP)
+│   │   │   └── pagination.util.ts                  # Pagination helper utilities
+│   │   └── index.ts                                # Barrel exports for common module
+│   ├── app.controller.ts                           # Root controller
+│   ├── app.controller.spec.ts                      # Root controller tests
+│   ├── app.service.ts                              # Root service
+│   ├── app.module.ts                               # Root module with global guards & filters
+│   └── main.ts                                     # Application entry point (bootstrap)
 ├── prisma/
-│   └── schema.prisma                               # Database schema (User, Session models)
+│   └── schema.prisma                               # Database schema (User, Session, PasswordReset)
 ├── documents/                                      # API Documentation
 │   ├── apis/                                       # API endpoint documentation
-│   │   ├── auth/                                   # Authentication APIs
-│   │   ├── user/                                   # User management APIs
-│   │   └── verification/                           # Verification APIs
-│   └── guides/                                     # Development guides
-├── test/                                           # E2E tests
-└── dist/                                           # Build output (gitignored)
+│   │   ├── auth/
+│   │   │   ├── authentication.md                   # Login, Register, Logout, Refresh Token APIs
+│   │   │   └── google-oauth.md                     # Google OAuth 2.0 flow documentation
+│   │   ├── users/
+│   │   │   ├── change-password.md                  # Change password API
+│   │   │   ├── session-management.md               # Session management APIs
+│   │   │   └── user-profile.md                     # Get user profile API
+│   │   └── verification/
+│   │       ├── email-verification.md               # Email verification APIs
+│   │       └── password-reset.md                   # Password reset flow APIs
+│   └── guides/
+│       └── environment-variables.md                # Environment variables setup guide
+├── test/
+│   ├── app.e2e-spec.ts                             # E2E tests
+│   └── jest-e2e.json                               # Jest E2E configuration
+├── .env                                            # Environment variables (gitignored)
+├── .env.example                                    # Environment variables template
+├── .gitignore                                      # Git ignore rules
+├── eslint.config.mjs                               # ESLint configuration
+├── nest-cli.json                                   # NestJS CLI configuration
+├── package.json                                    # Dependencies & scripts
+├── prisma.config.ts                                # Prisma configuration
+├── tsconfig.json                                   # TypeScript configuration with path aliases
+├── tsconfig.build.json                             # TypeScript build configuration
+└── README.md                                       # This file
+```
+
+### Path Aliases
+
+Dự án sử dụng TypeScript path aliases để import dễ dàng hơn:
+
+- `@/*` → `src/*`
+- `@auth/*` → `src/auth/*`
+- `@common/*` → `src/common/*`
+- `@mail/*` → `src/mail/*`
+- `@prisma/*` → `src/prisma/*`
+- `@tasks/*` → `src/tasks/*`
+- `@user/*` → `src/user/*`
+- `@verification/*` → `src/verification/*`
+
+**Ví dụ:**
+
+```typescript
+import { UserService } from '@user/user.service';
+import { PrismaService } from '@prisma/prisma.service';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 ```
 
 ## Security Features

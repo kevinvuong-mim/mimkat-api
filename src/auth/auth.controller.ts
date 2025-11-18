@@ -23,6 +23,7 @@ import {
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { GoogleAuthGuard } from '@auth/guards/google-auth.guard';
 import { DeviceUtil } from '@common/utils/device.util';
+import { AUTH_CONSTANTS } from './constants/auth.constants';
 
 @Controller('auth')
 export class AuthController {
@@ -49,7 +50,7 @@ export class AuthController {
     const result = await this.authService.login(loginDto, deviceInfo);
 
     // Set access token in httpOnly cookie
-    res.cookie('accessToken', result.accessToken, {
+    res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -57,7 +58,7 @@ export class AuthController {
     });
 
     // Set refresh token in httpOnly cookie
-    res.cookie('refreshToken', result.refreshToken, {
+    res.cookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY, result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -83,8 +84,8 @@ export class AuthController {
     await this.authService.logout(user.id, refreshToken);
 
     // Clear cookies
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
+    res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
   }
 
   @Public()
@@ -108,7 +109,7 @@ export class AuthController {
       );
 
       // Set new access token in httpOnly cookie
-      res.cookie('accessToken', result.accessToken, {
+      res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -116,7 +117,7 @@ export class AuthController {
       });
 
       // Set new refresh token in httpOnly cookie
-      res.cookie('refreshToken', result.refreshToken, {
+      res.cookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY, result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -126,8 +127,8 @@ export class AuthController {
       return result;
     } catch (error) {
       // Clear invalid cookies
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
+      res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
+      res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
 
       throw error; // Re-throw để NestJS handle
     }
@@ -154,7 +155,7 @@ export class AuthController {
     );
 
     // Set access token in httpOnly cookie
-    res.cookie('accessToken', result.accessToken, {
+    res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -162,7 +163,7 @@ export class AuthController {
     });
 
     // Set refresh token in httpOnly cookie
-    res.cookie('refreshToken', result.refreshToken, {
+    res.cookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY, result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',

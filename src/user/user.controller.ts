@@ -19,6 +19,7 @@ import {
   type UserPayload,
 } from '@common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
+import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -47,8 +48,8 @@ export class UserController {
     );
 
     // Clear cookies
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
+    res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
   }
 
   @Get('sessions')

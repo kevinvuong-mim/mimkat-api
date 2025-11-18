@@ -14,6 +14,7 @@ import { VerificationService } from './verification.service';
 import { ForgotPasswordDto } from '@auth/dto/forgot-password.dto';
 import { ResetPasswordDto } from '@auth/dto/reset-password.dto';
 import { Public } from '@common/decorators/public.decorator';
+import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
 
 @Controller('verification')
 export class VerificationController {
@@ -56,7 +57,7 @@ export class VerificationController {
     );
 
     // Clear cookies
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
+    res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
   }
 }

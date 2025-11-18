@@ -3,7 +3,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import { AppModule } from '@/app.module';
+import { AppModule } from './app.module';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
 import { ResponseInterceptor } from '@common/interceptors/response.interceptor';
 
