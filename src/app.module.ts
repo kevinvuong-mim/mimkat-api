@@ -20,7 +20,7 @@ import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 60 seconds
-        limit: 10, // 10 requests per ttl
+        limit: 100, // 100 requests per ttl
       },
     ]),
     PrismaModule,
