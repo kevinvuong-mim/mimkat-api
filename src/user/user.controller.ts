@@ -33,7 +33,7 @@ export class UserController {
     return this.userService.getUserProfile(user.id);
   }
 
-  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 requests per 1 hour
+  @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 requests per 1 hour
   @Put('password')
   @HttpCode(HttpStatus.OK)
   async changePassword(

@@ -94,7 +94,7 @@ curl -X POST http://localhost:3000/verification/forgot-password \
 
 **Endpoint**: `POST /verification/reset-password`
 
-**Rate Limit**: 5 requests / 1 giờ (3600000 milliseconds)
+**Rate Limit**: 10 requests / 1 giờ (3600000 milliseconds)
 
 **Authentication**: Không yêu cầu (Public)
 

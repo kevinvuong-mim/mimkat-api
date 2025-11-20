@@ -15,7 +15,7 @@ API đổi mật khẩu cho người dùng đã đăng nhập. Hỗ trợ hai tr
 
 **Endpoint**: `PUT /users/password`
 
-**Rate Limit**: 5 requests / 1 giờ (3600 seconds)
+**Rate Limit**: 10 requests / 1 giờ (3600 seconds)
 
 **Authentication**: Required (Bearer Token hoặc Cookie)
 
