@@ -135,31 +135,44 @@ Trả về khi user đã có password nhưng không cung cấp `currentPassword`
 }
 ```
 
-**401 Unauthorized - Mật khẩu hiện tại không đúng**
+**400 Bad Request - Mật khẩu hiện tại không đúng**
 
 Trả về khi `currentPassword` không match với password đã lưu trong database.
 
 ```json
 {
   "success": false,
-  "statusCode": 401,
+  "statusCode": 400,
   "message": "Current password is incorrect",
-  "error": "Unauthorized",
+  "error": "Bad Request",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/users/password"
 }
 ```
 
-**401 Unauthorized - Không tìm thấy người dùng**
+**403 Forbidden - User không tồn tại hoặc bị vô hiệu hóa**
 
-Trả về khi userId từ JWT token không tồn tại trong database (user bị xóa).
+Trả về khi userId từ JWT token không tồn tại trong database (user bị xóa) hoặc account bị disable.
 
 ```json
 {
   "success": false,
-  "statusCode": 401,
-  "message": "User not found",
-  "error": "Unauthorized",
+  "statusCode": 403,
+  "message": "User does not exist",
+  "error": "Forbidden",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/password"
+}
+```
+
+hoặc
+
+```json
+{
+  "success": false,
+  "statusCode": 403,
+  "message": "Account has been disabled",
+  "error": "Forbidden",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/users/password"
 }
@@ -295,9 +308,9 @@ curl -X PUT http://localhost:3000/users/password \
 ```json
 {
   "success": false,
-  "statusCode": 401,
+  "statusCode": 400,
   "message": "Current password is incorrect",
-  "error": "Unauthorized",
+  "error": "Bad Request",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/users/password"
 }

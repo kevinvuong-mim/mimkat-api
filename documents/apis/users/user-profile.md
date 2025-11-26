@@ -97,14 +97,27 @@ Cookie: accessToken=<token>
 }
 ```
 
-- **401 Unauthorized**: User không tồn tại
+- **403 Forbidden**: User không tồn tại hoặc bị vô hiệu hóa
 
 ```json
 {
   "success": false,
-  "statusCode": 401,
-  "message": "User not found",
-  "error": "Unauthorized",
+  "statusCode": 403,
+  "message": "User does not exist",
+  "error": "Forbidden",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/me"
+}
+```
+
+hoặc
+
+```json
+{
+  "success": false,
+  "statusCode": 403,
+  "message": "Account has been disabled",
+  "error": "Forbidden",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/users/me"
 }
@@ -132,13 +145,14 @@ curl -X GET http://localhost:3000/users/me \
 
 1. **Extract userId**: Lấy userId từ JWT token payload (`sub` field)
 2. **Query database**: Tìm user với Prisma `findUnique({ where: { id: userId } })`
-3. **Check user exists**: Throw `UnauthorizedException` nếu user không tồn tại
-4. **Select fields**: Chỉ select các fields cần thiết (bao gồm `password` và `googleId` để check)
-5. **Compute flags**:
+3. **Check user exists**: Throw `ForbiddenException` (403) nếu user không tồn tại (via JWT Strategy)
+4. **Check user active**: Throw `ForbiddenException` (403) nếu user bị disabled (via JWT Strategy)
+5. **Select fields**: Chỉ select các fields cần thiết (bao gồm `password` và `googleId` để check)
+6. **Compute flags**:
    - `hasPassword = !!user.password`
    - `hasGoogleAuth = !!user.googleId`
-6. **Return safe data**: Exclude sensitive fields, return computed flags
-7. **Auto-wrap response**: Response được wrap trong standard format bởi `ResponseInterceptor`
+7. **Return safe data**: Exclude sensitive fields, return computed flags
+8. **Auto-wrap response**: Response được wrap trong standard format bởi `ResponseInterceptor`
 
 ---
 

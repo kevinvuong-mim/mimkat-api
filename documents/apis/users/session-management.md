@@ -84,7 +84,7 @@ Cookie: accessToken=<token>
 
 **Error Responses**
 
-- **401 Unauthorized**: Access token không hợp lệ
+- **401 Unauthorized**: Access token không hợp lệ hoặc hết hạn
 
 ```json
 {
@@ -92,6 +92,32 @@ Cookie: accessToken=<token>
   "statusCode": 401,
   "message": "Unauthorized",
   "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions"
+}
+```
+
+- **403 Forbidden**: User không tồn tại hoặc bị vô hiệu hóa
+
+```json
+{
+  "success": false,
+  "statusCode": 403,
+  "message": "User does not exist",
+  "error": "Forbidden",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions"
+}
+```
+
+hoặc
+
+```json
+{
+  "success": false,
+  "statusCode": 403,
+  "message": "Account has been disabled",
+  "error": "Forbidden",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/users/sessions"
 }
@@ -246,6 +272,45 @@ Cookie: accessToken=<token>
 ```
 
 **Error Responses**
+
+- **401 Unauthorized**: Access token không hợp lệ hoặc hết hạn
+
+```json
+{
+  "success": false,
+  "statusCode": 401,
+  "message": "Unauthorized",
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions/:sessionId"
+}
+```
+
+- **403 Forbidden**: User không tồn tại hoặc bị vô hiệu hóa
+
+```json
+{
+  "success": false,
+  "statusCode": 403,
+  "message": "User does not exist",
+  "error": "Forbidden",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions/:sessionId"
+}
+```
+
+hoặc
+
+```json
+{
+  "success": false,
+  "statusCode": 403,
+  "message": "Account has been disabled",
+  "error": "Forbidden",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/sessions/:sessionId"
+}
+```
 
 - **400 Bad Request**: Session không tồn tại hoặc không thuộc về user
 

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '@prisma/prisma.service';
@@ -36,10 +36,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       },
     });
 
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException(
-        'User does not exist or has been disabled',
-      );
+    if (!user) {
+      throw new ForbiddenException('User does not exist');
+    }
+
+    if (!user.isActive) {
+      throw new ForbiddenException('Account has been disabled');
     }
 
     return {

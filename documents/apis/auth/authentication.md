@@ -387,14 +387,14 @@ Set-Cookie: refreshToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Ja
 }
 ```
 
-- **401 Unauthorized**: Refresh token không hợp lệ
+- **400 Bad Request**: Refresh token không hợp lệ
 
 ```json
 {
   "success": false,
-  "statusCode": 401,
+  "statusCode": 400,
   "message": "Invalid refresh token",
-  "error": "Unauthorized",
+  "error": "Bad Request",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/auth/logout"
 }

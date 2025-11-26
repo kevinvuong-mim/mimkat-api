@@ -1,7 +1,7 @@
 import {
   Injectable,
-  UnauthorizedException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@prisma/prisma.service';
@@ -29,7 +29,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new NotFoundException('User not found');
     }
 
     // Return user info with hasPassword flag (don't expose actual password)
@@ -59,7 +59,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new NotFoundException('User not found');
     }
 
     // If user has a password (traditional account or Google account with password set)
@@ -78,7 +78,7 @@ export class UserService {
       );
 
       if (!isPasswordValid) {
-        throw new UnauthorizedException('Current password is incorrect');
+        throw new BadRequestException('Current password is incorrect');
       }
     }
     // If user doesn't have a password (Google-only account), allow setting password without current password
