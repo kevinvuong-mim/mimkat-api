@@ -265,24 +265,6 @@ MAIL_FROM="noreply@mimkat.com"
 - Thường sử dụng địa chỉ dạng `noreply@` hoặc `support@`
 - Email này sẽ hiển thị cho người nhận
 
-### APP_URL
-
-URL của backend API, dùng làm base URL cho các operations backend.
-
-**Lưu ý:** Biến này hiện không được sử dụng trong code, nhưng có thể cần cho future features.
-
-**Ví dụ:**
-
-```
-# Development
-APP_URL="http://localhost:3000"
-
-# Production
-APP_URL="https://mimkat.com"
-```
-
----
-
 ## 5. CORS (Cross-Origin Resource Sharing)
 
 ### CORS_ORIGIN
@@ -384,11 +366,6 @@ FRONTEND_URL="https://app.mimkat.com"
 - Không có dấu `/` ở cuối URL
 - Nếu sai, verification links và reset password links sẽ không work
 
-**Sự khác biệt giữa APP_URL và FRONTEND_URL:**
-
-- `APP_URL`: Backend API URL (hiện không dùng trong code)
-- `FRONTEND_URL`: Frontend client URL (được dùng trong emails và OAuth callback)
-
 ---
 
 ## Tổng hợp - File .env hoàn chỉnh
@@ -414,7 +391,6 @@ MAIL_PORT=587
 MAIL_USER="your-email@gmail.com"
 MAIL_PASSWORD="your-app-password"
 MAIL_FROM="noreply@mimkat.com"
-APP_URL="http://localhost:3000"
 
 # CORS
 CORS_ORIGIN="http://localhost:3001, http://localhost:3002"
