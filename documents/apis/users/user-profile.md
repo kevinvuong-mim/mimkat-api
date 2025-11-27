@@ -147,12 +147,13 @@ curl -X GET http://localhost:3000/users/me \
 2. **Query database**: Tìm user với Prisma `findUnique({ where: { id: userId } })`
 3. **Check user exists**: Throw `ForbiddenException` (403) nếu user không tồn tại (via JWT Strategy)
 4. **Check user active**: Throw `ForbiddenException` (403) nếu user bị disabled (via JWT Strategy)
-5. **Select fields**: Chỉ select các fields cần thiết (bao gồm `password` và `googleId` để check)
-6. **Compute flags**:
+5. **Check session valid**: Throw `ForbiddenException` (403) nếu session không tồn tại hoặc đã bị logout (via JWT Strategy)
+6. **Select fields**: Chỉ select các fields cần thiết (bao gồm `password` và `googleId` để check)
+7. **Compute flags**:
    - `hasPassword = !!user.password`
    - `hasGoogleAuth = !!user.googleId`
-7. **Return safe data**: Exclude sensitive fields, return computed flags
-8. **Auto-wrap response**: Response được wrap trong standard format bởi `ResponseInterceptor`
+8. **Return safe data**: Exclude sensitive fields, return computed flags
+9. **Auto-wrap response**: Response được wrap trong standard format bởi `ResponseInterceptor`
 
 ---
 
