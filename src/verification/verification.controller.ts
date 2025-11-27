@@ -13,6 +13,7 @@ import type { Response } from 'express';
 import { VerificationService } from './verification.service';
 import { ForgotPasswordDto } from '@/verification/dto/forgot-password.dto';
 import { ResetPasswordDto } from '@/verification/dto/reset-password.dto';
+import { ResendVerificationDto } from '@/verification/dto/resend-verification.dto';
 import { Public } from '@common/decorators/public.decorator';
 import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
 
@@ -28,11 +29,15 @@ export class VerificationController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per 1 hour
+  @Throttle({ default: { limit: 12, ttl: 3600000 } }) // 12 requests per 1 hour
   @Post('resend')
   @HttpCode(HttpStatus.OK)
-  async resendVerification(@Body('email') email: string) {
-    return this.verificationService.resendVerificationEmail(email);
+  async resendVerification(
+    @Body() resendVerificationDto: ResendVerificationDto,
+  ) {
+    return this.verificationService.resendVerificationEmail(
+      resendVerificationDto.email,
+    );
   }
 
   @Public()

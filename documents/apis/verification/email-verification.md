@@ -94,7 +94,7 @@ Gửi lại email xác thực cho người dùng chưa xác thực email. Tạo 
 
 **Endpoint**: `POST /verification/resend`
 
-**Rate Limit**: 3 requests / 1 giờ (3600 seconds)
+**Rate Limit**: 12 requests / 1 giờ (3600 seconds)
 
 **Authentication**: Không yêu cầu (Public)
 
@@ -180,7 +180,7 @@ curl -X POST http://localhost:3000/verification/resend \
 
 - Tạo token mới mỗi lần gửi lại (token cũ bị thay thế)
 - Token mới có hiệu lực 48 giờ từ thời điểm tạo
-- Rate limit (3 requests/hour) ngăn spam email
+- Rate limit (12 requests/hour) ngăn spam email
 - Nếu gửi email thất bại, throw exception (không silent fail như register)
 - Response luôn trả về success để không reveal user existence (security)
 - Token được hash với bcrypt 10 salt rounds trước khi lưu
