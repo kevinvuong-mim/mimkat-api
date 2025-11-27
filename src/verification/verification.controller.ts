@@ -11,8 +11,8 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { VerificationService } from './verification.service';
-import { ForgotPasswordDto } from '@auth/dto/forgot-password.dto';
-import { ResetPasswordDto } from '@auth/dto/reset-password.dto';
+import { ForgotPasswordDto } from '@/verification/dto/forgot-password.dto';
+import { ResetPasswordDto } from '@/verification/dto/reset-password.dto';
 import { Public } from '@common/decorators/public.decorator';
 import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
 

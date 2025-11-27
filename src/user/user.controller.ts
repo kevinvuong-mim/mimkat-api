@@ -13,7 +13,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { UserService } from './user.service';
-import { ChangePasswordDto } from '@auth/dto/change-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import {
   CurrentUser,
   type UserPayload,

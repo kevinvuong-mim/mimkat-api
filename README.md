@@ -124,14 +124,10 @@ mimkat-api/
 │   │   ├── constants/
 │   │   │   └── auth.constants.ts                   # Auth constants (token expiration, cookie settings)
 │   │   ├── dto/
-│   │   │   ├── change-password.dto.ts              # Change password validation
-│   │   │   ├── forgot-password.dto.ts              # Forgot password validation
 │   │   │   ├── google-auth.dto.ts                  # Google OAuth data transfer
 │   │   │   ├── login.dto.ts                        # Login validation
 │   │   │   ├── refresh-token.dto.ts                # Refresh token validation
-│   │   │   ├── register.dto.ts                     # Registration validation
-│   │   │   ├── reset-password.dto.ts               # Reset password validation
-│   │   │   └── session.dto.ts                      # Session data transfer
+│   │   │   └── register.dto.ts                     # Registration validation
 │   │   ├── guards/
 │   │   │   ├── google-auth.guard.ts                # Google OAuth guard
 │   │   │   └── jwt-auth.guard.ts                   # JWT authentication guard with @Public support
@@ -142,10 +138,15 @@ mimkat-api/
 │   │   ├── auth.service.ts                         # Auth business logic
 │   │   └── auth.module.ts
 │   ├── user/                                       # User Management Module
+│   │   ├── dto/
+│   │   │   └── change-password.dto.ts              # Change password validation
 │   │   ├── user.controller.ts                      # User profile, password change, session management
 │   │   ├── user.service.ts                         # User business logic
 │   │   └── user.module.ts
 │   ├── verification/                               # Email Verification & Password Reset Module
+│   │   ├── dto/
+│   │   │   ├── forgot-password.dto.ts              # Forgot password validation
+│   │   │   └── reset-password.dto.ts               # Reset password validation
 │   │   ├── verification.controller.ts              # Verification endpoints
 │   │   ├── verification.service.ts                 # Email verification & password reset logic
 │   │   └── verification.module.ts
