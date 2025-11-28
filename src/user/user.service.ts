@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@prisma/prisma.service';
+import { createPaginatedResponse } from '@common/utils/pagination.util';
 
 @Injectable()
 export class UserService {
@@ -100,18 +101,31 @@ export class UserService {
     });
   }
 
-  async getActiveSessions(userId: string, currentSessionId?: string) {
-    const sessions = await this.prisma.session.findMany({
-      where: {
-        userId,
-        expiresAt: {
-          gte: new Date(), // Only active (non-expired) sessions
+  async getActiveSessions(
+    userId: string,
+    currentSessionId?: string,
+    page: number = 1,
+    limit: number = 10,
+    skip: number = 0,
+  ) {
+    const where = {
+      userId,
+      expiresAt: {
+        gte: new Date(), // Only active (non-expired) sessions
+      },
+    };
+
+    const [sessions, total] = await Promise.all([
+      this.prisma.session.findMany({
+        where,
+        orderBy: {
+          lastUsedAt: 'desc',
         },
-      },
-      orderBy: {
-        lastUsedAt: 'desc',
-      },
-    });
+        skip,
+        take: limit,
+      }),
+      this.prisma.session.count({ where }),
+    ]);
 
     const sessionDtos = sessions.map((session) => ({
       id: session.id,
@@ -124,9 +138,7 @@ export class UserService {
       isCurrent: currentSessionId ? session.id === currentSessionId : false,
     }));
 
-    return {
-      sessions: sessionDtos,
-    };
+    return createPaginatedResponse(sessionDtos, total, page, limit);
   }
 
   async logoutAllDevices(userId: string) {

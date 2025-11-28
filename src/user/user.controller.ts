@@ -9,6 +9,7 @@ import {
   HttpStatus,
   UseGuards,
   Res,
+  Query,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -20,6 +21,7 @@ import {
 } from '@common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
+import { getPaginationParams } from '@common/utils/pagination.util';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -54,8 +56,24 @@ export class UserController {
 
   @Get('sessions')
   @HttpCode(HttpStatus.OK)
-  async getActiveSessions(@CurrentUser() user: UserPayload) {
-    return this.userService.getActiveSessions(user.id, user.sessionId);
+  async getActiveSessions(
+    @CurrentUser() user: UserPayload,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const {
+      page: normalizedPage,
+      limit: normalizedLimit,
+      skip,
+    } = getPaginationParams(Number(page), Number(limit));
+
+    return this.userService.getActiveSessions(
+      user.id,
+      user.sessionId,
+      normalizedPage,
+      normalizedLimit,
+      skip,
+    );
   }
 
   @Delete('sessions')
