@@ -6,7 +6,7 @@ export const AUTH_CONSTANTS = {
   ACCESS_TOKEN_KEY: 'accessToken',
   REFRESH_TOKEN_KEY: 'refreshToken',
 
-  // Token expiration times
-  ACCESS_TOKEN_EXPIRATION: '1h' as const,
-  REFRESH_TOKEN_EXPIRATION: '7d' as const,
+  // Token expiration times in milliseconds
+  ACCESS_TOKEN_EXPIRATION: 60 * 60 * 1000, // 1 hour
+  REFRESH_TOKEN_EXPIRATION: 7 * 24 * 60 * 60 * 1000, // 7 days
 };

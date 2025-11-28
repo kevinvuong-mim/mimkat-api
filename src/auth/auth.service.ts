@@ -231,12 +231,16 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_SECRET,
-      expiresIn: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION,
+      expiresIn: this.msToJwtExpirationString(
+        AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION,
+      ) as `${number}${'d' | 'h' | 'm' | 's'}`,
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_REFRESH_SECRET,
-      expiresIn: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION,
+      expiresIn: this.msToJwtExpirationString(
+        AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION,
+      ) as `${number}${'d' | 'h' | 'm' | 's'}`,
     });
 
     return {
@@ -247,26 +251,10 @@ export class AuthService {
 
   private async createSession(userId: string, deviceInfo?: DeviceInfo) {
     const expiresAt = new Date();
-    const expiresIn = AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION;
 
-    // Parse expiration time (e.g., 7d, 24h, 60m)
-    const match = expiresIn.match(/^(\d+)([dhm])$/);
-    if (match) {
-      const value = parseInt(match[1], 10);
-      const unit = match[2];
-
-      switch (unit) {
-        case 'd':
-          expiresAt.setDate(expiresAt.getDate() + value);
-          break;
-        case 'h':
-          expiresAt.setHours(expiresAt.getHours() + value);
-          break;
-        case 'm':
-          expiresAt.setMinutes(expiresAt.getMinutes() + value);
-          break;
-      }
-    }
+    expiresAt.setTime(
+      expiresAt.getTime() + AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION,
+    );
 
     return this.prisma.session.create({
       data: {
@@ -310,6 +298,24 @@ export class AuthService {
         },
       });
     }
+  }
+
+  private msToJwtExpirationString(ms: number): string {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0 && hours % 24 === 0) {
+      return `${days}d`;
+    }
+    if (hours > 0 && minutes % 60 === 0) {
+      return `${hours}h`;
+    }
+    if (minutes > 0 && seconds % 60 === 0) {
+      return `${minutes}m`;
+    }
+    return `${seconds}s`;
   }
 
   async googleLogin(googleUser: GoogleAuthDto, deviceInfo?: DeviceInfo) {
