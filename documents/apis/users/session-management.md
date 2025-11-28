@@ -32,55 +32,70 @@ Authorization: Bearer {accessToken}
 Cookie: accessToken=<token>
 ```
 
+#### Query Parameters
+
+| Parameter | Type   | Required | Default | Description              |
+| --------- | ------ | -------- | ------- | ------------------------ |
+| page      | number | No       | 1       | Số trang (minimum: 1)    |
+| limit     | number | No       | 10      | Số sessions mỗi trang (min: 1, max: 100) |
+
 #### Response
 
 **Success (200 OK)**
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
-  "message": "Data retrieved successfully",
-  "data": {
-    "sessions": [
-      {
-        "id": "clx1234567890abcdefghij",
-        "deviceName": "Chrome on macOS",
-        "deviceType": "Desktop",
-        "ipAddress": "192.168.1.100",
-        "createdAt": "2025-11-07T08:00:00.000Z",
-        "lastUsedAt": "2025-11-07T10:30:00.000Z",
-        "expiresAt": "2025-11-14T08:00:00.000Z",
-        "isCurrent": true
-      },
-      {
-        "id": "clx0987654321zyxwvutsrq",
-        "deviceName": "Safari on iPhone",
-        "deviceType": "Mobile",
-        "ipAddress": "192.168.1.101",
-        "createdAt": "2025-11-06T15:20:00.000Z",
-        "lastUsedAt": "2025-11-06T18:45:00.000Z",
-        "expiresAt": "2025-11-13T15:20:00.000Z",
-        "isCurrent": false
-      }
-    ]
-  },
-  "timestamp": "2025-11-12T10:00:00.000Z",
-  "path": "/users/sessions"
+  "items": [
+    {
+      "id": "clx1234567890abcdefghij",
+      "deviceName": "Chrome on macOS",
+      "deviceType": "Desktop",
+      "ipAddress": "192.168.1.100",
+      "createdAt": "2025-11-07T08:00:00.000Z",
+      "lastUsedAt": "2025-11-07T10:30:00.000Z",
+      "expiresAt": "2025-11-14T08:00:00.000Z",
+      "isCurrent": true
+    },
+    {
+      "id": "clx0987654321zyxwvutsrq",
+      "deviceName": "Safari on iPhone",
+      "deviceType": "Mobile",
+      "ipAddress": "192.168.1.101",
+      "createdAt": "2025-11-06T15:20:00.000Z",
+      "lastUsedAt": "2025-11-06T18:45:00.000Z",
+      "expiresAt": "2025-11-13T15:20:00.000Z",
+      "isCurrent": false
+    }
+  ],
+  "meta": {
+    "total": 5,
+    "page": 1,
+    "perPage": 10,
+    "totalPages": 1,
+    "hasNextPage": false,
+    "hasPreviousPage": false
+  }
 }
 ```
 
 | Field                 | Type    | Description                            |
 | --------------------- | ------- | -------------------------------------- |
-| sessions              | array   | Danh sách các phiên đăng nhập          |
-| sessions[].id         | string  | Session ID (để dùng cho logout device) |
-| sessions[].deviceName | string  | Tên thiết bị (browser + OS)            |
-| sessions[].deviceType | string  | Loại thiết bị: Desktop, Mobile, Tablet |
-| sessions[].ipAddress  | string  | Địa chỉ IP của thiết bị                |
-| sessions[].createdAt  | string  | Thời điểm tạo session (ISO 8601)       |
-| sessions[].lastUsedAt | string  | Lần cuối sử dụng (ISO 8601)            |
-| sessions[].expiresAt  | string  | Thời điểm hết hạn (ISO 8601)           |
-| sessions[].isCurrent  | boolean | true nếu là thiết bị hiện tại          |
+| items                 | array   | Danh sách các phiên đăng nhập          |
+| items[].id            | string  | Session ID (để dùng cho logout device) |
+| items[].deviceName    | string  | Tên thiết bị (browser + OS)            |
+| items[].deviceType    | string  | Loại thiết bị: Desktop, Mobile, Tablet |
+| items[].ipAddress     | string  | Địa chỉ IP của thiết bị                |
+| items[].createdAt     | string  | Thời điểm tạo session (ISO 8601)       |
+| items[].lastUsedAt    | string  | Lần cuối sử dụng (ISO 8601)            |
+| items[].expiresAt     | string  | Thời điểm hết hạn (ISO 8601)           |
+| items[].isCurrent     | boolean | true nếu là thiết bị hiện tại          |
+| meta                  | object  | Thông tin phân trang                   |
+| meta.total            | number  | Tổng số sessions                       |
+| meta.page             | number  | Trang hiện tại                         |
+| meta.perPage          | number  | Số lượng sessions mỗi trang            |
+| meta.totalPages       | number  | Tổng số trang                          |
+| meta.hasNextPage      | boolean | Có trang tiếp theo hay không           |
+| meta.hasPreviousPage  | boolean | Có trang trước hay không               |
 
 **Error Responses**
 
@@ -128,19 +143,33 @@ hoặc
 **Using Authorization header:**
 
 ```bash
+# Get first page (default)
 curl -X GET http://localhost:3000/users/sessions \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+
+# Get second page with 5 items per page
+curl -X GET "http://localhost:3000/users/sessions?page=2&limit=5" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Using cookies:**
 
 ```bash
+# Get first page (default)
 curl -X GET http://localhost:3000/users/sessions \
+  -b "accessToken=YOUR_TOKEN"
+
+# Get specific page with custom limit
+curl -X GET "http://localhost:3000/users/sessions?page=1&limit=20" \
   -b "accessToken=YOUR_TOKEN"
 ```
 
 #### Notes
 
+- **Pagination**:
+  - Default: `page=1`, `limit=10`
+  - Limit range: 1-100 (values >100 will be capped at 100)
+  - Invalid page numbers (<1) will default to 1
 - Chỉ hiển thị sessions chưa hết hạn (`expiresAt >= now`)
 - Sessions được sắp xếp theo `lastUsedAt` giảm dần (mới nhất trước)
 - `isCurrent` được set `true` tự động dựa trên `sessionId` trong JWT access token
@@ -156,7 +185,7 @@ curl -X GET http://localhost:3000/users/sessions \
   - `deviceName`: "Unknown"
   - `deviceType`: "Unknown"
   - `ipAddress`: "Unknown"
-- Response luôn bao gồm array `sessions` (có thể empty nếu không có session nào)
+- Response luôn bao gồm array `items` (có thể empty nếu không có session nào)
 
 ---
 
