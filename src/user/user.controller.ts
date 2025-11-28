@@ -78,8 +78,15 @@ export class UserController {
 
   @Delete('sessions')
   @HttpCode(HttpStatus.OK)
-  async logoutAllDevices(@CurrentUser() user: UserPayload) {
-    return this.userService.logoutAllDevices(user.id);
+  async logoutAllDevices(
+    @CurrentUser() user: UserPayload,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.userService.logoutAllDevices(user.id);
+
+    // Clear cookies
+    res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
+    res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
   }
 
   @Delete('sessions/:sessionId')

@@ -34,9 +34,9 @@ Cookie: accessToken=<token>
 
 #### Query Parameters
 
-| Parameter | Type   | Required | Default | Description              |
-| --------- | ------ | -------- | ------- | ------------------------ |
-| page      | number | No       | 1       | Số trang (minimum: 1)    |
+| Parameter | Type   | Required | Default | Description                              |
+| --------- | ------ | -------- | ------- | ---------------------------------------- |
+| page      | number | No       | 1       | Số trang (minimum: 1)                    |
 | limit     | number | No       | 10      | Số sessions mỗi trang (min: 1, max: 100) |
 
 #### Response
@@ -78,24 +78,24 @@ Cookie: accessToken=<token>
 }
 ```
 
-| Field                 | Type    | Description                            |
-| --------------------- | ------- | -------------------------------------- |
-| items                 | array   | Danh sách các phiên đăng nhập          |
-| items[].id            | string  | Session ID (để dùng cho logout device) |
-| items[].deviceName    | string  | Tên thiết bị (browser + OS)            |
-| items[].deviceType    | string  | Loại thiết bị: Desktop, Mobile, Tablet |
-| items[].ipAddress     | string  | Địa chỉ IP của thiết bị                |
-| items[].createdAt     | string  | Thời điểm tạo session (ISO 8601)       |
-| items[].lastUsedAt    | string  | Lần cuối sử dụng (ISO 8601)            |
-| items[].expiresAt     | string  | Thời điểm hết hạn (ISO 8601)           |
-| items[].isCurrent     | boolean | true nếu là thiết bị hiện tại          |
-| meta                  | object  | Thông tin phân trang                   |
-| meta.total            | number  | Tổng số sessions                       |
-| meta.page             | number  | Trang hiện tại                         |
-| meta.perPage          | number  | Số lượng sessions mỗi trang            |
-| meta.totalPages       | number  | Tổng số trang                          |
-| meta.hasNextPage      | boolean | Có trang tiếp theo hay không           |
-| meta.hasPreviousPage  | boolean | Có trang trước hay không               |
+| Field                | Type    | Description                            |
+| -------------------- | ------- | -------------------------------------- |
+| items                | array   | Danh sách các phiên đăng nhập          |
+| items[].id           | string  | Session ID (để dùng cho logout device) |
+| items[].deviceName   | string  | Tên thiết bị (browser + OS)            |
+| items[].deviceType   | string  | Loại thiết bị: Desktop, Mobile, Tablet |
+| items[].ipAddress    | string  | Địa chỉ IP của thiết bị                |
+| items[].createdAt    | string  | Thời điểm tạo session (ISO 8601)       |
+| items[].lastUsedAt   | string  | Lần cuối sử dụng (ISO 8601)            |
+| items[].expiresAt    | string  | Thời điểm hết hạn (ISO 8601)           |
+| items[].isCurrent    | boolean | true nếu là thiết bị hiện tại          |
+| meta                 | object  | Thông tin phân trang                   |
+| meta.total           | number  | Tổng số sessions                       |
+| meta.page            | number  | Trang hiện tại                         |
+| meta.perPage         | number  | Số lượng sessions mỗi trang            |
+| meta.totalPages      | number  | Tổng số trang                          |
+| meta.hasNextPage     | boolean | Có trang tiếp theo hay không           |
+| meta.hasPreviousPage | boolean | Có trang trước hay không               |
 
 **Error Responses**
 
@@ -191,7 +191,7 @@ curl -X GET "http://localhost:3000/users/sessions?page=1&limit=20" \
 
 ### 2. Logout All Devices (Đăng xuất tất cả thiết bị)
 
-Đăng xuất khỏi tất cả các thiết bị bằng cách xóa tất cả sessions. User cần đăng nhập lại trên tất cả thiết bị.
+Đăng xuất khỏi tất cả các thiết bị bằng cách xóa tất cả sessions và xoá cookie phiên đăng nhập (accessToken). User cần đăng nhập lại trên tất cả thiết bị.
 
 **Endpoint**: `DELETE /users/sessions`
 
@@ -245,6 +245,7 @@ curl -X DELETE http://localhost:3000/users/sessions \
 #### Notes
 
 - Xóa **TẤT CẢ** sessions của user (gọi `prisma.session.deleteMany({ where: { userId } })`)
+- Xoá cookie phiên đăng nhập (`accessToken`) trên thiết bị hiện tại (nếu dùng cookie)
 - Bao gồm cả thiết bị hiện tại đang gọi API
 - User cần đăng nhập lại trên tất cả thiết bị
 - Access tokens hiện tại vẫn valid cho đến khi hết hạn (1h), nhưng không thể refresh
