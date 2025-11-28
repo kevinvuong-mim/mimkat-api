@@ -132,7 +132,7 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 
 - `HttpOnly`: true (không thể access bằng JavaScript)
 - `Secure`: true trong production (NODE_ENV=production)
-- `SameSite`: strict (CSRF protection)
+- `SameSite`: lax (CSRF protection)
 - `MaxAge`: 3600s (1 hour) cho accessToken, 604800s (7 days) cho refreshToken
 - `Path`: / (available cho tất cả routes)
 

@@ -669,7 +669,7 @@ curl -X POST http://localhost:3000/auth/refresh \
 
 - **HttpOnly**: `true` (không thể truy cập qua JavaScript)
 - **Secure**: `true` trong production (chỉ gửi qua HTTPS)
-- **SameSite**: `strict` (bảo vệ CSRF)
+- **SameSite**: `lax` (bảo vệ CSRF)
 - **Path**: `/` (available cho tất cả routes)
 - **Domain**: Không set (default to current domain)
 

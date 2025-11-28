@@ -53,7 +53,7 @@ export class AuthController {
     res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION, // 1 hour
     });
 
@@ -61,7 +61,7 @@ export class AuthController {
     res.cookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY, result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION, // 7 days
     });
 
@@ -112,7 +112,7 @@ export class AuthController {
       res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION, // 1 hour
       });
 
@@ -120,7 +120,7 @@ export class AuthController {
       res.cookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY, result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION, // 7 days
       });
 
@@ -158,7 +158,7 @@ export class AuthController {
     res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION, // 1 hour
     });
 
@@ -166,7 +166,7 @@ export class AuthController {
     res.cookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY, result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION, // 7 days
     });
 
