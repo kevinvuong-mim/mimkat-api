@@ -411,7 +411,7 @@ The Team
 
 ### Problem: Rate limit exceeded
 
-**Cause**: Resend quá 3 lần trong 1 giờ
+**Cause**: Resend quá 12 lần trong 1 giờ
 
 **Solution**:
 

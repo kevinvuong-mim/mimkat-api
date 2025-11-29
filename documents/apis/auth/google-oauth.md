@@ -13,7 +13,7 @@ API xác thực người dùng thông qua Google OAuth 2.0. Cho phép người d
 - Tự động verify email (Google accounts đã được verified)
 - Hỗ trợ link Google account vào tài khoản email/password hiện có
 - Session management với device tracking
-- HttpOnly cookies với SameSite=Strict
+- HttpOnly cookies với SameSite=Lax
 - Maximum 5 concurrent sessions per user
 
 ---
@@ -124,8 +124,8 @@ Backend sẽ:
 **Response Headers (Set-Cookie)**:
 
 ```
-Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600; Path=/
-Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/
+Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Lax; Max-Age=3600; Path=/
+Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Lax; Max-Age=604800; Path=/
 ```
 
 **Cookie Configuration**:

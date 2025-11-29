@@ -18,7 +18,7 @@ API xác thực người dùng, hỗ trợ cả Bearer tokens và HttpOnly cooki
 - Token rotation on refresh
 - Session management với device tracking
 - Rate limiting
-- HttpOnly cookies với SameSite=Strict
+- HttpOnly cookies với SameSite=Lax
 - Maximum 5 concurrent sessions per user
 
 ---
@@ -186,8 +186,8 @@ curl -X POST http://localhost:3000/auth/register \
 **Response Headers (Set-Cookie)**:
 
 ```
-Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600; Path=/
-Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/
+Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Lax; Max-Age=3600; Path=/
+Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Lax; Max-Age=604800; Path=/
 ```
 
 | Field        | Type   | Description                                       |
@@ -368,8 +368,8 @@ Authorization: Bearer {accessToken}
 **Response Headers (Clear cookies)**:
 
 ```
-Set-Cookie: accessToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
-Set-Cookie: refreshToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
+Set-Cookie: accessToken=; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
+Set-Cookie: refreshToken=; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
 ```
 
 **Error Responses**
@@ -487,8 +487,8 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 **Response Headers (Set new cookies)**:
 
 ```
-Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600; Path=/
-Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/
+Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Lax; Max-Age=3600; Path=/
+Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Lax; Max-Age=604800; Path=/
 ```
 
 | Field        | Type   | Description                                    |
@@ -540,8 +540,8 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 **Response Headers (Clear cookies khi có lỗi)**:
 
 ```
-Set-Cookie: accessToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
-Set-Cookie: refreshToken=; HttpOnly; Secure; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
+Set-Cookie: accessToken=; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
+Set-Cookie: refreshToken=; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/
 ```
 
 #### cURL Examples
