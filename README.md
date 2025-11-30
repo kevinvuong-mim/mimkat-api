@@ -282,7 +282,7 @@ npm run build
 npm run start:prod
 ```
 
-## Tài liệu API
+## Tài liệu
 
 ### 📚 Hướng dẫn tổng quan
 
@@ -303,6 +303,10 @@ npm run start:prod
 
 - [Email Verification](./documents/apis/verification/email-verification.md) - Xác thực email
 - [Password Reset](./documents/apis/verification/password-reset.md) - Quên mật khẩu và reset
+
+### 🛠️ Background Tasks & Cron Jobs
+
+- [Cleanup Cron Jobs](./documents/task/cleanup-cron-jobs.md) - Tài liệu các tác vụ dọn dẹp tự động: xóa tài khoản chưa xác thực, token hết hạn, session hết hạn
 
 ---
 
