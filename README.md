@@ -185,15 +185,17 @@ mimkat-api/
 │   │   ├── auth/
 │   │   │   ├── authentication.md                   # Login, Register, Logout, Refresh Token APIs
 │   │   │   └── google-oauth.md                     # Google OAuth 2.0 flow documentation
-│   │   ├── users/
+│   │   ├── user/
 │   │   │   ├── change-password.md                  # Change password API
 │   │   │   ├── session-management.md               # Session management APIs
 │   │   │   └── user-profile.md                     # Get user profile API
 │   │   └── verification/
 │   │       ├── email-verification.md               # Email verification APIs
 │   │       └── password-reset.md                   # Password reset flow APIs
-│   └── guides/
-│       └── environment-variables.md                # Environment variables setup guide
+│   ├─── setup/
+│   │    └── environment-variables.md               # Environment variables setup guide
+│   └── tasks/
+│       └── cleanup.md                              # Scheduled cleanup tasks
 ├── test/
 │   ├── app.e2e-spec.ts                             # E2E tests
 │   └── jest-e2e.json                               # Jest E2E configuration
@@ -286,7 +288,7 @@ npm run start:prod
 
 ### 📚 Hướng dẫn tổng quan
 
-- [Environment Variables](./documents/guides/environment-variables.md) - Hướng dẫn cấu hình biến môi trường
+- [Environment Variables](./documents/setup/environment-variables.md) - Hướng dẫn cấu hình biến môi trường
 
 ### 🔐 Authentication APIs
 
@@ -306,7 +308,7 @@ npm run start:prod
 
 ### 🛠️ Background Tasks & Cron Jobs
 
-- [Cleanup Cron Jobs](./documents/task/cleanup-cron-jobs.md) - Tài liệu các tác vụ dọn dẹp tự động: xóa tài khoản chưa xác thực, token hết hạn, session hết hạn
+- [Cleanup Cron Jobs](./documents/task/cleanup.md) - Tài liệu các tác vụ dọn dẹp tự động: xóa tài khoản chưa xác thực, token hết hạn, session hết hạn
 
 ---
 
