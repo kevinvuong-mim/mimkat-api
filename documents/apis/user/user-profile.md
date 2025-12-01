@@ -47,6 +47,7 @@ Cookie: accessToken=<token>
     "fullName": "John Doe",
     "username": "johndoe",
     "avatar": "https://example.com/avatar.jpg",
+    "phoneNumber": "+84 123 456 789",
     "isActive": true,
     "isEmailVerified": true,
     "hasPassword": true,
@@ -68,6 +69,7 @@ Cookie: accessToken=<token>
 | fullName        | string\|null | Tên đầy đủ của user (null nếu chưa set)                            |
 | username        | string\|null | Username (null nếu chưa set)                                       |
 | avatar          | string\|null | URL avatar (null nếu không có)                                     |
+| phoneNumber     | string\|null | Số điện thoại (null nếu chưa set)                                  |
 | isActive        | boolean      | Trạng thái tài khoản (true = active, false = disabled)             |
 | isEmailVerified | boolean      | Email đã được xác thực chưa (true = verified)                      |
 | hasPassword     | boolean      | User có password được set hay không (computed from password field) |
@@ -79,7 +81,7 @@ Cookie: accessToken=<token>
 
 - `hasPassword` = `!!user.password` - Boolean flag, không expose actual password
 - `hasGoogleAuth` = `!!user.googleId` - Indicates nếu Google account được linked
-- `fullName`, `username`, `avatar` có thể null nếu user chưa set
+- `fullName`, `username`, `avatar`, `phoneNumber` có thể null nếu user chưa set
 - Response không bao gồm sensitive fields: `password`, `googleId`, `verificationToken`, etc.
 
 **Error Responses**
@@ -412,7 +414,7 @@ curl -X GET http://localhost:3000/users/johndoe \
 - **JWT required**: Không thể anonymous access
 - **User-specific**: Chỉ return data của user hiện tại
 - **Computed fields**: `hasPassword` và `hasGoogleAuth` được compute runtime, không store trong DB
-- **Nullable fields**: `fullName`, `username`, `avatar` có thể null - handle gracefully in frontend
+- **Nullable fields**: `fullName`, `username`, `avatar`, `phoneNumber` có thể null - handle gracefully in frontend
 
 ### GET /users/:identifier
 

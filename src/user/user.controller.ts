@@ -15,6 +15,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { UserService } from './user.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import {
   CurrentUser,
   type UserPayload,
@@ -33,6 +34,15 @@ export class UserController {
   async getCurrentUser(@CurrentUser() user: UserPayload) {
     // Return full profile with hasPassword and hasGoogleAuth flags
     return this.userService.getUserProfile(user.id);
+  }
+
+  @Put('me')
+  @HttpCode(HttpStatus.OK)
+  async updateProfile(
+    @CurrentUser() user: UserPayload,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    return this.userService.updateProfile(user.id, updateProfileDto);
   }
 
   @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 requests per 1 hour

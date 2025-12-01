@@ -2,10 +2,12 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@prisma/prisma.service';
 import { createPaginatedResponse } from '@common/utils/pagination.util';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class UserService {
@@ -20,9 +22,10 @@ export class UserService {
         fullName: true,
         username: true,
         avatar: true,
+        phoneNumber: true,
         isActive: true,
         isEmailVerified: true,
-        password: true, // We need this to check if user has password
+        password: true,
         googleId: true,
         createdAt: true,
         updatedAt: true,
@@ -40,6 +43,7 @@ export class UserService {
       fullName: user.fullName,
       username: user.username,
       avatar: user.avatar,
+      phoneNumber: user.phoneNumber,
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
       hasPassword: !!user.password, // Boolean flag indicating if user has password
@@ -47,6 +51,49 @@ export class UserService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if username is being updated and if it's already taken
+    if (
+      updateProfileDto.username &&
+      updateProfileDto.username !== user.username
+    ) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { username: updateProfileDto.username },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('Username is already taken');
+      }
+    }
+
+    // Update user profile
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(updateProfileDto.username !== undefined && {
+          username: updateProfileDto.username,
+        }),
+        ...(updateProfileDto.fullName !== undefined && {
+          fullName: updateProfileDto.fullName,
+        }),
+        ...(updateProfileDto.avatar !== undefined && {
+          avatar: updateProfileDto.avatar,
+        }),
+        ...(updateProfileDto.phoneNumber !== undefined && {
+          phoneNumber: updateProfileDto.phoneNumber,
+        }),
+      },
+    });
   }
 
   async changePassword(
