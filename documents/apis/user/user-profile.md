@@ -141,7 +141,137 @@ curl -X GET http://localhost:3000/users/me \
 
 ---
 
+### Get User Profile by ID or Username (Lấy thông tin public profile của người khác)
+
+Lấy thông tin public profile của user khác thông qua ID hoặc username. Endpoint này chỉ trả về thông tin công khai, không bao gồm thông tin nhạy cảm.
+
+**Endpoint**: `GET /users/:identifier`
+
+**Authentication**: Required (Bearer Token hoặc Cookie)
+
+**Rate Limit**: Không giới hạn
+
+#### Path Parameters
+
+| Parameter  | Type   | Description                                          |
+| ---------- | ------ | ---------------------------------------------------- |
+| identifier | string | User ID (UUID format) hoặc username của user cần xem |
+
+#### Headers
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Or using cookies:**
+
+```
+Cookie: accessToken=<token>
+```
+
+#### Response
+
+**Success (200 OK)**
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Data retrieved successfully",
+  "data": {
+    "id": "clx1234567890abcdefghij",
+    "username": "johndoe",
+    "fullName": "John Doe",
+    "avatar": "https://example.com/avatar.jpg",
+    "createdAt": "2025-11-07T00:00:00.000Z"
+  },
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/johndoe"
+}
+```
+
+#### Response Schema
+
+| Field     | Type         | Description                               |
+| --------- | ------------ | ----------------------------------------- |
+| id        | string       | User ID (UUID format)                     |
+| username  | string\|null | Username (null nếu chưa set)              |
+| fullName  | string\|null | Tên đầy đủ của user (null nếu chưa set)   |
+| avatar    | string\|null | URL avatar (null nếu không có)            |
+| createdAt | string       | Thời gian tạo tài khoản (ISO 8601 format) |
+
+**Important Notes**:
+
+- Endpoint này **chỉ trả về thông tin công khai** (public profile)
+- **Không bao gồm**: `email`, `isActive`, `isEmailVerified`, `hasPassword`, `hasGoogleAuth`, `updatedAt`
+- `identifier` có thể là **User ID** (UUID) hoặc **username**
+- Chỉ trả về user có `isActive = true` (user bị disable sẽ trả về 404)
+- `username`, `fullName`, `avatar` có thể null nếu user chưa set
+
+**Error Responses**
+
+- **401 Unauthorized**: Token không hợp lệ hoặc hết hạn
+
+```json
+{
+  "success": false,
+  "statusCode": 401,
+  "message": "Unauthorized",
+  "error": "Unauthorized",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/johndoe"
+}
+```
+
+- **404 Not Found**: User không tồn tại hoặc bị vô hiệu hóa
+
+```json
+{
+  "success": false,
+  "statusCode": 404,
+  "message": "User not found",
+  "error": "Not Found",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/users/johndoe"
+}
+```
+
+#### cURL Examples
+
+**Using User ID:**
+
+```bash
+curl -X GET http://localhost:3000/users/clx1234567890abcdefghij \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**Using username:**
+
+```bash
+curl -X GET http://localhost:3000/users/johndoe \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**Using cookies:**
+
+```bash
+curl -X GET http://localhost:3000/users/johndoe \
+  -b "accessToken=YOUR_TOKEN"
+```
+
+#### Use Cases
+
+- Xem profile của user khác trong social features
+- Hiển thị thông tin tác giả của post/comment
+- User directory/search results
+- @ mention autocomplete
+- Friend/follower lists
+
+---
+
 ## Business Logic
+
+### GET /users/me (Current User Profile)
 
 1. **Extract userId**: Lấy userId từ JWT token payload (`sub` field)
 2. **Query database**: Tìm user với Prisma `findUnique({ where: { id: userId } })`
@@ -155,10 +285,28 @@ curl -X GET http://localhost:3000/users/me \
 8. **Return safe data**: Exclude sensitive fields, return computed flags
 9. **Auto-wrap response**: Response được wrap trong standard format bởi `ResponseInterceptor`
 
+### GET /users/:identifier (Other User Profile)
+
+1. **Extract identifier**: Lấy `identifier` từ path parameter (có thể là ID hoặc username)
+2. **Query database**: Tìm user với Prisma `findFirst({ where: { OR: [{ id }, { username }], isActive: true } })`
+3. **Check user exists**: Throw `NotFoundException` (404) nếu user không tồn tại hoặc bị disabled
+4. **Select public fields only**: Chỉ select `id`, `username`, `fullName`, `avatar`, `createdAt`
+5. **Return public data**: Không expose sensitive information
+6. **Auto-wrap response**: Response được wrap trong standard format bởi `ResponseInterceptor`
+
+**Key Differences**:
+
+- `/me` trả về **full profile** với sensitive info (email, verification status, auth methods)
+- `/:identifier` chỉ trả về **public profile** (username, name, avatar)
+- `/me` dùng `findUnique` với ID từ token, `/:identifier` dùng `findFirst` với OR condition
+- `/:identifier` filter `isActive: true`, `/me` check qua JWT Strategy
+
 ---
 
 ## Related Endpoints
 
+- **GET /users/me**: Get current user's full profile (private info)
+- **GET /users/:identifier**: Get other user's public profile (by ID or username)
 - **PUT /users/password**: Change password (uses `hasPassword` để decide logic)
 - **GET /users/sessions**: View active sessions
 - **POST /auth/login**: Login endpoint
@@ -225,14 +373,54 @@ curl -X GET http://localhost:3000/users/me \
 - User cần reset hoặc set password
 - Contact support
 
+### Problem: Không tìm thấy user khi search bằng username (GET /users/:identifier)
+
+**Cause**:
+
+- Username không tồn tại
+- User đã bị disable (`isActive = false`)
+- Username chứa ký tự đặc biệt không được encode
+
+**Solution**:
+
+- Verify username tồn tại trong database
+- Check `isActive` status của user
+- URL encode username nếu chứa ký tự đặc biệt:
+  ```javascript
+  const encodedUsername = encodeURIComponent(username);
+  fetch(`/users/${encodedUsername}`);
+  ```
+
+### Problem: Endpoint trả về user hiện tại thay vì user khác khi dùng GET /users/me
+
+**Cause**: Route order issue - `/users/me` phải được define trước `/users/:identifier`
+
+**Solution**:
+
+- Verify route order trong controller (đã fix - `/me` ở trước `:identifier`)
+- Clear route cache nếu cần
+
 ---
 
 ## Notes
+
+### GET /users/me
 
 - **Read-only endpoint**: Chỉ GET, không modify data
 - **No rate limiting**: Có thể call nhiều lần không giới hạn
 - **Automatic wrapping**: Response được wrap bởi `ResponseInterceptor`
 - **JWT required**: Không thể anonymous access
-- **User-specific**: Chỉ return data của user hiện tại, không thể xem profile người khác
+- **User-specific**: Chỉ return data của user hiện tại
 - **Computed fields**: `hasPassword` và `hasGoogleAuth` được compute runtime, không store trong DB
 - **Nullable fields**: `fullName`, `username`, `avatar` có thể null - handle gracefully in frontend
+
+### GET /users/:identifier
+
+- **Read-only endpoint**: Chỉ GET, không modify data
+- **Public profile only**: Chỉ trả về thông tin công khai, không có email/sensitive data
+- **JWT required**: Cần authentication để xem profile người khác (prevent abuse)
+- **Flexible identifier**: Có thể dùng User ID (UUID) hoặc username
+- **Active users only**: User bị disable sẽ trả về 404
+- **No rate limiting**: Có thể call nhiều lần không giới hạn
+- **Nullable fields**: `username`, `fullName`, `avatar` có thể null
+- **Route order**: Endpoint này phải được define **sau** `/users/me` để tránh conflict
