@@ -35,6 +35,12 @@ export class UserController {
     return this.userService.getUserProfile(user.id);
   }
 
+  @Get(':identifier')
+  @HttpCode(HttpStatus.OK)
+  getUserByIdOrUsername(@Param('identifier') identifier: string) {
+    return this.userService.getUserByIdOrUsername(identifier);
+  }
+
   @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 requests per 1 hour
   @Put('password')
   @HttpCode(HttpStatus.OK)
