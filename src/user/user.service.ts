@@ -49,29 +49,6 @@ export class UserService {
     };
   }
 
-  async getUserByIdOrUsername(identifier: string) {
-    // Try to find user by ID first, then by username
-    const user = await this.prisma.user.findFirst({
-      where: {
-        OR: [{ id: identifier }, { username: identifier }],
-        isActive: true, // Only return active users
-      },
-      select: {
-        id: true,
-        username: true,
-        fullName: true,
-        avatar: true,
-        createdAt: true,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
-  }
-
   async changePassword(
     userId: string,
     currentPassword: string | undefined,
