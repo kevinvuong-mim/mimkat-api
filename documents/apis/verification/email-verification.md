@@ -300,7 +300,7 @@ Hi there,
 
 Thanks for signing up! Please verify your email address by clicking the link below:
 
-{FRONTEND_URL}/verify-email?token={VERIFICATION_TOKEN}
+{CLIENT_URL}/verify-email?token={VERIFICATION_TOKEN}
 
 This link will expire in 48 hours.
 
@@ -312,7 +312,7 @@ The Team
 
 **Variables**:
 
-- `{FRONTEND_URL}`: From `process.env.FRONTEND_URL`
+- `{CLIENT_URL}`: From `process.env.CLIENT_URL`
 - `{VERIFICATION_TOKEN}`: 64-character hex string (plain text, not hashed)
 
 ---

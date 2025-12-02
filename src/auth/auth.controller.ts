@@ -170,6 +170,6 @@ export class AuthController {
       maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION, // 7 days
     });
 
-    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3001');
+    res.redirect(process.env.CLIENT_URL || 'http://localhost:3001');
   }
 }

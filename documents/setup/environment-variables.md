@@ -341,9 +341,9 @@ NODE_ENV="development"
 
 ## 7. Frontend Configuration
 
-### FRONTEND_URL
+### CLIENT_URL
 
-URL của ứng dụng frontend, **cực kỳ quan trọng** vì được sử dụng để:
+URL của ứng dụng client, **cực kỳ quan trọng** vì được sử dụng để:
 
 - Tạo verification email link (`/verify-email?token=...`)
 - Tạo password reset link (`/reset-password?token=...`)
@@ -353,10 +353,10 @@ URL của ứng dụng frontend, **cực kỳ quan trọng** vì được sử d
 
 ```
 # Development
-FRONTEND_URL="http://localhost:3001"
+CLIENT_URL="http://localhost:3001"
 
 # Production
-FRONTEND_URL="https://app.mimkat.com"
+CLIENT_URL="https://app.mimkat.com"
 ```
 
 **Lưu ý:**
@@ -399,8 +399,8 @@ CORS_ORIGIN="http://localhost:3001, http://localhost:3002"
 PORT=3000
 NODE_ENV="development"
 
-# Frontend URLs
-FRONTEND_URL="http://localhost:3001"
+# Client URL
+CLIENT_URL="http://localhost:3001"
 ```
 
 **Lưu ý quan trọng:**
@@ -459,12 +459,12 @@ psql -U postgres -d mimkat
 **Nguyên nhân:**
 
 - GOOGLE_CALLBACK_URL không match với "Authorized redirect URIs" trong Google Console
-- FRONTEND_URL sai
+- CLIENT_URL sai
 
 **Giải pháp:**
 
 - Kiểm tra GOOGLE_CALLBACK_URL phải giống y hệt trong Google Console
-- Đảm bảo FRONTEND_URL chính xác (không có `/` cuối)
+- Đảm bảo CLIENT_URL chính xác (không có `/` cuối)
 - Re-check Google Client ID và Secret
 
 ### 3. Email không gửi được
@@ -538,19 +538,19 @@ openssl rand -base64 32  # For JWT_REFRESH_SECRET (khác với trên)
 
 **Nguyên nhân:**
 
-- FRONTEND_URL sai
-- Frontend routes chưa setup
+- CLIENT_URL sai
+- Client routes chưa setup
 
 **Giải pháp:**
 
 ```env
 # Development
-FRONTEND_URL="http://localhost:3001"  # Port của Next.js app
+CLIENT_URL="http://localhost:3001"  # Port của Next.js app
 
 # Production
-FRONTEND_URL="https://app.mimkat.com"  # Domain của frontend
+CLIENT_URL="https://app.mimkat.com"  # Domain của client
 
-# Đảm bảo frontend có routes:
+# Đảm bảo client có routes:
 # - /verify-email
 # - /reset-password
 ```
@@ -631,7 +631,7 @@ npx prisma migrate reset
 - [ ] Tất cả env variables đã set trên production server
 - [ ] NODE_ENV="production"
 - [ ] CORS_ORIGIN có production domain
-- [ ] FRONTEND_URL trỏ đến production frontend
+- [ ] CLIENT_URL trỏ đến production client
 - [ ] Google OAuth callback URL có production URL
 - [ ] Database accessible từ production server
 - [ ] Cookies `secure: true` requires HTTPS

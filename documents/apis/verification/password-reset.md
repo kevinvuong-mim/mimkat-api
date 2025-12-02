@@ -377,7 +377,7 @@ Hi there,
 
 We received a request to reset your password. Click the link below to create a new password:
 
-{FRONTEND_URL}/reset-password?token={RESET_TOKEN}
+{CLIENT_URL}/reset-password?token={RESET_TOKEN}
 
 This link will expire in 1 hour.
 
@@ -389,7 +389,7 @@ The Team
 
 **Variables**:
 
-- `{FRONTEND_URL}`: From `process.env.FRONTEND_URL`
+- `{CLIENT_URL}`: From `process.env.CLIENT_URL`
 - `{RESET_TOKEN}`: 64-character hex string (plain text, not hashed)
 
 **Security Note**: Email nên include warning về phishing và không request password qua email

@@ -71,8 +71,8 @@ CORS_ORIGIN="http://localhost:3001, http://localhost:3002"
 PORT=3000
 NODE_ENV="development"
 
-# Frontend URLs
-FRONTEND_URL="http://localhost:3001"
+# Client URL
+CLIENT_URL="http://localhost:3001"
 ```
 
 ## Chạy ứng dụng
