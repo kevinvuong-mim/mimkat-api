@@ -29,7 +29,9 @@
       "@prisma/*": ["src/prisma/*"],
       "@tasks/*": ["src/tasks/*"],
       "@user/*": ["src/user/*"],
-      "@verification/*": ["src/verification/*"]
+      "@verification/*": ["src/verification/*"],
+      "@storage/*": ["src/storage/*"],
+      "@image-processing/*": ["src/image-processing/*"]
     }
   }
 }

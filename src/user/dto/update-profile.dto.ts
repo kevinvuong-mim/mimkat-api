@@ -24,11 +24,6 @@ export class UpdateProfileDto {
 
   @IsString()
   @IsOptional()
-  @MaxLength(500, { message: 'Avatar URL must not exceed 500 characters' })
-  avatar?: string;
-
-  @IsString()
-  @IsOptional()
   @Matches(/^[0-9+\-\s()]*$/, {
     message:
       'Phone number can only contain numbers, +, -, spaces, and parentheses',

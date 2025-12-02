@@ -8,6 +8,7 @@ Mimkat API là một REST API server cung cấp hệ thống xác thực và qu�
 
 - 🔐 **Authentication**: Email/Password và Google OAuth 2.0
 - 👤 **User Management**: Profile, password change, session management
+- 🖼️ **Avatar Upload**: Image processing và S3 storage với tự động tối ưu hóa
 - ✉️ **Email Verification**: Xác thực email và password reset
 - 🔒 **Security**: JWT tokens, bcrypt hashing, rate limiting
 - 📱 **Multi-Device**: Quản lý phiên đăng nhập đa thiết bị
@@ -17,10 +18,12 @@ Mimkat API là một REST API server cung cấp hệ thống xác thực và qu�
 
 - **Framework**: NestJS 11.x
 - **Language**: TypeScript
-- **Database**: Prisma ORM
+- **Database**: Prisma ORM with PostgreSQL
 - **Authentication**: Passport.js (JWT, Google OAuth2, Local)
 - **Validation**: class-validator, class-transformer
 - **Email**: Nodemailer
+- **Image Processing**: Sharp
+- **Storage**: AWS S3 SDK (S3-compatible services)
 - **Security**: bcrypt, @nestjs/throttler
 
 ## Cài đặt
@@ -139,8 +142,9 @@ mimkat-api/
 │   │   └── auth.module.ts
 │   ├── user/                                       # User Management Module
 │   │   ├── dto/
-│   │   │   └── change-password.dto.ts              # Change password validation
-│   │   ├── user.controller.ts                      # User profile, password change, session management
+│   │   │   ├── change-password.dto.ts              # Change password validation
+│   │   │   └── update-profile.dto.ts               # Update profile validation
+│   │   ├── user.controller.ts                      # User profile, avatar upload, password change, session management
 │   │   ├── user.service.ts                         # User business logic
 │   │   └── user.module.ts
 │   ├── verification/                               # Email Verification & Password Reset Module
@@ -150,6 +154,16 @@ mimkat-api/
 │   │   ├── verification.controller.ts              # Verification endpoints
 │   │   ├── verification.service.ts                 # Email verification & password reset logic
 │   │   └── verification.module.ts
+│   ├── storage/                                    # Storage Module (AWS S3)
+│   │   ├── interfaces/
+│   │   │   └── storage.interface.ts                # Storage service interface
+│   │   ├── providers/
+│   │   │   └── s3.service.ts                       # AWS S3 implementation
+│   │   ├── storage.service.ts                      # Storage service wrapper
+│   │   └── storage.module.ts
+│   ├── image-processing/                           # Image Processing Module
+│   │   ├── image-processing.service.ts             # Sharp-based image processing (resize, convert, optimize)
+│   │   └── image-processing.module.ts
 │   ├── mail/                                       # Email Service Module
 │   │   ├── mail.service.ts                         # Nodemailer integration for sending emails
 │   │   └── mail.module.ts
@@ -179,7 +193,8 @@ mimkat-api/
 │   ├── app.module.ts                               # Root module with global guards & filters
 │   └── main.ts                                     # Application entry point (bootstrap)
 ├── prisma/
-│   └── schema.prisma                               # Database schema (User, Session, PasswordReset)
+│   ├── migrations/                                 # Database migrations
+│   └── schema.prisma                               # Database schema (User, Session)
 ├── documents/                                      # API Documentation
 │   ├── apis/                                       # API endpoint documentation
 │   │   ├── auth/
@@ -188,10 +203,15 @@ mimkat-api/
 │   │   ├── user/
 │   │   │   ├── change-password.md                  # Change password API
 │   │   │   ├── session-management.md               # Session management APIs
+│   │   │   ├── update-avatar.md                    # Upload avatar API
+│   │   │   ├── update-profile.md                   # Update profile API
 │   │   │   └── user-profile.md                     # Get user profile API
 │   │   └── verification/
 │   │       ├── email-verification.md               # Email verification APIs
 │   │       └── password-reset.md                   # Password reset flow APIs
+│   ├── modules/                                    # Module documentation
+│   │   ├── image-processing.md                     # Image processing module
+│   │   └── storage.md                              # Storage (S3) module
 │   ├─── setup/
 │   │    └── environment-variables.md               # Environment variables setup guide
 │   └── tasks/
@@ -223,6 +243,8 @@ Dự án sử dụng TypeScript path aliases để import dễ dàng hơn:
 - `@tasks/*` → `src/tasks/*`
 - `@user/*` → `src/user/*`
 - `@verification/*` → `src/verification/*`
+- `@storage/*` → `src/storage/*`
+- `@image-processing/*` → `src/image-processing/*`
 
 **Ví dụ:**
 
@@ -230,6 +252,8 @@ Dự án sử dụng TypeScript path aliases để import dễ dàng hơn:
 import { UserService } from '@user/user.service';
 import { PrismaService } from '@prisma/prisma.service';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { StorageService } from '@storage/storage.service';
+import { ImageProcessingService } from '@image-processing/image-processing.service';
 ```
 
 ## Security Features
@@ -298,6 +322,8 @@ npm run start:prod
 ### 👤 User Management APIs
 
 - [User Profile](./documents/apis/user/user-profile.md) - Lấy thông tin profile
+- [Update Profile](./documents/apis/user/update-profile.md) - Cập nhật thông tin profile
+- [Update Avatar](./documents/apis/user/update-avatar.md) - Upload và cập nhật avatar
 - [Change Password](./documents/apis/user/change-password.md) - Đổi mật khẩu
 - [Session Management](./documents/apis/user/session-management.md) - Quản lý phiên đăng nhập
 
@@ -306,9 +332,14 @@ npm run start:prod
 - [Email Verification](./documents/apis/verification/email-verification.md) - Xác thực email
 - [Password Reset](./documents/apis/verification/password-reset.md) - Quên mật khẩu và reset
 
-### 🛠️ Background Tasks & Cron Jobs
+### 🛠️ Modules Documentation
 
-- [Cleanup Cron Jobs](./documents/task/cleanup.md) - Tài liệu các tác vụ dọn dẹp tự động: xóa tài khoản chưa xác thực, token hết hạn, session hết hạn
+- [Storage Module](./documents/modules/storage.md) - AWS S3 storage integration
+- [Image Processing Module](./documents/modules/image-processing.md) - Image optimization với Sharp
+
+### 📋 Background Tasks & Cron Jobs
+
+- [Cleanup Cron Jobs](./documents/tasks/cleanup.md) - Tài liệu các tác vụ dọn dẹp tự động: xóa tài khoản chưa xác thực, token hết hạn, session hết hạn
 
 ---
 

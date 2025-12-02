@@ -339,7 +339,193 @@ NODE_ENV="development"
 
 ---
 
-## 7. Frontend Configuration
+## 7. AWS S3 Configuration
+
+### AWS_REGION
+
+AWS region nơi S3 bucket được tạo.
+
+**Các region phổ biến:**
+
+- `us-east-1`: US East (N. Virginia)
+- `us-west-2`: US West (Oregon)
+- `ap-southeast-1`: Asia Pacific (Singapore)
+- `ap-northeast-1`: Asia Pacific (Tokyo)
+- `eu-west-1`: Europe (Ireland)
+
+**Ví dụ:**
+
+```
+AWS_REGION="ap-southeast-1"
+```
+
+**Lưu ý:**
+
+- Region phải match với region của bucket
+- Chọn region gần user để giảm latency
+
+### AWS_ACCESS_KEY_ID và AWS_SECRET_ACCESS_KEY
+
+Credentials để truy cập AWS S3.
+
+**Bước 1: Truy cập AWS Console**
+
+- Đăng nhập vào [AWS Console](https://console.aws.amazon.com/)
+- Vào **IAM** (Identity and Access Management)
+
+**Bước 2: Tạo IAM User**
+
+- Click **Users** → **Add users**
+- Nhập username (ví dụ: `mimkat-api-user`)
+- Chọn **Programmatic access**
+- Click **Next: Permissions**
+
+**Bước 3: Set Permissions**
+
+Option 1: Attach existing policy (recommended)
+
+- Chọn **Attach existing policies directly**
+- Tìm và chọn `AmazonS3FullAccess` (hoặc tạo custom policy với ít quyền hơn)
+
+Option 2: Custom policy (more secure)
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::your-bucket-name",
+        "arn:aws:s3:::your-bucket-name/*"
+      ]
+    }
+  ]
+}
+```
+
+**Bước 4: Lấy Credentials**
+
+- Sau khi tạo user, AWS sẽ hiển thị:
+  - **Access key ID** → Sao chép vào `AWS_ACCESS_KEY_ID`
+  - **Secret access key** → Sao chép vào `AWS_SECRET_ACCESS_KEY`
+- **QUAN TRỌNG**: Secret key chỉ hiển thị một lần duy nhất, hãy lưu lại cẩn thận
+
+**Ví dụ:**
+
+```
+AWS_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
+AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+```
+
+**Lưu ý:**
+
+- Không bao giờ commit credentials vào Git
+- Sử dụng IAM role khi deploy trên AWS EC2/ECS
+- Rotate credentials định kỳ cho bảo mật
+
+### AWS_BUCKET_NAME
+
+Tên của S3 bucket để lưu trữ files.
+
+**Bước 1: Tạo S3 Bucket**
+
+- Truy cập [S3 Console](https://s3.console.aws.amazon.com/)
+- Click **Create bucket**
+- Nhập bucket name (phải unique globally)
+- Chọn region (phải match với `AWS_REGION`)
+
+**Bước 2: Configure Bucket**
+
+Object Ownership:
+
+- Chọn **ACLs disabled (recommended)**
+
+Block Public Access:
+
+- Giữ nguyên setting mặc định (block all public access) cho private storage
+- Hoặc adjust nếu muốn public read access
+
+Bucket Versioning:
+
+- Enable nếu cần version control (optional)
+
+**Bước 3: Configure CORS (nếu cần)**
+
+Nếu client truy cập trực tiếp từ browser, thêm CORS policy:
+
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+    "AllowedOrigins": ["http://localhost:3001", "https://yourdomain.com"],
+    "ExposeHeaders": ["ETag"]
+  }
+]
+```
+
+**Ví dụ:**
+
+```
+AWS_BUCKET_NAME="mimkat-storage"
+```
+
+**Lưu ý:**
+
+- Bucket name phải unique globally (không trùng với bất kỳ bucket nào khác)
+- Chỉ dùng lowercase, numbers, hyphens
+- Không dùng underscores hoặc uppercase
+
+### AWS_ENDPOINT
+
+S3 endpoint URL.
+
+**For AWS S3:**
+
+Format: `https://s3.{region}.amazonaws.com`
+
+**Examples:**
+
+- US East: `https://s3.us-east-1.amazonaws.com`
+- Singapore: `https://s3.ap-southeast-1.amazonaws.com`
+- Ireland: `https://s3.eu-west-1.amazonaws.com`
+
+**For S3-compatible services:**
+
+- **MinIO**: `http://localhost:9000` (local) hoặc `https://minio.yourdomain.com`
+- **DigitalOcean Spaces**: `https://{region}.digitaloceanspaces.com`
+- **Wasabi**: `https://s3.wasabisys.com`
+- **Backblaze B2**: `https://s3.{region}.backblazeb2.com`
+
+**Ví dụ:**
+
+```
+# AWS S3 Singapore
+AWS_ENDPOINT="https://s3.ap-southeast-1.amazonaws.com"
+
+# MinIO self-hosted
+AWS_ENDPOINT="https://oss.s3.mimkat.vn"
+
+# DigitalOcean Spaces
+AWS_ENDPOINT="https://sgp1.digitaloceanspaces.com"
+```
+
+**Lưu ý:**
+
+- Endpoint phải match với region của bucket
+- Bao gồm protocol (http:// hoặc https://)
+- Không có trailing slash
+
+---
+
+## 8. Frontend Configuration
 
 ### CLIENT_URL
 
@@ -401,6 +587,13 @@ NODE_ENV="development"
 
 # Client URL
 CLIENT_URL="http://localhost:3001"
+
+# AWS S3 Configuration
+AWS_REGION="ap-southeast-1"
+AWS_ACCESS_KEY_ID="your-access-key"
+AWS_SECRET_ACCESS_KEY="your-secret-key"
+AWS_BUCKET_NAME="mimkat-storage"
+AWS_ENDPOINT="https://oss.s3.mimkat.vn"
 ```
 
 **Lưu ý quan trọng:**
@@ -622,7 +815,36 @@ npx prisma migrate dev
 npx prisma migrate reset
 ```
 
-### 10. Production deployment issues
+### 10. Avatar upload không work
+
+**Lỗi:** `Failed to upload avatar` hoặc S3 connection error
+
+**Nguyên nhân:**
+
+- AWS credentials sai hoặc chưa set
+- Bucket không tồn tại
+- Không có quyền truy cập bucket
+- Endpoint URL sai
+
+**Giải pháp:**
+
+```bash
+# Test S3 connection
+aws s3 ls s3://your-bucket-name --profile your-profile
+
+# Kiểm tra:
+# 1. AWS_REGION đúng chưa?
+# 2. AWS_ACCESS_KEY_ID và AWS_SECRET_ACCESS_KEY có quyền?
+# 3. AWS_BUCKET_NAME tồn tại không?
+# 4. AWS_ENDPOINT đúng format?
+```
+
+**Check IAM permissions:**
+
+- User phải có quyền: `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject`
+- Bucket policy cho phép user access
+
+### 11. Production deployment issues
 
 **Lỗi:** Works local nhưng không work khi deploy
 
@@ -634,6 +856,7 @@ npx prisma migrate reset
 - [ ] CLIENT_URL trỏ đến production client
 - [ ] Google OAuth callback URL có production URL
 - [ ] Database accessible từ production server
+- [ ] AWS S3 credentials và bucket configured
 - [ ] Cookies `secure: true` requires HTTPS
 
 ---

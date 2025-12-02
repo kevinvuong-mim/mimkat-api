@@ -8,9 +8,15 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
   Res,
   Query,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { UserService } from './user.service';
@@ -43,6 +49,27 @@ export class UserController {
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     return this.userService.updateProfile(user.id, updateProfileDto);
+  }
+
+  @Put('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 uploads per hour
+  @UseInterceptors(FileInterceptor('file'))
+  async updateAvatar(
+    @CurrentUser() user: UserPayload,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+          new FileTypeValidator({
+            fileType: /(jpg|jpeg|png|webp|gif)$/,
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.userService.updateAvatar(user.id, file);
   }
 
   @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 requests per 1 hour
