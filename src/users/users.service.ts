@@ -14,8 +14,8 @@ import { ImageProcessingService } from '@image-processing/image-processing.servi
 import { StorageService } from '@storage/storage.service';
 
 @Injectable()
-export class UserService {
-  private readonly logger = new Logger(UserService.name);
+export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
   private readonly awsEndpoint: string;
   private readonly awsBucketName: string;
 
@@ -30,7 +30,7 @@ export class UserService {
       this.configService.get<string>('AWS_BUCKET_NAME') || '';
   }
 
-  async getUserProfile(userId: string) {
+  async getCurrentUser(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -54,39 +54,12 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    return this.formatUserProfile(user);
-  }
-
-  private buildAvatarUrl(avatarKey: string | null): string | null {
-    if (!avatarKey) {
-      return null;
-    }
-
-    // If avatar is already a full URL (legacy data from Google OAuth), use it as is
-    if (avatarKey.startsWith('http://') || avatarKey.startsWith('https://')) {
-      return avatarKey;
-    }
-
-    return `${this.awsEndpoint}/${this.awsBucketName}/${avatarKey}`;
-  }
-
-  private formatUserProfile(user: any) {
-    let avatarUrl = this.buildAvatarUrl(user.avatar);
-
-    // Add cache busting query param if avatar exists
-    if (avatarUrl) {
-      const timestamp = user.avatarUpdatedAt
-        ? new Date(user.avatarUpdatedAt).getTime()
-        : Date.now();
-      avatarUrl = `${avatarUrl}?v=${timestamp}`;
-    }
-
     return {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
       username: user.username,
-      avatar: avatarUrl,
+      avatar: this.buildAvatarUrl(user.avatar, user.avatarUpdatedAt),
       phoneNumber: user.phoneNumber,
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
@@ -97,177 +70,61 @@ export class UserService {
     };
   }
 
+  private buildAvatarUrl(
+    avatarKey: string | null,
+    avatarUpdatedAt: Date | null,
+  ): string | null {
+    if (!avatarKey) return null;
+
+    // If avatar is already a full URL (legacy data from Google OAuth)
+    if (/^https?:\/\//.test(avatarKey)) return avatarKey;
+
+    // Add cache busting query param if avatar updated at is provided
+    const timestamp = avatarUpdatedAt
+      ? new Date(avatarUpdatedAt).getTime()
+      : Date.now();
+
+    return `${this.awsEndpoint}/${this.awsBucketName}/${avatarKey}?v=${timestamp}`;
+  }
+
   async updateAvatar(userId: string, file: Express.Multer.File) {
-    // 1. Find user and get old avatar
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, avatar: true },
     });
+    if (!user) throw new NotFoundException('User not found');
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // 2. Process image
     const processedImage = await this.imageProcessing.processImage(file);
 
-    // 3. Generate storage key with correct extension based on mimetype
-    const extension = processedImage.mimetype === 'image/gif' ? 'gif' : 'webp';
-    const storageKey = `general/avatars/${userId}.${extension}`;
+    // Generate storage key with correct extension based on mimetype
+    const storageKey = `general/avatars/${userId}.${processedImage.mimetype === 'image/gif' ? 'gif' : 'webp'}`;
 
-    // 4. Check if new avatar key is same as old (to avoid deleting the file we just uploaded)
-    const isSameKey = user.avatar === storageKey;
-
-    // 5. Upload to storage (returns encoded key, not full URL)
-    let avatarKey: string;
-    try {
-      avatarKey = await this.storage.upload(
-        processedImage.buffer,
-        storageKey,
-        processedImage.mimetype,
-      );
-    } catch (uploadError) {
-      this.logger.error('Failed to upload avatar to S3', uploadError);
-      throw new BadRequestException('Failed to upload avatar');
-    }
-
-    // 6. Update database with new avatar key and timestamp (with optimistic locking)
-    let updatedUser: any;
-    try {
-      updatedUser = await this.prisma.user.updateMany({
-        where: {
-          id: userId,
-          avatar: user.avatar, // Optimistic locking - only update if avatar unchanged
-        },
-        data: {
-          avatar: avatarKey,
-          avatarUpdatedAt: new Date(),
-        },
+    // Upload to storage and return encoded key
+    const avatarKey = await this.storage
+      .upload(processedImage.buffer, storageKey, processedImage.mimetype)
+      .catch(() => {
+        throw new BadRequestException('Failed to upload avatar');
       });
 
-      // Check if update was successful
+    // Update database with new avatar key and timestamp
+    const updatedUser = await this.prisma.user.updateMany({
+      where: { id: userId, avatar: user.avatar },
+      data: { avatar: avatarKey, avatarUpdatedAt: new Date() },
+    });
+
+    if (storageKey !== user.avatar) {
+      // Rollback if update was not successful
       if (updatedUser.count === 0) {
-        // Avatar was changed by another request, rollback our upload
-        // Only rollback if new key is different from old (to avoid deleting the file we just uploaded)
-        if (!isSameKey) {
-          await this.storage
-            .delete(storageKey)
-            .catch((err) =>
-              this.logger.error(
-                'Failed to rollback upload after conflict',
-                err,
-              ),
-            );
-        }
+        await this.storage.delete(storageKey);
         throw new ConflictException(
-          'Avatar was updated by another request. Please try again.',
+          'Failed to update avatar. Please try again',
         );
-      }
-
-      // Fetch updated user data
-      updatedUser = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          fullName: true,
-          username: true,
-          avatar: true,
-          avatarUpdatedAt: true,
-          phoneNumber: true,
-          isActive: true,
-          isEmailVerified: true,
-          password: true,
-          googleId: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-    } catch (dbError) {
-      // Rollback: Delete uploaded file if DB update fails
-      // Only rollback if new key is different from old (to avoid deleting the file we just uploaded)
-      if (!(dbError instanceof ConflictException) && !isSameKey) {
-        await this.storage
-          .delete(storageKey)
-          .catch((err) =>
-            this.logger.error('Failed to rollback upload after DB error', err),
-          );
-      }
-      throw dbError;
-    }
-
-    // 7. Delete old avatar from storage (fire and forget)
-    // Only delete if old avatar exists and is different from new avatar
-    if (user.avatar && !isSameKey) {
-      this.deleteOldAvatar(user.avatar).catch((err) =>
-        this.logger.warn('Failed to delete old avatar', err),
-      );
-    }
-  }
-
-  private async deleteOldAvatar(avatarKey: string): Promise<void> {
-    try {
-      // If avatarKey is a full URL (legacy data from Google OAuth or old system), skip deletion
-      // We don't delete external URLs (Google profile pictures) or legacy data
-      if (avatarKey.startsWith('http://') || avatarKey.startsWith('https://')) {
-        // Check if it's our own S3 URL that needs bucket name removed
-        if (
-          avatarKey.includes(this.awsEndpoint) &&
-          avatarKey.includes(this.awsBucketName)
-        ) {
-          try {
-            const url = new URL(avatarKey);
-            // Remove leading slash, bucket name, and query params
-            // Format: /bucketName/general/avatars/userId.webp -> general/avatars/userId.webp
-            const pathWithoutLeadingSlash = url.pathname.slice(1); // Remove leading /
-            const pathParts = pathWithoutLeadingSlash.split('/');
-
-            // Remove bucket name (first part) if it exists
-            if (pathParts[0] === this.awsBucketName) {
-              pathParts.shift();
-            }
-
-            const key = pathParts.join('/').split('?')[0]; // Remove query params
-
-            if (!key || key === '') {
-              this.logger.warn('Invalid storage key after parsing URL', {
-                avatarKey,
-              });
-              return;
-            }
-
-            await this.storage.delete(key);
-          } catch {
-            this.logger.warn('Invalid URL format for old avatar', {
-              avatarKey,
-            });
-            return;
-          }
-        } else {
-          // External URL (like Google profile picture), skip deletion
-          this.logger.log('Skipping deletion of external avatar URL', {
-            avatarKey,
-          });
+      } else {
+        // Delete old avatar from storage if it's not a full URL (legacy data from Google OAuth)
+        if (user.avatar && !/^https?:\/\//.test(user.avatar)) {
+          await this.storage.delete(user.avatar);
         }
-        return;
       }
-
-      // If it's already a key (not a URL), use it directly
-      const key = avatarKey;
-
-      if (!key || key === '') {
-        this.logger.warn('Invalid storage key for old avatar', {
-          avatarKey,
-        });
-        return;
-      }
-
-      await this.storage.delete(key);
-    } catch (error) {
-      this.logger.warn('Failed to delete old avatar', {
-        avatarKey,
-        error: error.message,
-      });
     }
   }
 
@@ -276,9 +133,7 @@ export class UserService {
       where: { id: userId },
     });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    if (!user) throw new NotFoundException('User not found');
 
     // Check if username is being updated and if it's already taken
     if (
@@ -447,22 +302,11 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    // Build public URL from key if avatar exists
-    let avatarUrl = this.buildAvatarUrl(user.avatar);
-
-    // Add cache busting query param if avatar exists
-    if (avatarUrl) {
-      const timestamp = user.avatarUpdatedAt
-        ? new Date(user.avatarUpdatedAt).getTime()
-        : Date.now();
-      avatarUrl = `${avatarUrl}?v=${timestamp}`;
-    }
-
     return {
       id: user.id,
       username: user.username,
       fullName: user.fullName,
-      avatar: avatarUrl,
+      avatar: this.buildAvatarUrl(user.avatar, user.avatarUpdatedAt),
       createdAt: user.createdAt,
     };
   }

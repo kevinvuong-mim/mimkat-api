@@ -503,5 +503,5 @@ buildPublicUrl(key: string): string {
 ## Related Documentation
 
 - [Image Processing Module](./image-processing.md) - Xử lý ảnh trước khi upload
-- [Update Avatar API](../apis/user/update-avatar.md) - API sử dụng storage module
+- [Update Avatar API](../apis/users/update-avatar.md) - API sử dụng storage module
 - [Environment Variables](../setup/environment-variables.md) - Cấu hình AWS S3

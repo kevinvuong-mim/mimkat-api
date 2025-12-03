@@ -140,13 +140,13 @@ mimkat-api/
 │   │   ├── auth.controller.ts                      # Auth endpoints (login, register, OAuth, logout)
 │   │   ├── auth.service.ts                         # Auth business logic
 │   │   └── auth.module.ts
-│   ├── user/                                       # User Management Module
+│   ├── users/                                      # User Management Module
 │   │   ├── dto/
 │   │   │   ├── change-password.dto.ts              # Change password validation
 │   │   │   └── update-profile.dto.ts               # Update profile validation
-│   │   ├── user.controller.ts                      # User profile, avatar upload, password change, session management
-│   │   ├── user.service.ts                         # User business logic
-│   │   └── user.module.ts
+│   │   ├── users.controller.ts                     # User profile, avatar upload, password change, session management
+│   │   ├── users.service.ts                        # User business logic
+│   │   └── users.module.ts
 │   ├── verification/                               # Email Verification & Password Reset Module
 │   │   ├── dto/
 │   │   │   ├── forgot-password.dto.ts              # Forgot password validation
@@ -200,7 +200,7 @@ mimkat-api/
 │   │   ├── auth/
 │   │   │   ├── authentication.md                   # Login, Register, Logout, Refresh Token APIs
 │   │   │   └── google-oauth.md                     # Google OAuth 2.0 flow documentation
-│   │   ├── user/
+│   │   ├── users/
 │   │   │   ├── change-password.md                  # Change password API
 │   │   │   ├── session-management.md               # Session management APIs
 │   │   │   ├── update-avatar.md                    # Upload avatar API
@@ -241,7 +241,7 @@ Dự án sử dụng TypeScript path aliases để import dễ dàng hơn:
 - `@mail/*` → `src/mail/*`
 - `@prisma/*` → `src/prisma/*`
 - `@tasks/*` → `src/tasks/*`
-- `@user/*` → `src/user/*`
+- `@users/*` → `src/users/*`
 - `@verification/*` → `src/verification/*`
 - `@storage/*` → `src/storage/*`
 - `@image-processing/*` → `src/image-processing/*`
@@ -249,7 +249,7 @@ Dự án sử dụng TypeScript path aliases để import dễ dàng hơn:
 **Ví dụ:**
 
 ```typescript
-import { UserService } from '@user/user.service';
+import { UsersService } from '@users/users.service';
 import { PrismaService } from '@prisma/prisma.service';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { StorageService } from '@storage/storage.service';
@@ -321,11 +321,11 @@ npm run start:prod
 
 ### 👤 User Management APIs
 
-- [User Profile](./documents/apis/user/user-profile.md) - Lấy thông tin profile
-- [Update Profile](./documents/apis/user/update-profile.md) - Cập nhật thông tin profile
-- [Update Avatar](./documents/apis/user/update-avatar.md) - Upload và cập nhật avatar
-- [Change Password](./documents/apis/user/change-password.md) - Đổi mật khẩu
-- [Session Management](./documents/apis/user/session-management.md) - Quản lý phiên đăng nhập
+- [User Profile](./documents/apis/users/user-profile.md) - Lấy thông tin profile
+- [Update Profile](./documents/apis/users/update-profile.md) - Cập nhật thông tin profile
+- [Update Avatar](./documents/apis/users/update-avßatar.md) - Upload và cập nhật avatar
+- [Change Password](./documents/apis/users/change-password.md) - Đổi mật khẩu
+- [Session Management](./documents/apis/users/session-management.md) - Quản lý phiên đăng nhập
 
 ### ✉️ Verification APIs
 

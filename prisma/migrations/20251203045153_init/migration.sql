@@ -13,6 +13,8 @@ CREATE TABLE "users" (
     "passwordResetTokenExpiry" TIMESTAMP(3),
     "googleId" TEXT,
     "avatar" TEXT,
+    "avatarUpdatedAt" TIMESTAMP(3),
+    "phoneNumber" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

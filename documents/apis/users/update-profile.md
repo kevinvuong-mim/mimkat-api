@@ -45,7 +45,7 @@ Tất cả các trường đều là **optional** (có thể gửi một hoặc 
 {
   "success": true,
   "statusCode": 200,
-  "message": "Operation completed successfully",
+  "message": "Resource updated successfully",
   "data": null,
   "timestamp": "2024-12-01T07:00:00.000Z",
   "path": "/users/me"
@@ -150,7 +150,7 @@ curl -X PUT http://localhost:3000/users/me \
 {
   "success": true,
   "statusCode": 200,
-  "message": "Operation completed successfully",
+  "message": "Resource updated successfully",
   "data": null,
   "timestamp": "2024-12-01T07:00:00.000Z",
   "path": "/users/me"
@@ -176,7 +176,7 @@ curl -X PUT http://localhost:3000/users/me \
 {
   "success": true,
   "statusCode": 200,
-  "message": "Operation completed successfully",
+  "message": "Resource updated successfully",
   "data": null,
   "timestamp": "2024-12-01T07:00:00.000Z",
   "path": "/users/me"
@@ -202,7 +202,7 @@ curl -X PUT http://localhost:3000/users/me \
 {
   "success": true,
   "statusCode": 200,
-  "message": "Operation completed successfully",
+  "message": "Resource updated successfully",
   "data": null,
   "timestamp": "2024-12-01T07:00:00.000Z",
   "path": "/users/me"

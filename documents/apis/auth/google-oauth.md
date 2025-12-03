@@ -392,8 +392,8 @@ does not match the ones authorized for the OAuth client.
 ## Related Documentation
 
 - [Authentication API](./authentication.md) - Email/password authentication
-- [Session Management API](../user/session-management.md) - Manage active sessions
-- [User Profile API](../user/user-profile.md) - Get user information
+- [Session Management API](../users/session-management.md) - Manage active sessions
+- [User Profile API](../users/user-profile.md) - Get user information
 
 ---
 

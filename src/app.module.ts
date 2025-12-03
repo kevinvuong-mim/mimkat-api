@@ -6,7 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from '@prisma/prisma.module';
 import { AuthModule } from '@auth/auth.module';
-import { UserModule } from '@user/user.module';
+import { UsersModule } from '@users/users.module';
 import { VerificationModule } from '@verification/verification.module';
 import { TasksModule } from '@tasks/tasks.module';
 import { StorageModule } from '@storage/storage.module';
@@ -27,7 +27,7 @@ import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
     ]),
     PrismaModule,
     AuthModule,
-    UserModule,
+    UsersModule,
     VerificationModule,
     TasksModule,
     StorageModule,

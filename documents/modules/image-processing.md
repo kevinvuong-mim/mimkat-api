@@ -558,5 +558,5 @@ await storage.upload(processed.buffer, key2, processed.mimetype); // ✅
 ## Related Documentation
 
 - [Storage Module](./storage.md) - Upload processed images to S3
-- [Update Avatar API](../apis/user/update-avatar.md) - API endpoint using this module
+- [Update Avatar API](../apis/users/update-avatar.md) - API endpoint using this module
 - [Sharp Documentation](https://sharp.pixelplumbing.com/) - Official Sharp docs

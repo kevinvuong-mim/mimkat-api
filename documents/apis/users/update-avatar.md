@@ -66,7 +66,7 @@ Content-Type: multipart/form-data
 {
   "success": true,
   "statusCode": 200,
-  "message": "Operation completed successfully",
+  "message": "Resource updated successfully",
   "data": null,
   "timestamp": "2024-12-01T08:15:23.456Z",
   "path": "/users/me/avatar"
@@ -188,7 +188,7 @@ Khi avatar được update bởi request khác (race condition):
 {
   "success": false,
   "statusCode": 409,
-  "message": "Avatar was updated by another request. Please try again.",
+  "message": "Failed to update avatar. Please try again",
   "error": "Conflict",
   "timestamp": "2024-12-01T08:00:00.000Z",
   "path": "/users/me/avatar"
@@ -391,7 +391,7 @@ Khi upload avatar mới:
 
 1. Process và upload ảnh mới
 2. Update database với avatar key mới
-3. **Delete old avatar** (fire-and-forget, không chặn response)
+3. **Overwite old avatar** (fire-and-forget, không chặn response)
 
 **Benefits:**
 
@@ -432,7 +432,7 @@ if (updatedCount === 0) {
   // Avatar changed by another request
   // Rollback: delete uploaded file
   await storage.delete(newAvatar);
-  throw new ConflictException('Avatar was updated by another request');
+  throw new ConflictException('Failed to update avatar. Please try again');
 }
 ```
 
