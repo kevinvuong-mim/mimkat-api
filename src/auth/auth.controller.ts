@@ -140,6 +140,7 @@ export class AuthController {
   async googleAuth() {
     // This route initiates the Google OAuth flow
     // User will be redirected to Google's login page
+    // GoogleAuthGuard will automatically handle state parameter
   }
 
   @Public()
@@ -170,6 +171,11 @@ export class AuthController {
       maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION, // 7 days
     });
 
-    res.redirect(process.env.CLIENT_URL || 'http://localhost:3001');
+    // Get the redirect URL from state parameter (passed from Google)
+    const state = req.query.state as string;
+    const redirectUrl =
+      state || process.env.CLIENT_URL || 'http://localhost:3001';
+
+    res.redirect(redirectUrl);
   }
 }
