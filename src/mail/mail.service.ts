@@ -21,7 +21,7 @@ export class MailService {
   }
 
   async sendVerificationEmail(email: string, token: string) {
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    const frontendUrl = this.configService.get<string>('CLIENT_URL');
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
 
     try {
@@ -40,7 +40,7 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string) {
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    const frontendUrl = this.configService.get<string>('CLIENT_URL');
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
     try {

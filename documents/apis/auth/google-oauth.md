@@ -378,7 +378,7 @@ does not match the ones authorized for the OAuth client.
 - [ ] Google Client ID và Secret đúng
 - [ ] Redirect URI match chính xác trong Google Console
 - [ ] Google+ API được enable
-- [ ] FRONTEND_URL và CORS_ORIGIN được set đúng
+- [ ] CLIENT_URL và CORS_ORIGIN được set đúng
 - [ ] NODE_ENV được set (development/production)
 - [ ] JWT secrets được configure
 - [ ] Database connection working
@@ -392,8 +392,8 @@ does not match the ones authorized for the OAuth client.
 ## Related Documentation
 
 - [Authentication API](./authentication.md) - Email/password authentication
-- [Session Management API](../user/session-management.md) - Manage active sessions
-- [User Profile API](../user/user-profile.md) - Get user information
+- [Session Management API](../users/session-management.md) - Manage active sessions
+- [User Profile API](../users/user-profile.md) - Get user information
 
 ---
 

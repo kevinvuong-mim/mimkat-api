@@ -28,8 +28,10 @@
       "@mail/*": ["src/mail/*"],
       "@prisma/*": ["src/prisma/*"],
       "@tasks/*": ["src/tasks/*"],
-      "@user/*": ["src/user/*"],
-      "@verification/*": ["src/verification/*"]
+      "@users/*": ["src/users/*"],
+      "@verification/*": ["src/verification/*"],
+      "@storage/*": ["src/storage/*"],
+      "@image-processing/*": ["src/image-processing/*"]
     }
   }
 }

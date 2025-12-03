@@ -8,13 +8,20 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
   Res,
   Query,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
-import { UserService } from './user.service';
+import { UsersService } from './users.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import {
   CurrentUser,
   type UserPayload,
@@ -25,14 +32,44 @@ import { getPaginationParams } from '@common/utils/pagination.util';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
-export class UserController {
-  constructor(private readonly userService: UserService) {}
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
   @HttpCode(HttpStatus.OK)
-  async getCurrentUser(@CurrentUser() user: UserPayload) {
+  getCurrentUser(@CurrentUser() user: UserPayload) {
     // Return full profile with hasPassword and hasGoogleAuth flags
-    return this.userService.getUserProfile(user.id);
+    return this.usersService.getCurrentUser(user.id);
+  }
+
+  @Put('me')
+  @HttpCode(HttpStatus.OK)
+  updateProfile(
+    @CurrentUser() user: UserPayload,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(user.id, updateProfileDto);
+  }
+
+  @Put('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 uploads per hour
+  @UseInterceptors(FileInterceptor('file'))
+  updateAvatar(
+    @CurrentUser() user: UserPayload,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+          new FileTypeValidator({
+            fileType: /(jpg|jpeg|png|webp|gif)$/,
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.usersService.updateAvatar(user.id, file);
   }
 
   @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 requests per 1 hour
@@ -43,7 +80,7 @@ export class UserController {
     @Body() changePasswordDto: ChangePasswordDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    await this.userService.changePassword(
+    await this.usersService.changePassword(
       user.id,
       changePasswordDto.currentPassword,
       changePasswordDto.newPassword,
@@ -56,7 +93,7 @@ export class UserController {
 
   @Get('sessions')
   @HttpCode(HttpStatus.OK)
-  async getActiveSessions(
+  getActiveSessions(
     @CurrentUser() user: UserPayload,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -67,7 +104,7 @@ export class UserController {
       skip,
     } = getPaginationParams(Number(page), Number(limit));
 
-    return this.userService.getActiveSessions(
+    return this.usersService.getActiveSessions(
       user.id,
       user.sessionId,
       normalizedPage,
@@ -82,7 +119,7 @@ export class UserController {
     @CurrentUser() user: UserPayload,
     @Res({ passthrough: true }) res: Response,
   ) {
-    await this.userService.logoutAllDevices(user.id);
+    await this.usersService.logoutAllDevices(user.id);
 
     // Clear cookies
     res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
@@ -91,10 +128,16 @@ export class UserController {
 
   @Delete('sessions/:sessionId')
   @HttpCode(HttpStatus.OK)
-  async logoutDevice(
+  logoutDevice(
     @CurrentUser() user: UserPayload,
     @Param('sessionId') sessionId: string,
   ) {
-    return this.userService.logoutDevice(user.id, sessionId);
+    return this.usersService.logoutDevice(user.id, sessionId);
+  }
+
+  @Get(':identifier')
+  @HttpCode(HttpStatus.OK)
+  getUserByIdOrUsername(@Param('identifier') identifier: string) {
+    return this.usersService.getUserByIdOrUsername(identifier);
   }
 }

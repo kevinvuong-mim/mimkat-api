@@ -21,6 +21,8 @@ model User {
   passwordResetTokenExpiry DateTime?
   googleId                 String?   @unique
   avatar                   String?
+  avatarUpdatedAt          DateTime?
+  phoneNumber              String?
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
   sessions                 Session[]
