@@ -13,3 +13,4 @@ export * from './filters/http-exception.filter';
 
 // Utils
 export * from './utils/pagination.util';
+export * from './utils/frontend-url.util';

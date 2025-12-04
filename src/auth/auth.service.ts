@@ -26,7 +26,7 @@ export class AuthService {
     private mailService: MailService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto, frontendUrl: string) {
     const { email, password } = registerDto;
 
     // Check if email already exists
@@ -67,7 +67,11 @@ export class AuthService {
 
     // Send verification email
     try {
-      await this.mailService.sendVerificationEmail(email, verificationToken);
+      await this.mailService.sendVerificationEmail(
+        email,
+        verificationToken,
+        frontendUrl,
+      );
     } catch (error) {
       // Log error but don't fail registration
       this.logger.error(

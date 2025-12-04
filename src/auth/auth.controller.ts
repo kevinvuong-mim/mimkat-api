@@ -23,6 +23,7 @@ import {
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { GoogleAuthGuard } from '@auth/guards/google-auth.guard';
 import { DeviceUtil } from '@common/utils/device.util';
+import { extractFrontendUrl } from '@common/utils/frontend-url.util';
 import { AUTH_CONSTANTS } from './constants/auth.constants';
 
 @Controller('auth')
@@ -33,8 +34,9 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto, @Req() req: Request) {
+    const frontendUrl = extractFrontendUrl(req);
+    return this.authService.register(registerDto, frontendUrl);
   }
 
   @Public()
@@ -140,6 +142,7 @@ export class AuthController {
   async googleAuth() {
     // This route initiates the Google OAuth flow
     // User will be redirected to Google's login page
+    // GoogleAuthGuard will automatically handle state parameter
   }
 
   @Public()
@@ -170,6 +173,9 @@ export class AuthController {
       maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION, // 7 days
     });
 
-    res.redirect(process.env.CLIENT_URL || 'http://localhost:3001');
+    // Get the redirect URL from state parameter (passed from Google)
+    const redirectUrl = req.query.state as string;
+
+    res.redirect(redirectUrl);
   }
 }

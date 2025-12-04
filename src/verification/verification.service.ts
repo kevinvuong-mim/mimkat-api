@@ -51,7 +51,7 @@ export class VerificationService {
     });
   }
 
-  async resendVerificationEmail(email: string) {
+  async resendVerificationEmail(email: string, frontendUrl: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -82,10 +82,14 @@ export class VerificationService {
     });
 
     // Send verification email
-    await this.mailService.sendVerificationEmail(email, verificationToken);
+    await this.mailService.sendVerificationEmail(
+      email,
+      verificationToken,
+      frontendUrl,
+    );
   }
 
-  async forgotPassword(email: string) {
+  async forgotPassword(email: string, frontendUrl: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -125,7 +129,11 @@ export class VerificationService {
 
     // Send password reset email
     try {
-      await this.mailService.sendPasswordResetEmail(email, resetToken);
+      await this.mailService.sendPasswordResetEmail(
+        email,
+        resetToken,
+        frontendUrl,
+      );
     } catch (error) {
       // Log error but don't fail the request
       this.logger.error(

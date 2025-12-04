@@ -7,14 +7,16 @@ import {
   HttpCode,
   HttpStatus,
   Res,
+  Req,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { VerificationService } from './verification.service';
 import { ForgotPasswordDto } from '@/verification/dto/forgot-password.dto';
 import { ResetPasswordDto } from '@/verification/dto/reset-password.dto';
 import { ResendVerificationDto } from '@/verification/dto/resend-verification.dto';
 import { Public } from '@common/decorators/public.decorator';
+import { extractFrontendUrl } from '@common/utils/frontend-url.util';
 import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
 
 @Controller('verification')
@@ -34,9 +36,12 @@ export class VerificationController {
   @HttpCode(HttpStatus.OK)
   async resendVerification(
     @Body() resendVerificationDto: ResendVerificationDto,
+    @Req() req: Request,
   ) {
+    const frontendUrl = extractFrontendUrl(req);
     return this.verificationService.resendVerificationEmail(
       resendVerificationDto.email,
+      frontendUrl,
     );
   }
 
@@ -44,8 +49,15 @@ export class VerificationController {
   @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per 1 hour
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.verificationService.forgotPassword(forgotPasswordDto.email);
+  async forgotPassword(
+    @Body() forgotPasswordDto: ForgotPasswordDto,
+    @Req() req: Request,
+  ) {
+    const frontendUrl = extractFrontendUrl(req);
+    return this.verificationService.forgotPassword(
+      forgotPasswordDto.email,
+      frontendUrl,
+    );
   }
 
   @Public()

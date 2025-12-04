@@ -300,7 +300,7 @@ Hi there,
 
 Thanks for signing up! Please verify your email address by clicking the link below:
 
-{CLIENT_URL}/verify-email?token={VERIFICATION_TOKEN}
+{FRONTEND_URL}/verify-email?token={VERIFICATION_TOKEN}
 
 This link will expire in 48 hours.
 
@@ -312,7 +312,7 @@ The Team
 
 **Variables**:
 
-- `{CLIENT_URL}`: From `process.env.CLIENT_URL`
+- `{FRONTEND_URL}`: Extracted from request headers (Origin or Referer), fallback to `http://localhost:3001` for development
 - `{VERIFICATION_TOKEN}`: 64-character hex string (plain text, not hashed)
 
 ---

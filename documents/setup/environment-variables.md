@@ -525,35 +525,6 @@ AWS_ENDPOINT="https://sgp1.digitaloceanspaces.com"
 
 ---
 
-## 8. Frontend Configuration
-
-### CLIENT_URL
-
-URL của ứng dụng client, **cực kỳ quan trọng** vì được sử dụng để:
-
-- Tạo verification email link (`/verify-email?token=...`)
-- Tạo password reset link (`/reset-password?token=...`)
-- Redirect sau Google OAuth callback
-
-**Ví dụ:**
-
-```
-# Development
-CLIENT_URL="http://localhost:3001"
-
-# Production
-CLIENT_URL="https://app.mimkat.com"
-```
-
-**Lưu ý:**
-
-- URL này phải trỏ đến frontend app (Next.js client)
-- **Khác với backend API URL** (backend chạy ở port 3000, frontend ở 3001)
-- Không có dấu `/` ở cuối URL
-- Nếu sai, verification links và reset password links sẽ không work
-
----
-
 ## Tổng hợp - File .env hoàn chỉnh
 
 Sau khi lấy được tất cả các biến, thêm chúng vào file `.env` của dự án:
@@ -584,9 +555,6 @@ CORS_ORIGIN="http://localhost:3001, http://localhost:3002"
 # Server
 PORT=3000
 NODE_ENV="development"
-
-# Client URL
-CLIENT_URL="http://localhost:3001"
 
 # AWS S3 Configuration
 AWS_REGION="ap-southeast-1"
@@ -652,12 +620,10 @@ psql -U postgres -d mimkat
 **Nguyên nhân:**
 
 - GOOGLE_CALLBACK_URL không match với "Authorized redirect URIs" trong Google Console
-- CLIENT_URL sai
 
 **Giải pháp:**
 
 - Kiểm tra GOOGLE_CALLBACK_URL phải giống y hệt trong Google Console
-- Đảm bảo CLIENT_URL chính xác (không có `/` cuối)
 - Re-check Google Client ID và Secret
 
 ### 3. Email không gửi được
@@ -731,22 +697,16 @@ openssl rand -base64 32  # For JWT_REFRESH_SECRET (khác với trên)
 
 **Nguyên nhân:**
 
-- CLIENT_URL sai
+- Frontend URL không được extract đúng từ request headers
 - Client routes chưa setup
 
 **Giải pháp:**
 
-```env
-# Development
-CLIENT_URL="http://localhost:3001"  # Port của Next.js app
-
-# Production
-CLIENT_URL="https://app.mimkat.com"  # Domain của client
-
-# Đảm bảo client có routes:
-# - /verify-email
-# - /reset-password
-```
+- Đảm bảo frontend gửi request với đúng `Origin` hoặc `Referer` headers
+- Kiểm tra client có routes:
+  - `/verify-email`
+  - `/reset-password`
+- Nếu không có headers, system sẽ fallback về `http://localhost:3001` (development)
 
 ### 7. Port already in use
 
@@ -853,10 +813,10 @@ aws s3 ls s3://your-bucket-name --profile your-profile
 - [ ] Tất cả env variables đã set trên production server
 - [ ] NODE_ENV="production"
 - [ ] CORS_ORIGIN có production domain
-- [ ] CLIENT_URL trỏ đến production client
 - [ ] Google OAuth callback URL có production URL
 - [ ] Database accessible từ production server
 - [ ] AWS S3 credentials và bucket configured
 - [ ] Cookies `secure: true` requires HTTPS
+- [ ] Frontend gửi đúng Origin/Referer headers trong requests
 
 ---
