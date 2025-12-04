@@ -16,25 +16,25 @@ lerna-debug.log*
 # Environment variables
 .env
 .env.local
-.env.development.local
 .env.test.local
 .env.production.local
+.env.development.local
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
 .idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
 *.sln
+*.suo
 *.sw?
+*.ntvs*
+.DS_Store
+.vscode/*
+*.njsproj
+!.vscode/extensions.json
 
 # Testing
+*.lcov
 coverage
 .nyc_output
-*.lcov
 
 # Cache
 .cache
@@ -42,9 +42,9 @@ coverage
 .tsbuildinfo
 
 # Temporary files
+.temp
 *.tmp
 *.temp
-.temp
 
 # OS files
 Thumbs.db
@@ -52,4 +52,5 @@ Thumbs.db
 # NestJS specific
 *.tsbuildinfo
 
+# Prisma
 /generated/prisma
