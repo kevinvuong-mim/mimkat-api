@@ -1,24 +1,25 @@
 import { Request } from 'express';
 
 export interface DeviceInfo {
-  deviceName: string;
-  deviceType: string;
   ipAddress: string;
   userAgent: string;
+  deviceName: string;
+  deviceType: string;
 }
 
 export class DeviceUtil {
   static extractDeviceInfo(req: Request): DeviceInfo {
-    const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = this.getIpAddress(req);
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+
     const deviceType = this.getDeviceType(userAgent);
     const deviceName = this.getDeviceName(userAgent, deviceType);
 
     return {
-      deviceName,
-      deviceType,
       ipAddress,
       userAgent,
+      deviceName,
+      deviceType,
     };
   }
 
@@ -42,14 +43,14 @@ export class DeviceUtil {
 
     // Mobile detection
     const mobileKeywords = [
-      'mobile',
-      'android',
-      'iphone',
       'ipad',
       'ipod',
+      'webos',
+      'iphone',
+      'mobile',
+      'android',
       'blackberry',
       'windows phone',
-      'webos',
     ];
     if (mobileKeywords.some((keyword) => ua.includes(keyword))) {
       return 'mobile';

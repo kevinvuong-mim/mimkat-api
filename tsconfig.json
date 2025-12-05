@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
+    "baseUrl": ".",
     "sourceMap": true,
     "outDir": "./dist",
     "target": "ES2023",
@@ -15,23 +15,12 @@
     "strictNullChecks": true,
     "strictBindCallApply": false,
     "emitDecoratorMetadata": true,
+    "paths": { "@/*": ["src/*"] },
     "experimentalDecorators": true,
     "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,
     "noFallthroughCasesInSwitch": false,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "paths": {
-      "@/*": ["src/*"],
-      "@auth/*": ["src/auth/*"],
-      "@mail/*": ["src/mail/*"],
-      "@tasks/*": ["src/tasks/*"],
-      "@users/*": ["src/users/*"],
-      "@common/*": ["src/common/*"],
-      "@prisma/*": ["src/prisma/*"],
-      "@storage/*": ["src/storage/*"],
-      "@verification/*": ["src/verification/*"],
-      "@image-processing/*": ["src/image-processing/*"]
-    }
+    "forceConsistentCasingInFileNames": true
   }
 }

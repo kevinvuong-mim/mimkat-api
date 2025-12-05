@@ -1,23 +1,24 @@
 import {
-  Controller,
-  Post,
   Get,
+  Res,
+  Req,
+  Post,
   Body,
   Query,
   HttpCode,
+  Controller,
   HttpStatus,
-  Res,
-  Req,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { Request, Response } from 'express';
-import { VerificationService } from './verification.service';
-import { ForgotPasswordDto } from '@/verification/dto/forgot-password.dto';
+import type { Response, Request } from 'express';
+
+import { Public } from '@/common/decorators/public.decorator';
+import { AUTH_CONSTANTS } from '@/auth/constants/auth.constants';
+import { extractFrontendUrl } from '@/common/utils/frontend-url.util';
 import { ResetPasswordDto } from '@/verification/dto/reset-password.dto';
+import { VerificationService } from '@/verification/verification.service';
+import { ForgotPasswordDto } from '@/verification/dto/forgot-password.dto';
 import { ResendVerificationDto } from '@/verification/dto/resend-verification.dto';
-import { Public } from '@common/decorators/public.decorator';
-import { extractFrontendUrl } from '@common/utils/frontend-url.util';
-import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
 
 @Controller('verification')
 export class VerificationController {

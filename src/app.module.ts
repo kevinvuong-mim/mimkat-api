@@ -1,18 +1,19 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_FILTER } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { PrismaModule } from '@prisma/prisma.module';
-import { AuthModule } from '@auth/auth.module';
-import { UsersModule } from '@users/users.module';
-import { VerificationModule } from '@verification/verification.module';
-import { TasksModule } from '@tasks/tasks.module';
-import { StorageModule } from '@storage/storage.module';
-import { ImageProcessingModule } from '@image-processing/image-processing.module';
-import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
-import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+
+import { AppService } from '@/app.service';
+import { AuthModule } from '@/auth/auth.module';
+import { AppController } from '@/app.controller';
+import { TasksModule } from '@/tasks/tasks.module';
+import { UsersModule } from '@/users/users.module';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { StorageModule } from '@/storage/storage.module';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { VerificationModule } from '@/verification/verification.module';
+import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
+import { ImageProcessingModule } from '@/image-processing/image-processing.module';
 
 @Module({
   imports: [

@@ -1,29 +1,28 @@
 import {
   Injectable,
-  BadRequestException,
-  NotFoundException,
   ConflictException,
-  Logger,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '@prisma/prisma.service';
-import { createPaginatedResponse } from '@common/utils/pagination.util';
-import { UpdateProfileDto } from './dto/update-profile.dto';
-import { ImageProcessingService } from '@image-processing/image-processing.service';
-import { StorageService } from '@storage/storage.service';
+import { ConfigService } from '@nestjs/config';
+
+import { PrismaService } from '@/prisma/prisma.service';
+import { StorageService } from '@/storage/storage.service';
+import { UpdateProfileDto } from '@/users/dto/update-profile.dto';
+import { createPaginatedResponse } from '@/common/utils/pagination.util';
+import { ImageProcessingService } from '@/image-processing/image-processing.service';
 
 @Injectable()
 export class UsersService {
-  private readonly logger = new Logger(UsersService.name);
   private readonly awsEndpoint: string;
   private readonly awsBucketName: string;
 
   constructor(
     private prisma: PrismaService,
-    private imageProcessing: ImageProcessingService,
     private storage: StorageService,
     private configService: ConfigService,
+    private imageProcessing: ImageProcessingService,
   ) {
     this.awsEndpoint = this.configService.get<string>('AWS_ENDPOINT') || '';
     this.awsBucketName =

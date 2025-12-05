@@ -1,10 +1,10 @@
 export interface ApiResponse<T = any> {
-  success: boolean;
-  statusCode: number;
-  message: string;
   data?: T;
-  timestamp: string;
   path: string;
+  message: string;
+  success: boolean;
+  timestamp: string;
+  statusCode: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -13,8 +13,8 @@ export interface PaginatedResponse<T> {
 }
 
 export interface PaginationMeta {
-  total: number;
   page: number;
+  total: number;
   perPage: number;
   totalPages: number;
   hasNextPage: boolean;
@@ -22,18 +22,18 @@ export interface PaginationMeta {
 }
 
 export interface ErrorResponse {
-  success: false;
-  statusCode: number;
-  message: string;
-  error: string;
-  errors?: ValidationError[];
-  timestamp: string;
   path: string;
+  error: string;
   stack?: string; // Only in development
+  success: false;
+  message: string;
+  timestamp: string;
+  statusCode: number;
+  errors?: ValidationError[];
 }
 
 export interface ValidationError {
+  value?: any;
   field: string;
   message: string;
-  value?: any;
 }

@@ -1,34 +1,35 @@
 import {
-  Controller,
   Get,
   Put,
-  Delete,
+  Res,
   Body,
   Param,
+  Query,
+  Delete,
   HttpCode,
-  HttpStatus,
   UseGuards,
-  UseInterceptors,
+  Controller,
+  HttpStatus,
   UploadedFile,
   ParseFilePipe,
-  MaxFileSizeValidator,
+  UseInterceptors,
   FileTypeValidator,
-  Res,
-  Query,
+  MaxFileSizeValidator,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
-import { UsersService } from './users.service';
-import { ChangePasswordDto } from './dto/change-password.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import { Throttle } from '@nestjs/throttler';
+import { FileInterceptor } from '@nestjs/platform-express';
+
 import {
   CurrentUser,
   type UserPayload,
-} from '@common/decorators/current-user.decorator';
-import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
-import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
-import { getPaginationParams } from '@common/utils/pagination.util';
+} from '@/common/decorators/current-user.decorator';
+import { UsersService } from '@/users/users.service';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { AUTH_CONSTANTS } from '@/auth/constants/auth.constants';
+import { UpdateProfileDto } from '@/users/dto/update-profile.dto';
+import { ChangePasswordDto } from '@/users/dto/change-password.dto';
+import { getPaginationParams } from '@/common/utils/pagination.util';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)

@@ -1,23 +1,23 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import sharp from 'sharp';
+import { Logger, Injectable, BadRequestException } from '@nestjs/common';
 
 export interface ProcessedImage {
+  size: number;
   buffer: Buffer;
   mimetype: string;
-  size: number;
 }
 
 @Injectable()
 export class ImageProcessingService {
-  private readonly logger = new Logger(ImageProcessingService.name);
-  private readonly MAX_DIMENSION = 1024;
   private readonly QUALITY = 80;
+  private readonly MAX_DIMENSION = 1024;
   private readonly ALLOWED_MIMETYPES = [
-    'image/jpeg',
-    'image/png',
-    'image/webp',
     'image/gif',
+    'image/png',
+    'image/jpeg',
+    'image/webp',
   ];
+  private readonly logger = new Logger(ImageProcessingService.name);
 
   async processImage(file: Express.Multer.File): Promise<ProcessedImage> {
     // Validate mimetype

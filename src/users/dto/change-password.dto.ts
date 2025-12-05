@@ -1,9 +1,9 @@
 import {
-  IsString,
-  IsNotEmpty,
-  MinLength,
   Matches,
+  IsString,
+  MinLength,
   IsOptional,
+  IsNotEmpty,
 } from 'class-validator';
 
 export class ChangePasswordDto {

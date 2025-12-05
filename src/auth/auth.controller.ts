@@ -1,30 +1,31 @@
 import {
-  Controller,
-  Post,
   Get,
-  Body,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
   Req,
   Res,
+  Body,
+  Post,
+  HttpCode,
+  UseGuards,
+  Controller,
+  HttpStatus,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
-import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { Public } from '@common/decorators/public.decorator';
+
+import { LoginDto } from '@/auth/dto/login.dto';
+import { AuthService } from '@/auth/auth.service';
 import {
   CurrentUser,
   type UserPayload,
-} from '@common/decorators/current-user.decorator';
-import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
-import { GoogleAuthGuard } from '@auth/guards/google-auth.guard';
-import { DeviceUtil } from '@common/utils/device.util';
-import { extractFrontendUrl } from '@common/utils/frontend-url.util';
+} from '@/common/decorators/current-user.decorator';
+import { RegisterDto } from '@/auth/dto/register.dto';
+import { DeviceUtil } from '@/common/utils/device.util';
 import { AUTH_CONSTANTS } from './constants/auth.constants';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { Public } from '@/common/decorators/public.decorator';
+import { RefreshTokenDto } from '@/auth/dto/refresh-token.dto';
+import { GoogleAuthGuard } from '@/auth/guards/google-auth.guard';
+import { extractFrontendUrl } from '@/common/utils/frontend-url.util';
 
 @Controller('auth')
 export class AuthController {

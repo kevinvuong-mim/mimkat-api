@@ -1,8 +1,9 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PrismaService } from '@prisma/prisma.service';
-import { AUTH_CONSTANTS } from '../constants/auth.constants';
+import { Strategy, ExtractJwt } from 'passport-jwt';
+import { Injectable, ForbiddenException } from '@nestjs/common';
+
+import { PrismaService } from '@/prisma/prisma.service';
+import { AUTH_CONSTANTS } from '@/auth/constants/auth.constants';
 
 interface JwtPayload {
   sub: string;
@@ -13,15 +14,15 @@ interface JwtPayload {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private prisma: PrismaService) {
     super({
+      passReqToCallback: true,
+      ignoreExpiration: false,
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
         (request) => {
           return request?.cookies?.accessToken;
         },
       ]),
-      ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET || 'default-secret',
-      passReqToCallback: true,
     });
   }
 
@@ -40,9 +41,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       select: {
         id: true,
         email: true,
-        username: true,
         fullName: true,
         isActive: true,
+        username: true,
       },
     });
 

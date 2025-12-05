@@ -1,20 +1,21 @@
 import {
+  Logger,
   Injectable,
   ConflictException,
-  UnauthorizedException,
   BadRequestException,
-  Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { PrismaService } from '@prisma/prisma.service';
-import { RegisterDto } from '@auth/dto/register.dto';
-import { LoginDto } from '@auth/dto/login.dto';
-import { DeviceInfo } from '@common/utils/device.util';
-import { AUTH_CONSTANTS } from '@auth/constants/auth.constants';
-import { GoogleAuthDto } from '@auth/dto/google-auth.dto';
-import { MailService } from '@mail/mail.service';
+import { JwtService } from '@nestjs/jwt';
+
+import { LoginDto } from '@/auth/dto/login.dto';
+import { MailService } from '@/mail/mail.service';
+import { RegisterDto } from '@/auth/dto/register.dto';
+import { DeviceInfo } from '@/common/utils/device.util';
+import { PrismaService } from '@/prisma/prisma.service';
+import { GoogleAuthDto } from '@/auth/dto/google-auth.dto';
+import { AUTH_CONSTANTS } from '@/auth/constants/auth.constants';
 
 @Injectable()
 export class AuthService {

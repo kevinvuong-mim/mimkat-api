@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import { CleanupService } from './cleanup.service';
+
+import { CleanupService } from '@/tasks/cleanup.service';
 
 @Module({
-  imports: [ScheduleModule.forRoot()],
   providers: [CleanupService],
+  imports: [ScheduleModule.forRoot()],
 })
 export class TasksModule {}

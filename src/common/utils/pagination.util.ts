@@ -1,7 +1,7 @@
 import {
-  PaginatedResponse,
   PaginationMeta,
-} from '@common/interfaces/response.interface';
+  PaginatedResponse,
+} from '@/common/interfaces/response.interface';
 
 export function createPaginatedResponse<T>(
   items: T[],
@@ -12,17 +12,17 @@ export function createPaginatedResponse<T>(
   const totalPages = Math.ceil(total / perPage);
 
   const meta: PaginationMeta = {
-    total,
     page,
+    total,
     perPage,
     totalPages,
-    hasNextPage: page < totalPages,
     hasPreviousPage: page > 1,
+    hasNextPage: page < totalPages,
   };
 
   return {
-    items,
     meta,
+    items,
   };
 }
 
@@ -35,8 +35,8 @@ export function getPaginationParams(
   const skip = (normalizedPage - 1) * normalizedLimit;
 
   return {
+    skip,
     page: normalizedPage,
     limit: normalizedLimit,
-    skip,
   };
 }

@@ -1,8 +1,9 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { PrismaService } from '@prisma/prisma.service';
-import { MailService } from '@mail/mail.service';
+import { Logger, Injectable, BadRequestException } from '@nestjs/common';
+
+import { MailService } from '@/mail/mail.service';
+import { PrismaService } from '@/prisma/prisma.service';
 
 @Injectable()
 export class VerificationService {

@@ -1,19 +1,19 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   PutObjectCommand,
-  DeleteObjectCommand,
   HeadBucketCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
-import { IStorageService } from '../interfaces/storage.interface';
+import { ConfigService } from '@nestjs/config';
+import { Logger, Injectable, OnModuleInit } from '@nestjs/common';
+import { IStorageService } from '@/storage/interfaces/storage.interface';
 
 @Injectable()
 export class S3Service implements IStorageService, OnModuleInit {
-  private readonly logger = new Logger(S3Service.name);
+  private region: string;
   private s3Client: S3Client;
   private bucketName: string;
-  private region: string;
+  private readonly logger = new Logger(S3Service.name);
 
   constructor(private configService: ConfigService) {
     const region = this.configService.get<string>('AWS_REGION');

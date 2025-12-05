@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { IStorageService } from './interfaces/storage.interface';
-import { S3Service } from './providers/s3.service';
+
+import { S3Service } from '@/storage/providers/s3.service';
+import { IStorageService } from '@/storage/interfaces/storage.interface';
 
 @Injectable()
 export class StorageService implements IStorageService {
