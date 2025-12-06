@@ -28,46 +28,6 @@ export class UsersService {
     this.awsBucketName = this.configService.get<string>('AWS_BUCKET_NAME') || '';
   }
 
-  async getCurrentUser(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        username: true,
-        avatar: true,
-        avatarUpdatedAt: true,
-        phoneNumber: true,
-        isActive: true,
-        isEmailVerified: true,
-        password: true,
-        googleId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return {
-      id: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      username: user.username,
-      avatar: this.buildAvatarUrl(user.avatar, user.avatarUpdatedAt),
-      phoneNumber: user.phoneNumber,
-      isActive: user.isActive,
-      isEmailVerified: user.isEmailVerified,
-      hasPassword: !!user.password,
-      hasGoogleAuth: !!user.googleId,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
-  }
-
   private buildAvatarUrl(avatarKey: string | null, avatarUpdatedAt: Date | null): string | null {
     if (!avatarKey) return null;
 
@@ -80,11 +40,50 @@ export class UsersService {
     return `${this.awsEndpoint}/${this.awsBucketName}/${avatarKey}?v=${timestamp}`;
   }
 
+  async getCurrentUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        avatar: true,
+        fullName: true,
+        googleId: true,
+        isActive: true,
+        password: true,
+        username: true,
+        createdAt: true,
+        updatedAt: true,
+        phoneNumber: true,
+        avatarUpdatedAt: true,
+        isEmailVerified: true,
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      isActive: user.isActive,
+      username: user.username,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      hasPassword: !!user.password,
+      phoneNumber: user.phoneNumber,
+      hasGoogleAuth: !!user.googleId,
+      isEmailVerified: user.isEmailVerified,
+      avatar: this.buildAvatarUrl(user.avatar, user.avatarUpdatedAt),
+    };
+  }
+
   async updateAvatar(userId: string, file: Express.Multer.File) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, avatar: true },
     });
+
     if (!user) throw new NotFoundException('User not found');
 
     const processedImage = await this.imageProcessing.processImage(file);
@@ -109,6 +108,7 @@ export class UsersService {
       // Rollback if update was not successful
       if (updatedUser.count === 0) {
         await this.storage.delete(storageKey);
+
         throw new ConflictException('Failed to update avatar. Please try again');
       } else {
         // Delete old avatar from storage if it's not a full URL (legacy data from Google OAuth)
@@ -120,9 +120,7 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) throw new NotFoundException('User not found');
 
@@ -132,9 +130,7 @@ export class UsersService {
         where: { username: updateProfileDto.username },
       });
 
-      if (existingUser) {
-        throw new ConflictException('Username is already taken');
-      }
+      if (existingUser) throw new ConflictException('Username is already taken');
     }
 
     // Update user profile
@@ -155,14 +151,9 @@ export class UsersService {
   }
 
   async changePassword(userId: string, currentPassword: string | undefined, newPassword: string) {
-    // Find user
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    if (!user) throw new NotFoundException('User not found');
 
     // If user has a password (traditional account or Google account with password set)
     if (user.password) {
@@ -174,9 +165,7 @@ export class UsersService {
       // Verify current password
       const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
-      if (!isPasswordValid) {
-        throw new BadRequestException('Current password is incorrect');
-      }
+      if (!isPasswordValid) throw new BadRequestException('Current password is incorrect');
     }
     // If user doesn't have a password (Google-only account), allow setting password without current password
 
@@ -186,15 +175,11 @@ export class UsersService {
     // Update password
     await this.prisma.user.update({
       where: { id: userId },
-      data: {
-        password: hashedPassword,
-      },
+      data: { password: hashedPassword },
     });
 
     // Invalidate all existing sessions for security
-    await this.prisma.session.deleteMany({
-      where: { userId },
-    });
+    await this.prisma.session.deleteMany({ where: { userId } });
   }
 
   async getActiveSessions(
@@ -206,31 +191,27 @@ export class UsersService {
   ) {
     const where = {
       userId,
-      expiresAt: {
-        gte: new Date(), // Only active (non-expired) sessions
-      },
+      expiresAt: { gte: new Date() },
     };
 
     const [sessions, total] = await Promise.all([
       this.prisma.session.findMany({
-        where,
-        orderBy: {
-          lastUsedAt: 'desc',
-        },
         skip,
+        where,
         take: limit,
+        orderBy: { lastUsedAt: 'desc' },
       }),
       this.prisma.session.count({ where }),
     ]);
 
     const sessionDtos = sessions.map((session) => ({
       id: session.id,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+      lastUsedAt: session.lastUsedAt,
+      ipAddress: session.ipAddress || 'Unknown',
       deviceName: session.deviceName || 'Unknown',
       deviceType: session.deviceType || 'Unknown',
-      ipAddress: session.ipAddress || 'Unknown',
-      createdAt: session.createdAt,
-      lastUsedAt: session.lastUsedAt,
-      expiresAt: session.expiresAt,
       isCurrent: currentSessionId ? session.id === currentSessionId : false,
     }));
 
@@ -238,55 +219,47 @@ export class UsersService {
   }
 
   async logoutAllDevices(userId: string) {
-    await this.prisma.session.deleteMany({
-      where: { userId },
-    });
+    await this.prisma.session.deleteMany({ where: { userId } });
   }
 
   async logoutDevice(userId: string, sessionId: string) {
     const token = await this.prisma.session.findFirst({
       where: {
-        id: sessionId,
         userId,
+        id: sessionId,
       },
     });
 
-    if (!token) {
-      throw new BadRequestException('Session not found');
-    }
+    if (!token) throw new BadRequestException('Session not found');
 
-    await this.prisma.session.delete({
-      where: { id: sessionId },
-    });
+    await this.prisma.session.delete({ where: { id: sessionId } });
   }
 
   async getUserByIdOrUsername(identifier: string) {
     // Try to find user by ID first, then by username
     const user = await this.prisma.user.findFirst({
       where: {
-        OR: [{ id: identifier }, { username: identifier }],
         isActive: true, // Only return active users
+        OR: [{ id: identifier }, { username: identifier }],
       },
       select: {
         id: true,
-        username: true,
-        fullName: true,
         avatar: true,
-        avatarUpdatedAt: true,
+        fullName: true,
+        username: true,
         createdAt: true,
+        avatarUpdatedAt: true,
       },
     });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    if (!user) throw new NotFoundException('User not found');
 
     return {
       id: user.id,
-      username: user.username,
       fullName: user.fullName,
-      avatar: this.buildAvatarUrl(user.avatar, user.avatarUpdatedAt),
+      username: user.username,
       createdAt: user.createdAt,
+      avatar: this.buildAvatarUrl(user.avatar, user.avatarUpdatedAt),
     };
   }
 }

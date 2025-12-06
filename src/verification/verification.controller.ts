@@ -22,14 +22,15 @@ export class VerificationController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 12, ttl: 3600000 } }) // 12 requests per 1 hour
   @Post('resend')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 12, ttl: 3600000 } }) // 12 requests per 1 hour
   async resendVerification(
-    @Body() resendVerificationDto: ResendVerificationDto,
     @Req() req: Request,
+    @Body() resendVerificationDto: ResendVerificationDto,
   ) {
     const frontendUrl = extractFrontendUrl(req);
+
     return this.verificationService.resendVerificationEmail(
       resendVerificationDto.email,
       frontendUrl,
@@ -37,21 +38,22 @@ export class VerificationController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per 1 hour
-  @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto, @Req() req: Request) {
+  @Post('forgot-password')
+  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per 1 hour
+  async forgotPassword(@Req() req: Request, @Body() forgotPasswordDto: ForgotPasswordDto) {
     const frontendUrl = extractFrontendUrl(req);
+
     return this.verificationService.forgotPassword(forgotPasswordDto.email, frontendUrl);
   }
 
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 requests per 1 hour
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 requests per 1 hour
   async resetPassword(
-    @Body() resetPasswordDto: ResetPasswordDto,
     @Res({ passthrough: true }) res: Response,
+    @Body() resetPasswordDto: ResetPasswordDto,
   ) {
     await this.verificationService.resetPassword(resetPasswordDto.token, resetPasswordDto.password);
 

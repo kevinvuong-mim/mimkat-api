@@ -29,21 +29,22 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes
   async register(@Body() registerDto: RegisterDto, @Req() req: Request) {
     const frontendUrl = extractFrontendUrl(req);
+
     return this.authService.register(registerDto, frontendUrl);
   }
 
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 900000 } }) // 10 requests per 15 minutes
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 900000 } }) // 10 requests per 15 minutes
   async login(
-    @Body() loginDto: LoginDto,
     @Req() req: Request,
+    @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
@@ -52,29 +53,29 @@ export class AuthController {
     // Set access token in httpOnly cookie
     res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
       maxAge: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION, // 1 hour
     });
 
     // Set refresh token in httpOnly cookie
     res.cookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY, result.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
       maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION, // 7 days
     });
 
     return result;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   async logout(
+    @Req() req: Request,
     @CurrentUser() user: UserPayload,
     @Body() refreshTokenDto: RefreshTokenDto,
-    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     // Get refresh token from cookie if not provided in body
@@ -91,8 +92,8 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshTokens(
-    @Body() refreshTokenDto: RefreshTokenDto,
     @Req() req: Request,
+    @Body() refreshTokenDto: RefreshTokenDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
@@ -106,16 +107,16 @@ export class AuthController {
       // Set new access token in httpOnly cookie
       res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
         maxAge: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION, // 1 hour
       });
 
       // Set new refresh token in httpOnly cookie
       res.cookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY, result.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
         maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION, // 7 days
       });
 
@@ -150,16 +151,16 @@ export class AuthController {
     // Set access token in httpOnly cookie
     res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
       maxAge: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION, // 1 hour
     });
 
     // Set refresh token in httpOnly cookie
     res.cookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY, result.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
       maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION, // 7 days
     });
 

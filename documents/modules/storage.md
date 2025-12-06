@@ -149,8 +149,7 @@ Kiểm tra bucket có tồn tại và accessible không.
 
 **Logging:**
 
-- Log success nếu bucket accessible
-- Log error với message cụ thể nếu có lỗi
+- Log error với message cụ thể nếu có lỗi (không log khi thành công)
 
 ### Upload Method
 
@@ -240,7 +239,7 @@ bucket-name/
 ### Import Module
 
 ```typescript
-import { StorageModule } from '@storage/storage.module';
+import { StorageModule } from '@/storage/storage.module';
 
 @Module({
   imports: [StorageModule],
@@ -252,7 +251,7 @@ export class YourModule {}
 ### Inject Service
 
 ```typescript
-import { StorageService } from '@storage/storage.service';
+import { StorageService } from '@/storage/storage.service';
 
 @Injectable()
 export class YourService {
@@ -260,11 +259,7 @@ export class YourService {
 
   async uploadFile(file: Express.Multer.File) {
     const key = `uploads/${Date.now()}-${file.originalname}`;
-    const storageKey = await this.storage.upload(
-      file.buffer,
-      key,
-      file.mimetype,
-    );
+    const storageKey = await this.storage.upload(file.buffer, key, file.mimetype);
 
     // Build full URL
     const fullUrl = `${this.endpoint}/${this.bucketName}/${storageKey}`;

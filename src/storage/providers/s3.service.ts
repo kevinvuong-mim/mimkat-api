@@ -23,7 +23,7 @@ export class S3Service implements IStorageService, OnModuleInit {
     const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
 
     // Validate all required environment variables
-    if (!region || !bucketName || !endpoint) {
+    if (!region || !endpoint || !bucketName) {
       throw new Error(
         'AWS_REGION, AWS_BUCKET_NAME, and AWS_ENDPOINT are required in environment variables.',
       );
@@ -74,20 +74,16 @@ export class S3Service implements IStorageService, OnModuleInit {
 
   async upload(file: Buffer, key: string, mimetype: string): Promise<string> {
     // Validate key format
-    if (!key || key.trim() === '') {
-      throw new Error('Storage key cannot be empty');
-    }
+    if (!key || key.trim() === '') throw new Error('Storage key cannot be empty');
 
-    if (key.includes('..')) {
-      throw new Error('Storage key cannot contain path traversal');
-    }
+    if (key.includes('..')) throw new Error('Storage key cannot contain path traversal');
 
     try {
       const command = new PutObjectCommand({
-        Bucket: this.bucketName,
         Key: key,
         Body: file,
         ContentType: mimetype,
+        Bucket: this.bucketName,
       });
 
       await this.s3Client.send(command);
@@ -102,11 +98,12 @@ export class S3Service implements IStorageService, OnModuleInit {
         `Failed to upload file to S3: ${error instanceof Error ? error.message : String(error)}`,
         {
           key,
-          bucketName: this.bucketName,
           region: this.region,
+          bucketName: this.bucketName,
           stack: error instanceof Error ? error.stack : undefined,
         },
       );
+
       throw error;
     }
   }
@@ -114,8 +111,8 @@ export class S3Service implements IStorageService, OnModuleInit {
   async delete(key: string): Promise<void> {
     try {
       const command = new DeleteObjectCommand({
-        Bucket: this.bucketName,
         Key: key,
+        Bucket: this.bucketName,
       });
 
       await this.s3Client.send(command);
@@ -125,8 +122,8 @@ export class S3Service implements IStorageService, OnModuleInit {
         `Failed to delete file from S3: ${error instanceof Error ? error.message : String(error)}`,
         {
           key,
-          bucketName: this.bucketName,
           region: this.region,
+          bucketName: this.bucketName,
         },
       );
     }

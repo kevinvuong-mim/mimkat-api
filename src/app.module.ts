@@ -16,24 +16,6 @@ import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
 import { ImageProcessingModule } from '@/image-processing/image-processing.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 60 seconds
-        limit: 100, // 100 requests per ttl
-      },
-    ]),
-    PrismaModule,
-    AuthModule,
-    UsersModule,
-    VerificationModule,
-    TasksModule,
-    StorageModule,
-    ImageProcessingModule,
-  ],
   controllers: [AppController],
   providers: [
     AppService,
@@ -49,6 +31,22 @@ import { ImageProcessingModule } from '@/image-processing/image-processing.modul
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
     },
+  ],
+  imports: [
+    AuthModule,
+    TasksModule,
+    UsersModule,
+    PrismaModule,
+    StorageModule,
+    VerificationModule,
+    ImageProcessingModule,
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 60 seconds
+        limit: 100, // 100 requests per ttl
+      },
+    ]),
+    ConfigModule.forRoot({ isGlobal: true }),
   ],
 })
 export class AppModule {}

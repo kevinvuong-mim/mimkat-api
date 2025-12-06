@@ -182,7 +182,7 @@ curl -X POST http://localhost:3000/verification/resend \
 - Token mới có hiệu lực 48 giờ từ thời điểm tạo
 - Rate limit (12 requests/hour) ngăn spam email
 - Nếu gửi email thất bại, throw exception (không silent fail như register)
-- Response luôn trả về success để không reveal user existence (security)
+- API throw exception cụ thể ("User not found", "Email is already verified") thay vì generic response
 - Token được hash với bcrypt 10 salt rounds trước khi lưu
 
 ### Business Logic
@@ -439,4 +439,4 @@ The Team
 - **Security**: Token rotation (mỗi lần resend tạo token mới)
 - **Performance**: Loop through users để compare (có thể optimize bằng index hoặc alternative approach)
 - **Email Service**: Sử dụng MailService (Nodemailer hoặc SendGrid)
-- **Error Handling**: Some errors không reveal user existence để security
+- **Error Handling**: API throw specific exceptions ("User not found", "Email is already verified") thay vì generic responses

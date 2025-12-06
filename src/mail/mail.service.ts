@@ -5,8 +5,8 @@ import { Logger, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MailService {
-  private readonly logger = new Logger(MailService.name);
   private readonly transporter: Transporter;
+  private readonly logger = new Logger(MailService.name);
 
   constructor(private readonly configService: ConfigService) {
     this.transporter = nodemailer.createTransport({
@@ -25,9 +25,9 @@ export class MailService {
 
     try {
       await this.transporter.sendMail({
-        from: this.configService.get<string>('MAIL_FROM'),
         to: email,
         subject: 'Verify Your Email Address',
+        from: this.configService.get<string>('MAIL_FROM'),
         html: this.getVerificationEmailTemplate(verificationUrl),
       });
 
@@ -37,6 +37,7 @@ export class MailService {
         'Failed to send verification email',
         error instanceof Error ? error.stack : String(error),
       );
+
       throw new Error('Failed to send verification email');
     }
   }
@@ -46,9 +47,9 @@ export class MailService {
 
     try {
       await this.transporter.sendMail({
-        from: this.configService.get<string>('MAIL_FROM'),
         to: email,
         subject: 'Reset Your Password',
+        from: this.configService.get<string>('MAIL_FROM'),
         html: this.getPasswordResetEmailTemplate(resetUrl),
       });
 
@@ -58,6 +59,7 @@ export class MailService {
         'Failed to send password reset email',
         error instanceof Error ? error.stack : String(error),
       );
+
       throw new Error('Failed to send password reset email');
     }
   }

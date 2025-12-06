@@ -18,6 +18,16 @@ describe('AppController (e2e)', () => {
   });
 
   it('/ (GET)', () => {
-    return request(app.getHttpServer()).get('/').expect(200).expect('Hello World!');
+    return request(app.getHttpServer())
+      .get('/')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).toHaveProperty('path', '/');
+        expect(res.body).toHaveProperty('timestamp');
+        expect(res.body).toHaveProperty('success', true);
+        expect(res.body).toHaveProperty('statusCode', 200);
+        expect(res.body).toHaveProperty('data', 'Hello World!');
+        expect(res.body).toHaveProperty('message', 'Data retrieved successfully');
+      });
   });
 });

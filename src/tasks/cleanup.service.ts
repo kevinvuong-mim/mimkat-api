@@ -23,9 +23,7 @@ export class CleanupService {
       const result = await this.prisma.user.deleteMany({
         where: {
           isEmailVerified: false,
-          createdAt: {
-            lt: fourteenDaysAgo,
-          },
+          createdAt: { lt: fourteenDaysAgo },
         },
       });
 
@@ -45,28 +43,24 @@ export class CleanupService {
     try {
       // Clear expired verification tokens
       const verificationResult = await this.prisma.user.updateMany({
-        where: {
-          verificationTokenExpiry: {
-            lt: new Date(),
-          },
-          isEmailVerified: false,
-        },
         data: {
           verificationToken: null,
           verificationTokenExpiry: null,
+        },
+        where: {
+          isEmailVerified: false,
+          verificationTokenExpiry: { lt: new Date() },
         },
       });
 
       // Clear expired password reset tokens
       const passwordResetResult = await this.prisma.user.updateMany({
-        where: {
-          passwordResetTokenExpiry: {
-            lt: new Date(),
-          },
-        },
         data: {
           passwordResetToken: null,
           passwordResetTokenExpiry: null,
+        },
+        where: {
+          passwordResetTokenExpiry: { lt: new Date() },
         },
       });
 
@@ -86,11 +80,7 @@ export class CleanupService {
     try {
       // Delete expired sessions
       const result = await this.prisma.session.deleteMany({
-        where: {
-          expiresAt: {
-            lt: new Date(),
-          },
-        },
+        where: { expiresAt: { lt: new Date() } },
       });
 
       this.logger.log(`Cleanup completed. Deleted ${result.count} expired sessions.`);

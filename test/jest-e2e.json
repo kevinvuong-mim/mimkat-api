@@ -3,5 +3,6 @@
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": { "^.+\\.(t|j)s$": "ts-jest" },
-  "moduleFileExtensions": ["js", "json", "ts"]
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "moduleNameMapper": { "^@/(.*)$": "<rootDir>/../src/$1" }
 }

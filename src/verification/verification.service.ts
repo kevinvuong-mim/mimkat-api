@@ -18,10 +18,8 @@ export class VerificationService {
     // Find user with matching token that hasn't expired
     const users = await this.prisma.user.findMany({
       where: {
-        verificationTokenExpiry: {
-          gte: new Date(),
-        },
         isEmailVerified: false,
+        verificationTokenExpiry: { gte: new Date() },
       },
     });
 
@@ -30,6 +28,7 @@ export class VerificationService {
     for (const user of users) {
       if (user.verificationToken) {
         const isValid = await bcrypt.compare(token, user.verificationToken);
+
         if (isValid) {
           matchedUserId = user.id;
           break;
@@ -37,9 +36,7 @@ export class VerificationService {
       }
     }
 
-    if (!matchedUserId) {
-      throw new BadRequestException('Invalid or expired verification token');
-    }
+    if (!matchedUserId) throw new BadRequestException('Invalid or expired verification token');
 
     // Update user as verified
     await this.prisma.user.update({
@@ -53,17 +50,11 @@ export class VerificationService {
   }
 
   async resendVerificationEmail(email: string, frontendUrl: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
+    if (!user) throw new BadRequestException('User not found');
 
-    if (user.isEmailVerified) {
-      throw new BadRequestException('Email is already verified');
-    }
+    if (user.isEmailVerified) throw new BadRequestException('Email is already verified');
 
     // Generate new verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -77,8 +68,8 @@ export class VerificationService {
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
-        verificationToken: hashedToken,
         verificationTokenExpiry,
+        verificationToken: hashedToken,
       },
     });
 
@@ -87,9 +78,7 @@ export class VerificationService {
   }
 
   async forgotPassword(email: string, frontendUrl: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
     // Don't reveal if user exists or not (security best practice)
     if (!user) {
@@ -138,12 +127,8 @@ export class VerificationService {
     // Find users with non-expired reset tokens
     const users = await this.prisma.user.findMany({
       where: {
-        passwordResetTokenExpiry: {
-          gte: new Date(),
-        },
-        passwordResetToken: {
-          not: null,
-        },
+        passwordResetToken: { not: null },
+        passwordResetTokenExpiry: { gte: new Date() },
       },
     });
 
@@ -152,6 +137,7 @@ export class VerificationService {
     for (const user of users) {
       if (user.passwordResetToken) {
         const isValid = await bcrypt.compare(token, user.passwordResetToken);
+
         if (isValid) {
           matchedUserId = user.id;
           break;
@@ -159,9 +145,7 @@ export class VerificationService {
       }
     }
 
-    if (!matchedUserId) {
-      throw new BadRequestException('Invalid or expired reset token');
-    }
+    if (!matchedUserId) throw new BadRequestException('Invalid or expired reset token');
 
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -177,8 +161,6 @@ export class VerificationService {
     });
 
     // Invalidate all existing sessions for security
-    await this.prisma.session.deleteMany({
-      where: { userId: matchedUserId },
-    });
+    await this.prisma.session.deleteMany({ where: { userId: matchedUserId } });
   }
 }

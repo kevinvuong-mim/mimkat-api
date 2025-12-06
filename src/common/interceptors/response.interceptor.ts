@@ -9,24 +9,23 @@ import { ApiResponse } from '@/common/interfaces/response.interface';
 export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<ApiResponse<T>> {
     const ctx = context.switchToHttp();
-    const response = ctx.getResponse<Response>();
+
     const request = ctx.getRequest();
+    const response = ctx.getResponse<Response>();
 
     return next.handle().pipe(
       map((data) => {
         // If data is already formatted (has success field), return as is
-        if (data && typeof data === 'object' && 'success' in data) {
-          return data;
-        }
+        if (data && typeof data === 'object' && 'success' in data) return data;
 
         // Transform response to standard format
         return {
           success: true,
-          statusCode: response.statusCode,
-          message: this.getDefaultMessage(request.method),
-          data: data ?? null,
-          timestamp: new Date().toISOString(),
           path: request.url,
+          data: data ?? null,
+          statusCode: response.statusCode,
+          timestamp: new Date().toISOString(),
+          message: this.getDefaultMessage(request.method),
         };
       }),
     );

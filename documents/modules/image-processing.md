@@ -28,10 +28,10 @@ src/image-processing/
 private readonly MAX_DIMENSION = 1024;      // Max width/height
 private readonly QUALITY = 80;              // WebP quality (0-100)
 private readonly ALLOWED_MIMETYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
   'image/gif',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
 ];
 ```
 
@@ -39,9 +39,9 @@ private readonly ALLOWED_MIMETYPES = [
 
 ```typescript
 export interface ProcessedImage {
+  size: number; // Final file size in bytes
   buffer: Buffer; // Processed image buffer
   mimetype: string; // Output mimetype (image/webp or image/gif)
-  size: number; // Final file size in bytes
 }
 ```
 
@@ -78,10 +78,10 @@ Xử lý và tối ưu hóa ảnh upload.
 
 Chỉ chấp nhận:
 
-- `image/jpeg` (JPG, JPEG)
-- `image/png` (PNG)
-- `image/webp` (WebP)
 - `image/gif` (GIF)
+- `image/png` (PNG)
+- `image/jpeg` (JPG, JPEG)
+- `image/webp` (WebP)
 
 **Error:** `BadRequestException` - "Invalid file type. Only JPG, PNG, WebP, and GIF are allowed."
 
@@ -131,8 +131,8 @@ if (metadata.format === 'gif') {
   }
 
   return {
-    buffer: processedBuffer,
     mimetype: 'image/gif',
+    buffer: processedBuffer,
     size: processedBuffer.length,
   };
 }
@@ -165,8 +165,8 @@ if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
 }
 
 return {
-  buffer: processedBuffer,
   mimetype: 'image/webp',
+  buffer: processedBuffer,
   size: processedBuffer.length,
 };
 ```
@@ -200,13 +200,8 @@ return {
 #### Out of Memory Errors
 
 ```typescript
-if (
-  error.message?.includes('memory') ||
-  error.message?.includes('allocation')
-) {
-  throw new BadRequestException(
-    'Image is too large to process. Please use a smaller file.',
-  );
+if (error.message?.includes('memory') || error.message?.includes('allocation')) {
+  throw new BadRequestException('Image is too large to process. Please use a smaller file.');
 }
 ```
 
@@ -221,9 +216,7 @@ if (
 #### Invalid/Corrupted Files
 
 ```typescript
-throw new BadRequestException(
-  'Failed to process image. File may be corrupted.',
-);
+throw new BadRequestException('Failed to process image. File may be corrupted.');
 ```
 
 **Khi nào xảy ra:**
@@ -237,7 +230,7 @@ throw new BadRequestException(
 ### Example 1: Basic Usage
 
 ```typescript
-import { ImageProcessingService } from '@image-processing/image-processing.service';
+import { ImageProcessingService } from '@/image-processing/image-processing.service';
 
 @Injectable()
 export class AvatarService {
@@ -423,15 +416,11 @@ describe('ImageProcessingService', () => {
   });
 
   it('should reject small images', async () => {
-    await expect(service.processImage(tinyImage)).rejects.toThrow(
-      'Image too small',
-    );
+    await expect(service.processImage(tinyImage)).rejects.toThrow('Image too small');
   });
 
   it('should reject invalid aspect ratio', async () => {
-    await expect(service.processImage(bannerImage)).rejects.toThrow(
-      'Invalid aspect ratio',
-    );
+    await expect(service.processImage(bannerImage)).rejects.toThrow('Invalid aspect ratio');
   });
 });
 ```
@@ -519,9 +508,7 @@ const startSize = file.size;
 const processed = await this.imageProcessing.processImage(file);
 const savings = (((startSize - processed.size) / startSize) * 100).toFixed(1);
 
-this.logger.log(
-  `Image processed: ${startSize} → ${processed.size} bytes (${savings}% saved)`,
-);
+this.logger.log(`Image processed: ${startSize} → ${processed.size} bytes (${savings}% saved)`);
 ```
 
 ### 3. Handle errors gracefully

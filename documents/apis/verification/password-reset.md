@@ -34,16 +34,14 @@ Gửi email chứa link đặt lại mật khẩu. Endpoint này không tiết l
 
 #### Response
 
-**Success (200 OK)**
+**Success (200 OK)** - Khi user tồn tại và có password
 
 ```json
 {
   "success": true,
   "statusCode": 200,
   "message": "Data retrieved successfully",
-  "data": {
-    "message": "If an account with that email exists, we sent a password reset link."
-  },
+  "data": null,
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/verification/forgot-password"
 }
@@ -51,10 +49,26 @@ Gửi email chứa link đặt lại mật khẩu. Endpoint này không tiết l
 
 **Notes**:
 
-- Response luôn giống nhau dù email có tồn tại hay không (security feature)
-- Ngăn attacker dò tìm email đã đăng ký
+- Nếu user tồn tại và có password → gửi email và return 200 OK
+- Nếu user không tồn tại hoặc không có password → throw BadRequestException (400) với message "If an account with that email exists, we sent a password reset link."
+- Message giống nhau cho cả 2 trường hợp lỗi để không tiết lộ thông tin về user existence
 
 **Error Responses**
+
+- **400 Bad Request**: Email không tồn tại hoặc account không có password
+
+```json
+{
+  "success": false,
+  "statusCode": 400,
+  "message": "If an account with that email exists, we sent a password reset link.",
+  "error": "Bad Request",
+  "timestamp": "2025-11-12T10:00:00.000Z",
+  "path": "/verification/forgot-password"
+}
+```
+
+**Note**: Message giống nhau cho cả 2 trường hợp (email không tồn tại hoặc không có password) để không tiết lộ thông tin user
 
 - **429 Too Many Requests**: Vượt quá rate limit
 
@@ -84,7 +98,8 @@ curl -X POST http://localhost:3000/verification/forgot-password \
 - Chỉ gửi email cho tài khoản có password được set
 - Tài khoản chỉ có Google OAuth (không có password) không thể đặt lại mật khẩu
 - Token có hiệu lực 1 giờ (ngắn hơn email verification để tăng bảo mật)
-- Nếu gửi email thất bại, log error nhưng vẫn trả về success message
+- Nếu gửi email thất bại, log error nhưng không throw exception (vẫn return 200)
+- Nếu user không tồn tại hoặc không có password, throw BadRequestException với message giống nhau để không tiết lộ user existence
 
 ---
 
@@ -210,17 +225,17 @@ curl -X POST http://localhost:3000/verification/reset-password \
 
 1. **Lookup User**: Tìm user theo email
 2. **Check Existence**:
-   - Nếu user không tồn tại → return generic success message (không tiết lộ)
+   - Nếu user không tồn tại → throw BadRequestException với message "If an account with that email exists, we sent a password reset link."
    - Nếu user tồn tại → continue
 3. **Check Password Capability**:
-   - Nếu user không có password field (OAuth-only account) → return generic success message
+   - Nếu user không có password field (OAuth-only account) → throw BadRequestException với message "If an account with that email exists, we sent a password reset link."
    - Chỉ accounts có password mới được reset
 4. **Generate Reset Token**: Create 32-byte random token (64 hex chars)
 5. **Hash Token**: Hash với bcrypt (10 salt rounds)
 6. **Set Expiry**: 1 giờ từ bây giờ
 7. **Update Database**: Lưu `passwordResetToken` và `passwordResetTokenExpiry`
-8. **Send Email**: Gửi plain token qua email (có error handling, không fail request nếu email fails)
-9. **Return**: Generic success message
+8. **Send Email**: Gửi plain token qua email (có try-catch, log error nếu fail nhưng không throw exception)
+9. **Return**: Success (200 OK) nếu đến bước này
 
 **Reset Password Flow (resetPassword)**:
 
@@ -247,7 +262,7 @@ curl -X POST http://localhost:3000/verification/reset-password \
   - Plain token gửi qua email (1 lần)
   - Hashed token lưu DB (bcrypt 10 rounds for tokens)
   - Password hash sử dụng 12 rounds (cao hơn)
-- **Generic Response**: Forgot password luôn return success message dù email có tồn tại hay không
+- **Partial Security**: Forgot password throw BadRequestException cho email không tồn tại hoặc không có password (message giống nhau), nhưng return 200 cho email hợp lệ (có thể reveal user existence)
 - **Performance**: Loop qua users để compare tokens (giống email verification, có thể optimize)
 
 ---
@@ -324,18 +339,16 @@ res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
-  "message": "Data retrieved successfully",
-  "data": {
-    "message": "If an account with that email exists, we sent a password reset link."
-  },
+  "success": false,
+  "statusCode": 400,
+  "message": "If an account with that email exists, we sent a password reset link.",
+  "error": "Bad Request",
   "timestamp": "2025-11-12T10:00:00.000Z",
   "path": "/verification/forgot-password"
 }
 ```
 
-**Note**: Không gửi email thực tế, nhưng response giống nhau
+**Note**: Không gửi email thực tế, nhưng throw BadRequestException với message giống nhau
 
 **Solution**: Thông báo user sử dụng Google login
 
@@ -434,7 +447,7 @@ The Team
 2. User quên và cố reset password
 3. User nhập email vào forgot password form
 4. Backend check: user không có password field
-5. Return generic success message (không tiết lộ)
+5. Throw BadRequestException với message "If an account with that email exists, we sent a password reset link."
 6. User không nhận email (vì không eligible)
 7. User thử login → nhớ ra dùng Google
 8. User login với Google successfully
@@ -583,7 +596,7 @@ The Team
 - **Token Storage**: Hashed với bcrypt 10 salt rounds
 - **Password Storage**: Hashed với bcrypt 12 salt rounds (stronger than token)
 - **Expiry**: 1 hour from creation (shorter than email verification for security)
-- **Security**: Generic responses để không reveal user existence
+- **Security**: Throw BadRequestException (400) cho email không tồn tại/không có password với message giống nhau, nhưng return 200 cho email hợp lệ
 - **Session Invalidation**: Tất cả sessions bị xóa after reset (force re-login)
 - **Performance**: Loop through users để compare tokens (có thể optimize với index)
 - **Email Service**: Uses MailService (Nodemailer/SendGrid)

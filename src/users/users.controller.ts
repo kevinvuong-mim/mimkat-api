@@ -48,17 +48,15 @@ export class UsersController {
 
   @Put('me/avatar')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 uploads per hour
   @UseInterceptors(FileInterceptor('file'))
+  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 uploads per hour
   updateAvatar(
     @CurrentUser() user: UserPayload,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-          new FileTypeValidator({
-            fileType: /(jpg|jpeg|png|webp|gif)$/,
-          }),
+          new FileTypeValidator({ fileType: /(jpg|jpeg|png|webp|gif)$/ }),
         ],
       }),
     )
@@ -67,13 +65,13 @@ export class UsersController {
     return this.usersService.updateAvatar(user.id, file);
   }
 
-  @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 requests per 1 hour
   @Put('password')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 requests per 1 hour
   async changePassword(
     @CurrentUser() user: UserPayload,
-    @Body() changePasswordDto: ChangePasswordDto,
     @Res({ passthrough: true }) res: Response,
+    @Body() changePasswordDto: ChangePasswordDto,
   ) {
     await this.usersService.changePassword(
       user.id,
@@ -94,9 +92,9 @@ export class UsersController {
     @Query('limit') limit?: string,
   ) {
     const {
+      skip,
       page: normalizedPage,
       limit: normalizedLimit,
-      skip,
     } = getPaginationParams(Number(page), Number(limit));
 
     return this.usersService.getActiveSessions(
@@ -121,8 +119,8 @@ export class UsersController {
     res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
   }
 
-  @Delete('sessions/:sessionId')
   @HttpCode(HttpStatus.OK)
+  @Delete('sessions/:sessionId')
   logoutDevice(@CurrentUser() user: UserPayload, @Param('sessionId') sessionId: string) {
     return this.usersService.logoutDevice(user.id, sessionId);
   }

@@ -11,8 +11,8 @@ export interface ProcessedImage {
 export class ImageProcessingService {
   private readonly QUALITY = 80;
   private readonly MAX_DIMENSION = 1024;
-  private readonly ALLOWED_MIMETYPES = ['image/gif', 'image/png', 'image/jpeg', 'image/webp'];
   private readonly logger = new Logger(ImageProcessingService.name);
+  private readonly ALLOWED_MIMETYPES = ['image/gif', 'image/png', 'image/jpeg', 'image/webp'];
 
   async processImage(file: Express.Multer.File): Promise<ProcessedImage> {
     // Validate mimetype
@@ -63,8 +63,8 @@ export class ImageProcessingService {
         this.logger.log(`GIF processed: ${file.size} -> ${processedBuffer.length} bytes`);
 
         return {
-          buffer: processedBuffer,
           mimetype: 'image/gif',
+          buffer: processedBuffer,
           size: processedBuffer.length,
         };
       }
@@ -88,8 +88,8 @@ export class ImageProcessingService {
       this.logger.log(`Image processed: ${file.size} -> ${processedBuffer.length} bytes`);
 
       return {
-        buffer: processedBuffer,
         mimetype: 'image/webp',
+        buffer: processedBuffer,
         size: processedBuffer.length,
       };
     } catch (error) {

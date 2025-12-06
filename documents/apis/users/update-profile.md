@@ -21,7 +21,6 @@ Yêu cầu JWT token trong:
 {
   "username": "johndoe",
   "fullName": "John Doe",
-  "avatar": "https://example.com/avatar.jpg",
   "phoneNumber": "+84 123 456 789"
 }
 ```
@@ -34,7 +33,6 @@ Tất cả các trường đều là **optional** (có thể gửi một hoặc 
 | ------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
 | `username`    | string | No       | - Min: 3 characters<br>- Max: 20 characters<br>- Pattern: chỉ chữ cái, số, dấu chấm (.), gạch dưới (\_)<br>- Bắt đầu và kết thúc bằng chữ hoặc số<br>- Không có hai dấu đặc biệt liên tiếp | Username duy nhất         |
 | `fullName`    | string | No       | - Max: 100 characters                                                                                                                                                                      | Tên đầy đủ của người dùng |
-| `avatar`      | string | No       | - Max: 500 characters                                                                                                                                                                      | URL của ảnh đại diện      |
 | `phoneNumber` | string | No       | - Min: 10 characters<br>- Max: 20 characters<br>- Pattern: số, +, -, khoảng trắng, ngoặc đơn                                                                                               | Số điện thoại             |
 
 ## Response
@@ -139,7 +137,6 @@ curl -X PUT http://localhost:3000/users/me \
   -d '{
     "username": "johndoe",
     "fullName": "John Doe",
-    "avatar": "https://example.com/avatar.jpg",
     "phoneNumber": "+84 123 456 789"
   }'
 ```
@@ -233,11 +230,6 @@ curl -X PUT http://localhost:3000/users/me \
 
 - Độ dài tối đa: 100 ký tự
 
-### Avatar
-
-- Độ dài tối đa: 500 ký tự
-- Nên là URL hợp lệ
-
 ### Phone Number
 
 - Độ dài: 10-20 ký tự
@@ -255,6 +247,7 @@ curl -X PUT http://localhost:3000/users/me \
 - Username phải unique - nếu username đã tồn tại, API sẽ trả về lỗi 409 Conflict
 - Nếu username trong request giống với username hiện tại của user, không cần kiểm tra uniqueness
 - Tất cả các trường đều optional - có thể gửi request body rỗng `{}`
+- **Avatar không thể update qua endpoint này** - sử dụng `PUT /users/me/avatar` để upload avatar
 - Email không thể thay đổi qua endpoint này
 - Thời gian `updatedAt` sẽ tự động được cập nhật khi có thay đổi
 - **Response không trả về data**: Endpoint này chỉ trả về `data: null` để xác nhận cập nhật thành công
@@ -263,5 +256,6 @@ curl -X PUT http://localhost:3000/users/me \
 ## Related APIs
 
 - [Get User Profile](./user-profile.md) - Lấy thông tin profile hiện tại
+- [Update Avatar](./update-avatar.md) - Upload và cập nhật avatar
 - [Change Password](./change-password.md) - Đổi mật khẩu
 - [Session Management](./session-management.md) - Quản lý phiên đăng nhập

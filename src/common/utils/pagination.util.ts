@@ -29,11 +29,10 @@ export function getPaginationParams(
 ): { page: number; limit: number; skip: number } {
   const normalizedPage = Math.max(1, page || 1);
   const normalizedLimit = Math.min(100, Math.max(1, limit || 10));
-  const skip = (normalizedPage - 1) * normalizedLimit;
 
   return {
-    skip,
     page: normalizedPage,
     limit: normalizedLimit,
+    skip: (normalizedPage - 1) * normalizedLimit,
   };
 }

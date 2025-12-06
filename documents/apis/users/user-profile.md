@@ -157,7 +157,7 @@ Lấy thông tin public profile của user khác thông qua ID hoặc username. 
 
 | Parameter  | Type   | Description                                          |
 | ---------- | ------ | ---------------------------------------------------- |
-| identifier | string | User ID (UUID format) hoặc username của user cần xem |
+| identifier | string | User ID (CUID format) hoặc username của user cần xem |
 
 #### Headers
 
@@ -196,7 +196,7 @@ Cookie: accessToken=<token>
 
 | Field     | Type         | Description                               |
 | --------- | ------------ | ----------------------------------------- |
-| id        | string       | User ID (UUID format)                     |
+| id        | string       | User ID (CUID format)                     |
 | username  | string\|null | Username (null nếu chưa set)              |
 | fullName  | string\|null | Tên đầy đủ của user (null nếu chưa set)   |
 | avatar    | string\|null | URL avatar (null nếu không có)            |
@@ -240,7 +240,7 @@ Cookie: accessToken=<token>
 
 #### cURL Examples
 
-**Using User ID:**
+**Using User ID (CUID):**
 
 ```bash
 curl -X GET http://localhost:3000/users/clx1234567890abcdefghij \

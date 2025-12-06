@@ -15,20 +15,20 @@ async function bootstrap() {
   // Helmet - Security headers middleware
   app.use(
     helmet({
-      contentSecurityPolicy: process.env.NODE_ENV === 'production',
       hsts: {
         maxAge: 31536000,
         includeSubDomains: true,
       },
+      contentSecurityPolicy: process.env.NODE_ENV === 'production',
     }),
   );
 
   // Enable CORS - Support both Bearer token and cookies
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(', ').filter(Boolean) : '*',
     credentials: true, // Allow cookies to be sent
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'PUT', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Type'],
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(', ').filter(Boolean) : '*',
   });
 
   // Cookie parser middleware
@@ -37,12 +37,10 @@ async function bootstrap() {
   // Global validation pipe với whitelist để tránh mass assignment
   app.useGlobalPipes(
     new ValidationPipe({
+      transform: true, // Tự động transform types
       whitelist: true, // Strip properties không có decorator
       forbidNonWhitelisted: true, // Throw error nếu có property không mong muốn
-      transform: true, // Tự động transform types
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
+      transformOptions: { enableImplicitConversion: true },
     }),
   );
 
@@ -52,16 +50,11 @@ async function bootstrap() {
   // Global response interceptor - Format all success responses
   app.useGlobalInterceptors(new ResponseInterceptor());
 
-  // Request size limit - Express default là 100kb
-  // Có thể config trong NestFactory.create nếu cần tăng:
-  // app.use(express.json({ limit: '10mb' }));
-  // app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
   // Compression - Enable response compression
   app.use(
     compression({
-      threshold: 1024, // Chỉ compress response > 1KB
       level: 6, // Compression level (0-9)
+      threshold: 1024, // Chỉ compress response > 1KB
     }),
   );
 
@@ -69,8 +62,8 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   const port = process.env.PORT ?? 3000;
-  await app.listen(port);
 
+  await app.listen(port);
   logger.log(`🚀 Application is running on: http://localhost:${port}`);
 }
 

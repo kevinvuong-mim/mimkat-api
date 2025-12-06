@@ -395,16 +395,8 @@ Option 2: Custom policy (more secure)
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:DeleteObject",
-        "s3:ListBucket"
-      ],
-      "Resource": [
-        "arn:aws:s3:::your-bucket-name",
-        "arn:aws:s3:::your-bucket-name/*"
-      ]
+      "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket"],
+      "Resource": ["arn:aws:s3:::your-bucket-name", "arn:aws:s3:::your-bucket-name/*"]
     }
   ]
 }
@@ -563,17 +555,6 @@ AWS_SECRET_ACCESS_KEY="your-secret-key"
 AWS_BUCKET_NAME="mimkat-storage"
 AWS_ENDPOINT="https://oss.s3.mimkat.vn"
 ```
-
-**Lưu ý quan trọng:**
-
-- File `.env` chứa thông tin nhạy cảm, **KHÔNG BAO GIỜ commit lên Git**
-- Đảm bảo `.env` đã được thêm vào `.gitignore`
-- Sử dụng file `.env.example` để chia sẻ template với team
-- Mỗi môi trường (dev, staging, production) nên có file `.env` riêng với các giá trị khác nhau
-
----
-
-## Troubleshooting - Các lỗi thường gặp
 
 **Lưu ý quan trọng:**
 

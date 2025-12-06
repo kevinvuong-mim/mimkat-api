@@ -2,9 +2,7 @@ import type { Request } from 'express';
 
 export function extractFrontendUrl(req: Request): string {
   // Try origin header first (most reliable for CORS requests)
-  if (req.headers.origin && isValidUrl(req.headers.origin)) {
-    return req.headers.origin;
-  }
+  if (req.headers.origin && isValidUrl(req.headers.origin)) return req.headers.origin;
 
   // Fallback to referer header
   if (req.headers.referer) {
