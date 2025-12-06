@@ -52,7 +52,7 @@ Backend API for Mimkat application built with NestJS, PostgreSQL, and Prisma ORM
 ## 📦 Prerequisites
 
 - **Node.js** >= 20.0.0
-- **PostgreSQL** >= 14.0
+- **Docker** for containerized database
 - **npm** or **yarn** or **pnpm**
 - **AWS Account** (for S3 storage)
 - **Google OAuth Credentials** (for Google login)
@@ -85,13 +85,18 @@ cp .env.example .env
 
 ### 4. Setup database
 
-Create PostgreSQL database:
+Start PostgreSQL database with Docker Compose:
 
 ```bash
-createdb mimkat
+docker-compose up -d
 ```
 
-Or use PostgreSQL client/GUI tools to create the database.
+This will start:
+
+- Password: `1234abcd`
+- Username: `kwong2000`
+- Database name: `mimkat`
+- PostgreSQL on port `5432`
 
 ### 5. Run migrations
 
@@ -115,7 +120,7 @@ Create a `.env` file in the root directory with the following environment variab
 
 ```env
 # Database
-DATABASE_URL="postgresql://user:password@localhost:5432/mimkat"
+DATABASE_URL="postgresql://kwong2000:1234abcd@localhost:5432/mimkat"
 
 # JWT
 JWT_SECRET="your-jwt-secret-key-at-least-32-chars"
@@ -204,6 +209,10 @@ npm run test:e2e       # Run end-to-end tests
 npm run prisma:generate  # Generate Prisma Client
 npm run prisma:migrate   # Run migrations
 npx prisma studio        # Open Prisma Studio (database GUI)
+
+# Docker
+docker-compose up -d     # Start database in background
+docker-compose down      # Stop database
 ```
 
 ## 📁 Project Structure
