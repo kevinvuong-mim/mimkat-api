@@ -1,7 +1,4 @@
-import {
-  PaginationMeta,
-  PaginatedResponse,
-} from '@/common/interfaces/response.interface';
+import { PaginationMeta, PaginatedResponse } from '@/common/interfaces/response.interface';
 
 export function createPaginatedResponse<T>(
   items: T[],

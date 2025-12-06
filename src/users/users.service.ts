@@ -25,8 +25,7 @@ export class UsersService {
     private imageProcessing: ImageProcessingService,
   ) {
     this.awsEndpoint = this.configService.get<string>('AWS_ENDPOINT') || '';
-    this.awsBucketName =
-      this.configService.get<string>('AWS_BUCKET_NAME') || '';
+    this.awsBucketName = this.configService.get<string>('AWS_BUCKET_NAME') || '';
   }
 
   async getCurrentUser(userId: string) {
@@ -69,19 +68,14 @@ export class UsersService {
     };
   }
 
-  private buildAvatarUrl(
-    avatarKey: string | null,
-    avatarUpdatedAt: Date | null,
-  ): string | null {
+  private buildAvatarUrl(avatarKey: string | null, avatarUpdatedAt: Date | null): string | null {
     if (!avatarKey) return null;
 
     // If avatar is already a full URL (legacy data from Google OAuth)
     if (/^https?:\/\//.test(avatarKey)) return avatarKey;
 
     // Add cache busting query param if avatar updated at is provided
-    const timestamp = avatarUpdatedAt
-      ? new Date(avatarUpdatedAt).getTime()
-      : Date.now();
+    const timestamp = avatarUpdatedAt ? new Date(avatarUpdatedAt).getTime() : Date.now();
 
     return `${this.awsEndpoint}/${this.awsBucketName}/${avatarKey}?v=${timestamp}`;
   }
@@ -115,9 +109,7 @@ export class UsersService {
       // Rollback if update was not successful
       if (updatedUser.count === 0) {
         await this.storage.delete(storageKey);
-        throw new ConflictException(
-          'Failed to update avatar. Please try again',
-        );
+        throw new ConflictException('Failed to update avatar. Please try again');
       } else {
         // Delete old avatar from storage if it's not a full URL (legacy data from Google OAuth)
         if (user.avatar && !/^https?:\/\//.test(user.avatar)) {
@@ -135,10 +127,7 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     // Check if username is being updated and if it's already taken
-    if (
-      updateProfileDto.username &&
-      updateProfileDto.username !== user.username
-    ) {
+    if (updateProfileDto.username && updateProfileDto.username !== user.username) {
       const existingUser = await this.prisma.user.findUnique({
         where: { username: updateProfileDto.username },
       });
@@ -165,11 +154,7 @@ export class UsersService {
     });
   }
 
-  async changePassword(
-    userId: string,
-    currentPassword: string | undefined,
-    newPassword: string,
-  ) {
+  async changePassword(userId: string, currentPassword: string | undefined, newPassword: string) {
     // Find user
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -183,16 +168,11 @@ export class UsersService {
     if (user.password) {
       // Current password is required when user already has a password
       if (!currentPassword) {
-        throw new BadRequestException(
-          'Current password is required to change password',
-        );
+        throw new BadRequestException('Current password is required to change password');
       }
 
       // Verify current password
-      const isPasswordValid = await bcrypt.compare(
-        currentPassword,
-        user.password,
-      );
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
       if (!isPasswordValid) {
         throw new BadRequestException('Current password is incorrect');

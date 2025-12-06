@@ -25,9 +25,7 @@ async function bootstrap() {
 
   // Enable CORS - Support both Bearer token and cookies
   app.enableCors({
-    origin: process.env.CORS_ORIGIN
-      ? process.env.CORS_ORIGIN.split(', ').filter(Boolean)
-      : '*',
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(', ').filter(Boolean) : '*',
     credentials: true, // Allow cookies to be sent
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Type'],

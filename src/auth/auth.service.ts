@@ -68,11 +68,7 @@ export class AuthService {
 
     // Send verification email
     try {
-      await this.mailService.sendVerificationEmail(
-        email,
-        verificationToken,
-        frontendUrl,
-      );
+      await this.mailService.sendVerificationEmail(email, verificationToken, frontendUrl);
     } catch (error) {
       // Log error but don't fail registration
       this.logger.error(
@@ -203,10 +199,7 @@ export class AuthService {
     }
 
     // Generate new tokens
-    const tokens = await this.generateTokens(
-      tokenRecord.user.id,
-      tokenRecord.id,
-    );
+    const tokens = await this.generateTokens(tokenRecord.user.id, tokenRecord.id);
 
     // Update session with new refresh token
     await this.prisma.session.update({
@@ -257,9 +250,7 @@ export class AuthService {
   private async createSession(userId: string, deviceInfo?: DeviceInfo) {
     const expiresAt = new Date();
 
-    expiresAt.setTime(
-      expiresAt.getTime() + AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION,
-    );
+    expiresAt.setTime(expiresAt.getTime() + AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION);
 
     return this.prisma.session.create({
       data: {
@@ -343,8 +334,7 @@ export class AuthService {
         data: {
           googleId: googleUser.googleId,
           avatar: user.avatar || googleUser.avatar,
-          fullName:
-            user.fullName || `${googleUser.firstName} ${googleUser.lastName}`,
+          fullName: user.fullName || `${googleUser.firstName} ${googleUser.lastName}`,
           isEmailVerified: true, // Google login implies email is verified
         },
       });

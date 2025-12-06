@@ -49,8 +49,8 @@ coverage
 # OS files
 Thumbs.db
 
-# NestJS specific
-*.tsbuildinfo
-
 # Prisma
 /generated/prisma
+
+# Prettier
+.prettiercache

@@ -83,11 +83,7 @@ export class VerificationService {
     });
 
     // Send verification email
-    await this.mailService.sendVerificationEmail(
-      email,
-      verificationToken,
-      frontendUrl,
-    );
+    await this.mailService.sendVerificationEmail(email, verificationToken, frontendUrl);
   }
 
   async forgotPassword(email: string, frontendUrl: string) {
@@ -97,18 +93,16 @@ export class VerificationService {
 
     // Don't reveal if user exists or not (security best practice)
     if (!user) {
-      return {
-        message:
-          'If an account with that email exists, we sent a password reset link.',
-      };
+      throw new BadRequestException(
+        'If an account with that email exists, we sent a password reset link.',
+      );
     }
 
     // Only allow password reset for accounts that have password capability
     if (!user.password) {
-      return {
-        message:
-          'If an account with that email exists, we sent a password reset link.',
-      };
+      throw new BadRequestException(
+        'If an account with that email exists, we sent a password reset link.',
+      );
     }
 
     // Generate password reset token
@@ -130,11 +124,7 @@ export class VerificationService {
 
     // Send password reset email
     try {
-      await this.mailService.sendPasswordResetEmail(
-        email,
-        resetToken,
-        frontendUrl,
-      );
+      await this.mailService.sendPasswordResetEmail(email, resetToken, frontendUrl);
     } catch (error) {
       // Log error but don't fail the request
       this.logger.error(

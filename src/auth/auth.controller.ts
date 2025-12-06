@@ -14,10 +14,6 @@ import type { Request, Response } from 'express';
 
 import { LoginDto } from '@/auth/dto/login.dto';
 import { AuthService } from '@/auth/auth.service';
-import {
-  CurrentUser,
-  type UserPayload,
-} from '@/common/decorators/current-user.decorator';
 import { RegisterDto } from '@/auth/dto/register.dto';
 import { DeviceUtil } from '@/common/utils/device.util';
 import { AUTH_CONSTANTS } from './constants/auth.constants';
@@ -26,6 +22,7 @@ import { Public } from '@/common/decorators/public.decorator';
 import { RefreshTokenDto } from '@/auth/dto/refresh-token.dto';
 import { GoogleAuthGuard } from '@/auth/guards/google-auth.guard';
 import { extractFrontendUrl } from '@/common/utils/frontend-url.util';
+import { CurrentUser, type UserPayload } from '@/common/decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -81,8 +78,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     // Get refresh token from cookie if not provided in body
-    const refreshToken =
-      refreshTokenDto.refreshToken || req.cookies?.refreshToken;
+    const refreshToken = refreshTokenDto.refreshToken || req.cookies?.refreshToken;
 
     await this.authService.logout(user.id, refreshToken);
 
@@ -103,13 +99,9 @@ export class AuthController {
       const deviceInfo = DeviceUtil.extractDeviceInfo(req);
 
       // Get refresh token from cookie if not provided in body
-      const refreshToken =
-        refreshTokenDto.refreshToken || req.cookies?.refreshToken;
+      const refreshToken = refreshTokenDto.refreshToken || req.cookies?.refreshToken;
 
-      const result = await this.authService.refreshTokens(
-        refreshToken,
-        deviceInfo,
-      );
+      const result = await this.authService.refreshTokens(refreshToken, deviceInfo);
 
       // Set new access token in httpOnly cookie
       res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {
@@ -153,10 +145,7 @@ export class AuthController {
     // After Google authentication, this callback is triggered
     const deviceInfo = DeviceUtil.extractDeviceInfo(req);
 
-    const result = await this.authService.googleLogin(
-      req.user as any,
-      deviceInfo,
-    );
+    const result = await this.authService.googleLogin(req.user as any, deviceInfo);
 
     // Set access token in httpOnly cookie
     res.cookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY, result.accessToken, {

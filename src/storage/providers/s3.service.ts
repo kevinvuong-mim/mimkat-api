@@ -17,12 +17,10 @@ export class S3Service implements IStorageService, OnModuleInit {
 
   constructor(private configService: ConfigService) {
     const region = this.configService.get<string>('AWS_REGION');
-    const bucketName = this.configService.get<string>('AWS_BUCKET_NAME');
     const endpoint = this.configService.get<string>('AWS_ENDPOINT');
+    const bucketName = this.configService.get<string>('AWS_BUCKET_NAME');
     const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.get<string>(
-      'AWS_SECRET_ACCESS_KEY',
-    );
+    const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
 
     // Validate all required environment variables
     if (!region || !bucketName || !endpoint) {
@@ -58,22 +56,16 @@ export class S3Service implements IStorageService, OnModuleInit {
   async initialize(): Promise<void> {
     try {
       // Check if bucket exists
-      await this.s3Client.send(
-        new HeadBucketCommand({ Bucket: this.bucketName }),
-      );
+      await this.s3Client.send(new HeadBucketCommand({ Bucket: this.bucketName }));
     } catch (error) {
       // Provide specific error messages based on error type
-      if (error.name === 'NoSuchBucket') {
-        this.logger.error(
-          `S3 bucket "${this.bucketName}" does not exist. Please create it first.`,
-        );
-      } else if (error.name === 'Forbidden') {
-        this.logger.error(
-          `Access denied to bucket "${this.bucketName}". Check IAM permissions.`,
-        );
+      if (error instanceof Error && error.name === 'NoSuchBucket') {
+        this.logger.error(`S3 bucket "${this.bucketName}" does not exist. Please create it first.`);
+      } else if (error instanceof Error && error.name === 'Forbidden') {
+        this.logger.error(`Access denied to bucket "${this.bucketName}". Check IAM permissions.`);
       } else {
         this.logger.error(
-          `Failed to access S3 bucket "${this.bucketName}": ${error.message}`,
+          `Failed to access S3 bucket "${this.bucketName}": ${error instanceof Error ? error.message : String(error)}`,
         );
       }
       throw error;
@@ -106,12 +98,15 @@ export class S3Service implements IStorageService, OnModuleInit {
 
       return encodedKey;
     } catch (error) {
-      this.logger.error(`Failed to upload file to S3: ${error.message}`, {
-        key,
-        bucketName: this.bucketName,
-        region: this.region,
-        stack: error.stack,
-      });
+      this.logger.error(
+        `Failed to upload file to S3: ${error instanceof Error ? error.message : String(error)}`,
+        {
+          key,
+          bucketName: this.bucketName,
+          region: this.region,
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      );
       throw error;
     }
   }
@@ -126,11 +121,14 @@ export class S3Service implements IStorageService, OnModuleInit {
       await this.s3Client.send(command);
       this.logger.log(`File deleted successfully: ${key}`);
     } catch (error) {
-      this.logger.warn(`Failed to delete file from S3: ${error.message}`, {
-        key,
-        bucketName: this.bucketName,
-        region: this.region,
-      });
+      this.logger.warn(
+        `Failed to delete file from S3: ${error instanceof Error ? error.message : String(error)}`,
+        {
+          key,
+          bucketName: this.bucketName,
+          region: this.region,
+        },
+      );
     }
   }
 }

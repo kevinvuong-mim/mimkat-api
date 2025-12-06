@@ -1,10 +1,4 @@
-import {
-  Matches,
-  IsString,
-  MaxLength,
-  MinLength,
-  IsOptional,
-} from 'class-validator';
+import { Matches, IsString, MaxLength, MinLength, IsOptional } from 'class-validator';
 
 export class UpdateProfileDto {
   @IsString()
@@ -29,8 +23,7 @@ export class UpdateProfileDto {
   })
   @MaxLength(20, { message: 'Phone number must not exceed 20 characters' })
   @Matches(/^[0-9+\-\s()]*$/, {
-    message:
-      'Phone number can only contain numbers, +, -, spaces, and parentheses',
+    message: 'Phone number can only contain numbers, +, -, spaces, and parentheses',
   })
   phoneNumber?: string;
 }

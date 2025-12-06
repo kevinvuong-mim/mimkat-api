@@ -31,11 +31,7 @@ export class DeviceUtil {
       return ips[0].trim();
     }
 
-    return (
-      (req.headers['x-real-ip'] as string) ||
-      req.socket.remoteAddress ||
-      'Unknown'
-    );
+    return (req.headers['x-real-ip'] as string) || req.socket.remoteAddress || 'Unknown';
   }
 
   private static getDeviceType(userAgent: string): string {
@@ -90,8 +86,7 @@ export class DeviceUtil {
 
     // Browsers
     if (ua.includes('chrome') && !ua.includes('edge')) return 'Chrome Browser';
-    if (ua.includes('safari') && !ua.includes('chrome'))
-      return 'Safari Browser';
+    if (ua.includes('safari') && !ua.includes('chrome')) return 'Safari Browser';
     if (ua.includes('firefox')) return 'Firefox Browser';
     if (ua.includes('edge')) return 'Edge Browser';
 

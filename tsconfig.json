@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "strict": true,
+    "lib": ["ES2023"],
     "sourceMap": true,
     "outDir": "./dist",
     "target": "ES2023",
@@ -8,19 +10,24 @@
     "incremental": true,
     "module": "nodenext",
     "skipLibCheck": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "removeComments": true,
     "esModuleInterop": true,
+    "noUnusedLocals": false,
     "isolatedModules": true,
     "strictNullChecks": true,
-    "strictBindCallApply": false,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUnusedParameters": false,
+    "strictBindCallApply": true,
     "emitDecoratorMetadata": true,
     "paths": { "@/*": ["src/*"] },
     "experimentalDecorators": true,
     "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,
-    "noFallthroughCasesInSwitch": false,
+    "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
+    "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true
   }
 }

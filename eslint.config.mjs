@@ -4,7 +4,16 @@ import tseslint from 'typescript-eslint';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
 export default tseslint.config(
-  { ignores: ['eslint.config.mjs'] },
+  {
+    ignores: [
+      'dist/**',
+      '.prisma/**',
+      'coverage/**',
+      'node_modules/**',
+      'eslint.config.mjs',
+      'prisma/migrations/**',
+    ],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,
@@ -14,7 +23,8 @@ export default tseslint.config(
         ...globals.node,
         ...globals.jest,
       },
-      sourceType: 'commonjs',
+      sourceType: 'module',
+      ecmaVersion: 'latest',
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
@@ -23,15 +33,15 @@ export default tseslint.config(
   },
   {
     rules: {
+      // Prettier integration
+      'prettier/prettier': 'error',
+
       // General ESLint rules
       'no-var': 'error',
       'no-debugger': 'error',
       'prefer-const': 'error',
       'no-duplicate-imports': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-
-      // Prettier integration
-      'prettier/prettier': ['error', { endOfLine: 'auto' }],
 
       // TypeScript specific rules
       '@typescript-eslint/no-unused-vars': [
@@ -42,8 +52,8 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/require-await': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',

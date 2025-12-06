@@ -93,9 +93,7 @@ export class CleanupService {
         },
       });
 
-      this.logger.log(
-        `Cleanup completed. Deleted ${result.count} expired sessions.`,
-      );
+      this.logger.log(`Cleanup completed. Deleted ${result.count} expired sessions.`);
     } catch (error) {
       this.logger.error('Failed to cleanup expired sessions', error);
     }

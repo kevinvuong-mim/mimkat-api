@@ -20,11 +20,7 @@ export class MailService {
     });
   }
 
-  async sendVerificationEmail(
-    email: string,
-    token: string,
-    frontendUrl: string,
-  ) {
+  async sendVerificationEmail(email: string, token: string, frontendUrl: string) {
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
 
     try {
@@ -37,16 +33,15 @@ export class MailService {
 
       this.logger.log('Verification email sent successfully');
     } catch (error) {
-      this.logger.error('Failed to send verification email', error.stack);
+      this.logger.error(
+        'Failed to send verification email',
+        error instanceof Error ? error.stack : String(error),
+      );
       throw new Error('Failed to send verification email');
     }
   }
 
-  async sendPasswordResetEmail(
-    email: string,
-    token: string,
-    frontendUrl: string,
-  ) {
+  async sendPasswordResetEmail(email: string, token: string, frontendUrl: string) {
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
     try {
@@ -59,7 +54,10 @@ export class MailService {
 
       this.logger.log('Password reset email sent successfully');
     } catch (error) {
-      this.logger.error('Failed to send password reset email', error.stack);
+      this.logger.error(
+        'Failed to send password reset email',
+        error instanceof Error ? error.stack : String(error),
+      );
       throw new Error('Failed to send password reset email');
     }
   }

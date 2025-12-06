@@ -49,8 +49,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
               field: msg.property || msg.field || 'unknown',
               message: Array.isArray(msg.constraints)
                 ? msg.constraints.join(', ')
-                : Object.values(msg.constraints || {}).join(', ') ||
-                  msg.message,
+                : Object.values(msg.constraints || {}).join(', ') || msg.message,
               value: msg.value,
             };
           });

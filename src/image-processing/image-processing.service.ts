@@ -11,20 +11,13 @@ export interface ProcessedImage {
 export class ImageProcessingService {
   private readonly QUALITY = 80;
   private readonly MAX_DIMENSION = 1024;
-  private readonly ALLOWED_MIMETYPES = [
-    'image/gif',
-    'image/png',
-    'image/jpeg',
-    'image/webp',
-  ];
+  private readonly ALLOWED_MIMETYPES = ['image/gif', 'image/png', 'image/jpeg', 'image/webp'];
   private readonly logger = new Logger(ImageProcessingService.name);
 
   async processImage(file: Express.Multer.File): Promise<ProcessedImage> {
     // Validate mimetype
     if (!this.ALLOWED_MIMETYPES.includes(file.mimetype)) {
-      throw new BadRequestException(
-        'Invalid file type. Only JPG, PNG, WebP, and GIF are allowed.',
-      );
+      throw new BadRequestException('Invalid file type. Only JPG, PNG, WebP, and GIF are allowed.');
     }
 
     try {
@@ -38,9 +31,7 @@ export class ImageProcessingService {
 
       // Validate image dimensions
       if (metadata.width < 50 || metadata.height < 50) {
-        throw new BadRequestException(
-          'Image too small. Minimum dimensions: 50x50 pixels.',
-        );
+        throw new BadRequestException('Image too small. Minimum dimensions: 50x50 pixels.');
       }
 
       // Validate aspect ratio (prevent banner-like images)
@@ -55,10 +46,7 @@ export class ImageProcessingService {
       if (metadata.format === 'gif') {
         let processedBuffer: Buffer;
 
-        if (
-          metadata.width > this.MAX_DIMENSION ||
-          metadata.height > this.MAX_DIMENSION
-        ) {
+        if (metadata.width > this.MAX_DIMENSION || metadata.height > this.MAX_DIMENSION) {
           // Resize GIF while preserving animation
           processedBuffer = await sharpInstance
             .resize(this.MAX_DIMENSION, this.MAX_DIMENSION, {
@@ -72,9 +60,7 @@ export class ImageProcessingService {
           processedBuffer = file.buffer;
         }
 
-        this.logger.log(
-          `GIF processed: ${file.size} -> ${processedBuffer.length} bytes`,
-        );
+        this.logger.log(`GIF processed: ${file.size} -> ${processedBuffer.length} bytes`);
 
         return {
           buffer: processedBuffer,
@@ -86,10 +72,7 @@ export class ImageProcessingService {
       // Process non-GIF images (convert to WebP)
       let processedBuffer: Buffer;
 
-      if (
-        metadata.width > this.MAX_DIMENSION ||
-        metadata.height > this.MAX_DIMENSION
-      ) {
+      if (metadata.width > this.MAX_DIMENSION || metadata.height > this.MAX_DIMENSION) {
         processedBuffer = await sharpInstance
           .resize(this.MAX_DIMENSION, this.MAX_DIMENSION, {
             fit: 'inside', // Maintain aspect ratio
@@ -99,14 +82,10 @@ export class ImageProcessingService {
           .toBuffer();
       } else {
         // Just convert to WebP and optimize
-        processedBuffer = await sharpInstance
-          .webp({ quality: this.QUALITY })
-          .toBuffer();
+        processedBuffer = await sharpInstance.webp({ quality: this.QUALITY }).toBuffer();
       }
 
-      this.logger.log(
-        `Image processed: ${file.size} -> ${processedBuffer.length} bytes`,
-      );
+      this.logger.log(`Image processed: ${file.size} -> ${processedBuffer.length} bytes`);
 
       return {
         buffer: processedBuffer,
@@ -116,13 +95,11 @@ export class ImageProcessingService {
     } catch (error) {
       // Handle out-of-memory errors specifically
       if (
-        error.message?.includes('memory') ||
-        error.message?.includes('allocation')
+        error instanceof Error &&
+        (error.message?.includes('memory') || error.message?.includes('allocation'))
       ) {
         this.logger.error('Out of memory while processing image', error);
-        throw new BadRequestException(
-          'Image is too large to process. Please use a smaller file.',
-        );
+        throw new BadRequestException('Image is too large to process. Please use a smaller file.');
       }
 
       // Re-throw BadRequestException as-is
@@ -132,9 +109,7 @@ export class ImageProcessingService {
 
       // Other errors
       this.logger.error('Failed to process image', error);
-      throw new BadRequestException(
-        'Failed to process image. File may be corrupted.',
-      );
+      throw new BadRequestException('Failed to process image. File may be corrupted.');
     }
   }
 }

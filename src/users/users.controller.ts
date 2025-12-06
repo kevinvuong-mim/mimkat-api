@@ -20,16 +20,13 @@ import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-import {
-  CurrentUser,
-  type UserPayload,
-} from '@/common/decorators/current-user.decorator';
 import { UsersService } from '@/users/users.service';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { AUTH_CONSTANTS } from '@/auth/constants/auth.constants';
 import { UpdateProfileDto } from '@/users/dto/update-profile.dto';
 import { ChangePasswordDto } from '@/users/dto/change-password.dto';
 import { getPaginationParams } from '@/common/utils/pagination.util';
+import { CurrentUser, type UserPayload } from '@/common/decorators/current-user.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -45,10 +42,7 @@ export class UsersController {
 
   @Put('me')
   @HttpCode(HttpStatus.OK)
-  updateProfile(
-    @CurrentUser() user: UserPayload,
-    @Body() updateProfileDto: UpdateProfileDto,
-  ) {
+  updateProfile(@CurrentUser() user: UserPayload, @Body() updateProfileDto: UpdateProfileDto) {
     return this.usersService.updateProfile(user.id, updateProfileDto);
   }
 
@@ -129,10 +123,7 @@ export class UsersController {
 
   @Delete('sessions/:sessionId')
   @HttpCode(HttpStatus.OK)
-  logoutDevice(
-    @CurrentUser() user: UserPayload,
-    @Param('sessionId') sessionId: string,
-  ) {
+  logoutDevice(@CurrentUser() user: UserPayload, @Param('sessionId') sessionId: string) {
     return this.usersService.logoutDevice(user.id, sessionId);
   }
 
