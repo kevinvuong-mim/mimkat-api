@@ -8,41 +8,69 @@ datasource db {
 }
 
 model User {
-  id                       String    @id @default(uuid())
-  email                    String    @unique
-  password                 String?
-  username                 String?   @unique
-  fullName                 String?
-  isActive                 Boolean   @default(true)
-  isEmailVerified          Boolean   @default(false)
-  verificationToken        String?   @unique
-  verificationTokenExpiry  DateTime?
-  passwordResetToken       String?   @unique
+  // ID & Primary Key
+  id String @id @default(uuid())
+
+  // Authentication
+  password String?
+  email    String  @unique
+  googleId String? @unique
+
+  // Avatar/Media
+  avatar          String?
+  avatarUpdatedAt DateTime?
+
+  // Profile Information
+  fullName    String?
+  phoneNumber String?
+  username    String? @unique
+
+  // Timestamps
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  // Account Status
+  isActive        Boolean @default(true)
+  isEmailVerified Boolean @default(false)
+
+  // Email Verification
+  verificationTokenExpiry DateTime?
+  verificationToken       String?   @unique
+
+  // Password Reset
   passwordResetTokenExpiry DateTime?
-  googleId                 String?   @unique
-  avatar                   String?
-  avatarUpdatedAt          DateTime?
-  phoneNumber              String?
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
-  sessions                 Session[]
+  passwordResetToken       String?   @unique
+
+  // Relations
+  sessions Session[]
 
   @@index([email])
   @@map("users")
 }
 
 model Session {
-  id           String   @id @default(uuid())
-  refreshToken String   @unique
-  userId       String
+  // ID & Primary Key
+  id String @id @default(uuid())
+
+  // User Relation
+  userId String
+
+  // Device Information
+  deviceName String?
+  deviceType String?
+  ipAddress  String?
+  userAgent  String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  // Session Data
   expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  deviceName   String?
-  deviceType   String?
-  ipAddress    String?
-  userAgent    String?
+  refreshToken String   @unique
   lastUsedAt   DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])

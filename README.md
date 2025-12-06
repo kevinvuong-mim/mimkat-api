@@ -63,7 +63,7 @@ Backend API for Mimkat application built with NestJS, PostgreSQL, and Prisma ORM
 ### 1. Clone repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/kevinvuong-mim/mimkat-api.git
 cd mimkat-api
 ```
 
@@ -219,7 +219,7 @@ docker-compose down      # Stop database
 
 ```
 mimkat-api/
-├── documents/              # Project documentation
+├── documents/             # Project documentation
 │   ├── apis/              # API documentation
 │   │   ├── auth/          # Auth endpoints docs
 │   │   ├── users/         # User endpoints docs
@@ -304,14 +304,3 @@ npx prisma migrate deploy
 ```bash
 npm run start:prod
 ```
-
-### Deployment Platforms
-
-This API can be deployed to:
-
-- **AWS EC2** / **DigitalOcean** / **Linode**
-- **Heroku**
-- **Railway**
-- **Render**
-- **Google Cloud Platform**
-- **Azure App Service**
