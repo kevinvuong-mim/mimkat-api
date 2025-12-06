@@ -30,8 +30,6 @@ export class MailService {
         from: this.configService.get<string>('MAIL_FROM'),
         html: this.getVerificationEmailTemplate(verificationUrl),
       });
-
-      this.logger.log('Verification email sent successfully');
     } catch (error) {
       this.logger.error(
         'Failed to send verification email',
@@ -52,8 +50,6 @@ export class MailService {
         from: this.configService.get<string>('MAIL_FROM'),
         html: this.getPasswordResetEmailTemplate(resetUrl),
       });
-
-      this.logger.log('Password reset email sent successfully');
     } catch (error) {
       this.logger.error(
         'Failed to send password reset email',

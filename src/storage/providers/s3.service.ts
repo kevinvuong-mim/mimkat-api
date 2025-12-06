@@ -90,7 +90,6 @@ export class S3Service implements IStorageService, OnModuleInit {
 
       // Return encoded key instead of public URL
       const encodedKey = encodeURI(key);
-      this.logger.log(`File uploaded successfully: ${key}`);
 
       return encodedKey;
     } catch (error) {
@@ -116,7 +115,6 @@ export class S3Service implements IStorageService, OnModuleInit {
       });
 
       await this.s3Client.send(command);
-      this.logger.log(`File deleted successfully: ${key}`);
     } catch (error) {
       this.logger.warn(
         `Failed to delete file from S3: ${error instanceof Error ? error.message : String(error)}`,

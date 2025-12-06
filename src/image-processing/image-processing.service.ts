@@ -25,10 +25,6 @@ export class ImageProcessingService {
       const sharpInstance = sharp(file.buffer);
       const metadata = await sharpInstance.metadata();
 
-      this.logger.log(
-        `Processing image: ${metadata.width}x${metadata.height}, format: ${metadata.format}`,
-      );
-
       // Validate image dimensions
       if (metadata.width < 50 || metadata.height < 50) {
         throw new BadRequestException('Image too small. Minimum dimensions: 50x50 pixels.');
@@ -60,8 +56,6 @@ export class ImageProcessingService {
           processedBuffer = file.buffer;
         }
 
-        this.logger.log(`GIF processed: ${file.size} -> ${processedBuffer.length} bytes`);
-
         return {
           mimetype: 'image/gif',
           buffer: processedBuffer,
@@ -84,8 +78,6 @@ export class ImageProcessingService {
         // Just convert to WebP and optimize
         processedBuffer = await sharpInstance.webp({ quality: this.QUALITY }).toBuffer();
       }
-
-      this.logger.log(`Image processed: ${file.size} -> ${processedBuffer.length} bytes`);
 
       return {
         mimetype: 'image/webp',
