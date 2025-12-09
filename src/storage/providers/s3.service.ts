@@ -68,6 +68,7 @@ export class S3Service implements IStorageService, OnModuleInit {
           `Failed to access S3 bucket "${this.bucketName}": ${error instanceof Error ? error.message : String(error)}`,
         );
       }
+
       throw error;
     }
   }

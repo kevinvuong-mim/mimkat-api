@@ -37,7 +37,7 @@ async function bootstrap() {
   // Global validation pipe với whitelist để tránh mass assignment
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true, // Tự động transform types
+      transform: true, // Auto transform types
       whitelist: true, // Strip properties không có decorator
       forbidNonWhitelisted: true, // Throw error nếu có property không mong muốn
       transformOptions: { enableImplicitConversion: true },
@@ -54,7 +54,7 @@ async function bootstrap() {
   app.use(
     compression({
       level: 6, // Compression level (0-9)
-      threshold: 1024, // Chỉ compress response > 1KB
+      threshold: 1024, // Only compress response > 1KB
     }),
   );
 
