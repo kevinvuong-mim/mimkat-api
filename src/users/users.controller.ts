@@ -79,7 +79,7 @@ export class UsersController {
       changePasswordDto.newPassword,
     );
 
-    // Clear cookies
+    // Clear authentication cookies to force re-login after password change
     res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
     res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
   }
@@ -114,7 +114,7 @@ export class UsersController {
   ) {
     await this.usersService.logoutAllDevices(user.id);
 
-    // Clear cookies
+    // Clear authentication cookies on current device
     res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
     res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
   }

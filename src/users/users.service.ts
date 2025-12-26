@@ -105,7 +105,7 @@ export class UsersService {
     });
 
     if (storageKey !== user.avatar) {
-      // Rollback if update was not successful
+      // Check for race condition: if count is 0, another request already updated the avatar
       if (updatedUser.count === 0) {
         await this.storage.delete(storageKey);
 
@@ -236,10 +236,11 @@ export class UsersService {
   }
 
   async getUserByIdOrUsername(identifier: string) {
-    // Try to find user by ID first, then by username
+    // Find user by ID or username (flexible identifier)
+    // Only return active users for security
     const user = await this.prisma.user.findFirst({
       where: {
-        isActive: true, // Only return active users
+        isActive: true,
         OR: [{ id: identifier }, { username: identifier }],
       },
       select: {

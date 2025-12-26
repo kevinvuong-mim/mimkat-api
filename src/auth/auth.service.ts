@@ -117,7 +117,7 @@ export class AuthService {
 
     if (existingUser) throw new ConflictException('Email already in use');
 
-    // Hash password with bcrypt (salt rounds = 12 for high security)
+    // Hash password with bcrypt (salt rounds = 12 provides strong security without significant performance impact)
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Generate verification token

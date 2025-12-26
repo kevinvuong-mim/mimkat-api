@@ -10,7 +10,7 @@ export function extractFrontendUrl(req: Request): string {
     return `${refererUrl.protocol}//${refererUrl.host}`;
   }
 
-  // Fallback for development
+  // Default fallback when headers are missing (development only - should not happen in production)
   return 'http://localhost:3001';
 }
 

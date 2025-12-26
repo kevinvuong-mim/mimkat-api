@@ -81,13 +81,13 @@ export class VerificationService {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
     // Don't reveal if user exists or not (security best practice)
+    // Only allow password reset for accounts that have password capability
     if (!user) {
       throw new BadRequestException(
         'If an account with that email exists, we sent a password reset link.',
       );
     }
 
-    // Only allow password reset for accounts that have password capability
     if (!user.password) {
       throw new BadRequestException(
         'If an account with that email exists, we sent a password reset link.',
@@ -115,7 +115,7 @@ export class VerificationService {
     try {
       await this.mailService.sendPasswordResetEmail(email, resetToken, frontendUrl);
     } catch (error) {
-      // Log error but don't fail the request
+      // Log email sending errors without failing the password reset flow
       this.logger.error(
         'Failed to send password reset email',
         error instanceof Error ? error.stack : String(error),

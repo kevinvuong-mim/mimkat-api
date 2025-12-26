@@ -99,7 +99,7 @@ export class ImageProcessingService {
         throw error;
       }
 
-      // Other errors
+      // Handle unexpected errors (corrupt file, unsupported format, Sharp processing errors)
       this.logger.error('Failed to process image', error);
       throw new BadRequestException('Failed to process image. File may be corrupted.');
     }

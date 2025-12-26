@@ -89,7 +89,8 @@ export class S3Service implements IStorageService, OnModuleInit {
 
       await this.s3Client.send(command);
 
-      // Return encoded key instead of public URL
+      // Return encoded storage key for database storage
+      // The public URL will be constructed by UsersService.buildAvatarUrl() when needed
       const encodedKey = encodeURI(key);
 
       return encodedKey;

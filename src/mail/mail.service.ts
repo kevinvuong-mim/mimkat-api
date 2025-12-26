@@ -10,7 +10,8 @@ export class MailService {
 
   constructor(private readonly configService: ConfigService) {
     this.transporter = nodemailer.createTransport({
-      secure: false, // true for 465, false for other ports
+      // Use TLS/SSL: true for port 465 (implicit TLS), false for port 587/25 (STARTTLS)
+      secure: false,
       host: this.configService.get<string>('MAIL_HOST'),
       port: this.configService.get<number>('MAIL_PORT'),
       auth: {

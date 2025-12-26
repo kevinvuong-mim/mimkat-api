@@ -57,7 +57,7 @@ export class VerificationController {
   ) {
     await this.verificationService.resetPassword(resetPasswordDto.token, resetPasswordDto.password);
 
-    // Clear cookies
+    // Clear authentication cookies to force re-login after password reset
     res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
     res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
   }

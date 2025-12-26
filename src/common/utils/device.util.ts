@@ -87,7 +87,7 @@ export class DeviceUtil {
     if (ua.includes('chrome') && !ua.includes('edge')) return 'Chrome Browser';
     if (ua.includes('safari') && !ua.includes('chrome')) return 'Safari Browser';
 
-    // Fallback
+    // Fallback to generic name based on device type when specific device/browser cannot be detected
     return deviceType === 'mobile'
       ? 'Mobile Device'
       : deviceType === 'desktop'

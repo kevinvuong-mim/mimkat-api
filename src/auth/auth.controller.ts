@@ -83,7 +83,7 @@ export class AuthController {
 
     await this.authService.logout(user.id, refreshToken);
 
-    // Clear cookies
+    // Clear authentication cookies after logout
     res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
     res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
   }
@@ -122,7 +122,7 @@ export class AuthController {
 
       return result;
     } catch (error) {
-      // Clear invalid cookies
+      // Clear invalid cookies on refresh token error
       res.clearCookie(AUTH_CONSTANTS.ACCESS_TOKEN_KEY);
       res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
 
@@ -164,7 +164,7 @@ export class AuthController {
       maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRATION, // 7 days
     });
 
-    // Get the redirect URL from state parameter (passed from Google)
+    // Get the redirect URL from state parameter (returned by Google OAuth flow)
     const redirectUrl = req.query.state as string;
 
     res.redirect(redirectUrl);
