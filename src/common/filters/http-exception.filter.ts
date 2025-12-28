@@ -6,7 +6,7 @@ import {
   HttpException,
   ExceptionFilter,
 } from '@nestjs/common';
-import { Response, Request } from 'express';
+import { Request, Response } from 'express';
 
 import { ErrorResponse } from '@/common/interfaces/response.interface';
 
