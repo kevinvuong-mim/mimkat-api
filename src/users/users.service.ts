@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { StorageService } from '@/storage/storage.service';
 import { UpdateProfileDto } from '@/users/dto/update-profile.dto';
-import { createPaginatedResponse } from '@/common/utils/pagination.util';
+import { createPaginatedData } from '@/common/utils/pagination.util';
 import { ImageProcessingService } from '@/image-processing/image-processing.service';
 
 @Injectable()
@@ -215,7 +215,7 @@ export class UsersService {
       isCurrent: currentSessionId ? session.id === currentSessionId : false,
     }));
 
-    return createPaginatedResponse(sessionDtos, total, page, limit);
+    return createPaginatedData(sessionDtos, total, page, limit);
   }
 
   async logoutAllDevices(userId: string) {

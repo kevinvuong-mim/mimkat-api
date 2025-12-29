@@ -1,11 +1,11 @@
-import { PaginationMeta, PaginatedResponse } from '@/common/interfaces/response.interface';
+import { PaginationMeta, PaginatedData } from '@/common/interfaces/response.interface';
 
-export function createPaginatedResponse<T>(
+export function createPaginatedData<T>(
   items: T[],
   total: number,
   page: number,
   perPage: number,
-): PaginatedResponse<T> {
+): PaginatedData<T> {
   const totalPages = Math.ceil(total / perPage);
 
   const meta: PaginationMeta = {
