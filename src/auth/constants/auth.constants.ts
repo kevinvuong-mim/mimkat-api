@@ -1,6 +1,6 @@
 export const AUTH_CONSTANTS = {
   // Maximum number of concurrent sessions allowed per user
-  MAX_CONCURRENT_SESSIONS: 5,
+  MAX_CONCURRENT_SESSIONS: 10,
 
   // Token storage keys
   ACCESS_TOKEN_KEY: 'accessToken',

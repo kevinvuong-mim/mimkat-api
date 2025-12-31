@@ -19,7 +19,7 @@ API xác thực người dùng, hỗ trợ cả Bearer tokens và HttpOnly cooki
 - Session management với device tracking
 - Rate limiting
 - HttpOnly cookies với SameSite=Lax
-- Maximum 5 concurrent sessions per user
+- Maximum 10 concurrent sessions per user
 
 ---
 
@@ -317,7 +317,7 @@ curl -X POST http://localhost:3000/auth/login \
 - **Mobile/APIs**: Sử dụng Authorization header với tokens từ response body
 - **Secure Cookie**: Chỉ được bật trong production mode (NODE_ENV=production)
 - Hệ thống tự động thu thập thông tin thiết bị từ request headers
-- Mỗi người dùng có giới hạn **5 phiên đăng nhập đồng thời** (MAX_CONCURRENT_SESSIONS)
+- Mỗi người dùng có giới hạn **10 phiên đăng nhập đồng thời** (MAX_CONCURRENT_SESSIONS)
 - Khi vượt quá giới hạn, phiên cũ nhất (theo lastUsedAt) sẽ tự động bị đăng xuất
 - AccessToken: 1 giờ, RefreshToken: 7 ngày
 - Password được verify bằng bcrypt.compare()
@@ -675,7 +675,7 @@ curl -X POST http://localhost:3000/auth/refresh \
 
 ### Session Management
 
-- **Số phiên đăng nhập đồng thời tối đa**: 5 sessions (AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS)
+- **Số phiên đăng nhập đồng thời tối đa**: 10 sessions (AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS)
 - **Khi vượt quá giới hạn**: Tự động đăng xuất phiên cũ nhất (dựa theo `lastUsedAt` field)
 - **Thông tin lưu trữ trong Session table**:
   - `refreshToken`: JWT refresh token (unique, indexed)

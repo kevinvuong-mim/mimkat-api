@@ -14,7 +14,7 @@ API xác thực người dùng thông qua Google OAuth 2.0. Cho phép người d
 - Hỗ trợ link Google account vào tài khoản email/password hiện có
 - Session management với device tracking
 - HttpOnly cookies với SameSite=Lax
-- Maximum 5 concurrent sessions per user
+- Maximum 10 concurrent sessions per user
 
 ---
 
@@ -271,7 +271,7 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
   - Device type (Desktop/Mobile/Tablet)
   - IP address
   - Full User-Agent string
-- **Session Limit**: Maximum 5 concurrent sessions per user
+- **Session Limit**: Maximum 10 concurrent sessions per user
 - **Cleanup**: Session cũ nhất (theo `lastUsedAt`) bị xóa khi vượt limit
 - **Token Expiry**:
   - Access token: 1 hour

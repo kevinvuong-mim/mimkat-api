@@ -424,9 +424,9 @@ Sessions được tạo tự động khi:
 
 ### Session Limit
 
-- **Max concurrent sessions**: 5 (cấu hình trong `AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS`)
+- **Max concurrent sessions**: 10 (cấu hình trong `AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS`)
 - **Enforcement**: Khi đạt limit, session cũ nhất (oldest `lastUsedAt`) bị xóa tự động
-- **Example**: Nếu limit = 5, login lần thứ 6 sẽ xóa session cũ nhất
+- **Example**: Nếu limit = 10, login lần thứ 11 sẽ xóa session cũ nhất
 - **Automatic cleanup**: Xảy ra trong `auth.service.ts` method `enforceSessionLimit()`
 
 ---
