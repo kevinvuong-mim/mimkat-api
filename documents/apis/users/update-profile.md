@@ -67,11 +67,21 @@ Khi dữ liệu không hợp lệ:
   "errors": [
     {
       "field": "username",
-      "message": "Username must be at least 3 characters long"
+      "constraint": "minLength",
+      "message": "Username must be at least 3 characters long",
+      "value": "ab"
     },
     {
       "field": "username",
-      "message": "Username must start and end with a letter or number, contain only letters, numbers, dots, and underscores, and cannot have consecutive special characters"
+      "constraint": "matches",
+      "message": "Username must start and end with a letter or number, contain only letters, numbers, dots, and underscores, and cannot have consecutive special characters",
+      "value": "ab"
+    },
+    {
+      "field": "phoneNumber",
+      "constraint": "matches",
+      "message": "Phone number can only contain numbers, +, -, spaces, and parentheses",
+      "value": "invalid"
     }
   ],
   "timestamp": "2024-12-01T07:00:00.000Z",
