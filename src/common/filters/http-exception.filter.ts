@@ -42,18 +42,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
         // Handle validation errors from class-validator
         if (Array.isArray(res.message)) {
-          validationErrors = res.message.map((msg: any) => {
-            if (typeof msg === 'string') {
-              return { field: 'unknown', message: msg };
-            }
-            return {
-              field: msg.property || msg.field || 'unknown',
-              message: Array.isArray(msg.constraints)
-                ? msg.constraints.join(', ')
-                : Object.values(msg.constraints || {}).join(', ') || msg.message,
-              value: msg.value,
-            };
-          });
+          validationErrors = res.message;
           message = 'Validation failed';
         }
       }

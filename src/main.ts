@@ -2,7 +2,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, HttpException, ValidationPipe } from '@nestjs/common';
 
 import { AppModule } from '@/app.module';
 import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
@@ -41,6 +41,29 @@ async function bootstrap() {
       whitelist: true, // Strip properties không có decorator
       forbidNonWhitelisted: true, // Throw error nếu có property không mong muốn
       transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: (errors) => {
+        const formattedErrors = errors.flatMap((error) => {
+          if (!error.constraints) return [];
+
+          return Object.entries(error.constraints).map(([key, message]) => ({
+            constraint: key,
+            message: message,
+            value: error.value,
+            field: error.property,
+          }));
+        });
+
+        const exception = new HttpException(
+          {
+            statusCode: 400,
+            error: 'Bad Request',
+            message: formattedErrors,
+          },
+          400,
+        );
+
+        return exception;
+      },
     }),
   );
 
