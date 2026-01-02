@@ -168,7 +168,9 @@ curl -X POST http://localhost:3000/verification/forgot-password \
   "errors": [
     {
       "field": "password",
-      "message": "Password must be at least 8 characters long"
+      "constraint": "minLength",
+      "message": "Password must be at least 8 characters long",
+      "value": "short"
     }
   ],
   "timestamp": "2025-11-12T10:00:00.000Z",
@@ -187,7 +189,9 @@ curl -X POST http://localhost:3000/verification/forgot-password \
   "errors": [
     {
       "field": "password",
-      "message": "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+      "constraint": "matches",
+      "message": "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+      "value": "weakpassword"
     }
   ],
   "timestamp": "2025-11-12T10:00:00.000Z",
@@ -367,7 +371,9 @@ res.clearCookie(AUTH_CONSTANTS.REFRESH_TOKEN_KEY);
   "errors": [
     {
       "field": "password",
-      "message": "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+      "constraint": "matches",
+      "message": "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+      "value": "weakpassword"
     }
   ],
   "timestamp": "2025-11-12T10:00:00.000Z",

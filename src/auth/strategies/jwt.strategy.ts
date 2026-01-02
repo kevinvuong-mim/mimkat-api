@@ -7,7 +7,7 @@ import { AUTH_CONSTANTS } from '@/auth/constants/auth.constants';
 
 interface JwtPayload {
   sub: string;
-  sessionId?: string;
+  sessionId: string;
 }
 
 @Injectable()
@@ -40,10 +40,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       where: { id: payload.sub },
       select: {
         id: true,
-        email: true,
-        fullName: true,
         isActive: true,
-        username: true,
       },
     });
 
@@ -67,8 +64,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     return {
-      ...user,
-      sessionId: payload.sessionId,
+      id: user.id,
+      sessionId: session.id,
     };
   }
 }

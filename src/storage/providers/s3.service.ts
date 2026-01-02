@@ -55,19 +55,10 @@ export class S3Service implements IStorageService, OnModuleInit {
 
   async initialize(): Promise<void> {
     try {
-      // Check if bucket exists
+      // Check if the bucket is accessible
       await this.s3Client.send(new HeadBucketCommand({ Bucket: this.bucketName }));
     } catch (error) {
-      // Provide specific error messages based on error type
-      if (error instanceof Error && error.name === 'NoSuchBucket') {
-        this.logger.error(`S3 bucket "${this.bucketName}" does not exist. Please create it first.`);
-      } else if (error instanceof Error && error.name === 'Forbidden') {
-        this.logger.error(`Access denied to bucket "${this.bucketName}". Check IAM permissions.`);
-      } else {
-        this.logger.error(
-          `Failed to access S3 bucket "${this.bucketName}": ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
+      this.logger.error(`Failed to access S3 bucket "${this.bucketName}"`);
 
       throw error;
     }

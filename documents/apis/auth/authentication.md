@@ -82,11 +82,15 @@ Tạo tài khoản người dùng mới với email và mật khẩu. Sau khi đ
   "errors": [
     {
       "field": "email",
-      "message": "email must be an email"
+      "constraint": "isEmail",
+      "message": "email must be an email",
+      "value": "invalid-email"
     },
     {
       "field": "password",
-      "message": "password must be longer than or equal to 8 characters"
+      "constraint": "minLength",
+      "message": "password must be longer than or equal to 8 characters",
+      "value": "short"
     }
   ],
   "timestamp": "2025-11-12T10:00:00.000Z",
@@ -208,10 +212,13 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
   "errors": [
     {
       "field": "email",
-      "message": "email must be an email"
+      "constraint": "isEmail",
+      "message": "email must be an email",
+      "value": "invalid-email"
     },
     {
       "field": "password",
+      "constraint": "isNotEmpty",
       "message": "password should not be empty"
     }
   ],

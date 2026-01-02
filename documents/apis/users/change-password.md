@@ -191,11 +191,15 @@ Trả về khi `newPassword` không đáp ứng các yêu cầu validation.
   "errors": [
     {
       "field": "newPassword",
-      "message": "Password must be at least 8 characters long"
+      "constraint": "minLength",
+      "message": "Password must be at least 8 characters long",
+      "value": "short"
     },
     {
       "field": "newPassword",
-      "message": "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+      "constraint": "matches",
+      "message": "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+      "value": "weakpass"
     }
   ],
   "timestamp": "2025-11-12T10:00:00.000Z",

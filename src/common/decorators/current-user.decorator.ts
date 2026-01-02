@@ -3,11 +3,7 @@ import { ExecutionContext, createParamDecorator } from '@nestjs/common';
 
 export interface UserPayload {
   id: string;
-  email: string;
-  fullName?: string;
-  isActive: boolean;
-  username?: string;
-  sessionId?: string;
+  sessionId: string;
 }
 
 declare module 'express' {
