@@ -3,7 +3,7 @@ import { map } from 'rxjs/operators';
 import type { Response } from 'express';
 import { Injectable, CallHandler, NestInterceptor, ExecutionContext } from '@nestjs/common';
 
-import { SuccessResponse } from '@/common/interfaces/response.interface';
+import { SuccessResponse } from '@/common/interfaces';
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, SuccessResponse<T>> {

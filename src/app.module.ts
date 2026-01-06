@@ -9,10 +9,10 @@ import { AppController } from '@/app.controller';
 import { TasksModule } from '@/tasks/tasks.module';
 import { UsersModule } from '@/users/users.module';
 import { PrismaModule } from '@/prisma/prisma.module';
+import { HttpExceptionFilter } from '@/common/filters';
 import { StorageModule } from '@/storage/storage.module';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { VerificationModule } from '@/verification/verification.module';
-import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
 import { ImageProcessingModule } from '@/image-processing/image-processing.module';
 
 @Module({

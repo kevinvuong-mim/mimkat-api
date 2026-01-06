@@ -15,15 +15,12 @@ import type { Request, Response } from 'express';
 import { LoginDto } from '@/auth/dto/login.dto';
 import { AuthService } from '@/auth/auth.service';
 import { RegisterDto } from '@/auth/dto/register.dto';
-import { DeviceUtil } from '@/common/utils/device.util';
 import { AUTH_CONSTANTS } from './constants/auth.constants';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
-import { Public } from '@/common/decorators/public.decorator';
 import { RefreshTokenDto } from '@/auth/dto/refresh-token.dto';
+import { DeviceUtil, extractFrontendUrl } from '@/common/utils';
 import { GoogleAuthGuard } from '@/auth/guards/google-auth.guard';
-import { extractFrontendUrl } from '@/common/utils/frontend-url.util';
-import { CurrentUser, type UserPayload } from '@/common/decorators/current-user.decorator';
-
+import { Public, CurrentUser, type UserPayload } from '@/common/decorators';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

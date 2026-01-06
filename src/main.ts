@@ -5,8 +5,8 @@ import { NestFactory } from '@nestjs/core';
 import { Logger, HttpException, ValidationPipe } from '@nestjs/common';
 
 import { AppModule } from '@/app.module';
-import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
-import { ResponseInterceptor } from '@/common/interceptors/response.interceptor';
+import { HttpExceptionFilter } from '@/common/filters';
+import { ResponseInterceptor } from '@/common/interceptors';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');

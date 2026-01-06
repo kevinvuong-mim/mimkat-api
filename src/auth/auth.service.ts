@@ -9,10 +9,10 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 
+import { DeviceInfo } from '@/common/utils';
 import { LoginDto } from '@/auth/dto/login.dto';
 import { MailService } from '@/mail/mail.service';
 import { RegisterDto } from '@/auth/dto/register.dto';
-import { DeviceInfo } from '@/common/utils/device.util';
 import { PrismaService } from '@/prisma/prisma.service';
 import { GoogleAuthDto } from '@/auth/dto/google-auth.dto';
 import { AUTH_CONSTANTS } from '@/auth/constants/auth.constants';

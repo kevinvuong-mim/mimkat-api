@@ -2,9 +2,9 @@ import { Throttle } from '@nestjs/throttler';
 import type { Response, Request } from 'express';
 import { Get, Res, Req, Post, Body, Query, HttpCode, Controller, HttpStatus } from '@nestjs/common';
 
-import { Public } from '@/common/decorators/public.decorator';
+import { Public } from '@/common/decorators';
+import { extractFrontendUrl } from '@/common/utils';
 import { AUTH_CONSTANTS } from '@/auth/constants/auth.constants';
-import { extractFrontendUrl } from '@/common/utils/frontend-url.util';
 import { ResetPasswordDto } from '@/verification/dto/reset-password.dto';
 import { VerificationService } from '@/verification/verification.service';
 import { ForgotPasswordDto } from '@/verification/dto/forgot-password.dto';

@@ -1,7 +1,7 @@
 import { AuthGuard } from '@nestjs/passport';
 import { Injectable, ExecutionContext } from '@nestjs/common';
 
-import { extractFrontendUrl } from '@/common/utils/frontend-url.util';
+import { extractFrontendUrl } from '@/common/utils';
 
 @Injectable()
 export class GoogleAuthGuard extends AuthGuard('google') {

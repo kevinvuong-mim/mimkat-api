@@ -7,10 +7,10 @@ import {
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 
+import { createPaginatedData } from '@/common/utils';
 import { PrismaService } from '@/prisma/prisma.service';
 import { StorageService } from '@/storage/storage.service';
 import { UpdateProfileDto } from '@/users/dto/update-profile.dto';
-import { createPaginatedData } from '@/common/utils/pagination.util';
 import { ImageProcessingService } from '@/image-processing/image-processing.service';
 
 @Injectable()

@@ -21,12 +21,12 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 import { UsersService } from '@/users/users.service';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { FileSizeByTypeValidator } from '@/common/validators';
 import { AUTH_CONSTANTS } from '@/auth/constants/auth.constants';
 import { UpdateProfileDto } from '@/users/dto/update-profile.dto';
 import { ChangePasswordDto } from '@/users/dto/change-password.dto';
+import { CurrentUser, type UserPayload } from '@/common/decorators';
 import { getPaginationParams } from '@/common/utils/pagination.util';
-import { FileSizeByTypeValidator } from '@/common/validators/file-size-by-type.validator';
-import { CurrentUser, type UserPayload } from '@/common/decorators/current-user.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)

@@ -249,7 +249,8 @@ mimkat-api/
 │   │   ├── filters/       # Exception filters
 │   │   ├── interceptors/  # Response interceptors
 │   │   ├── interfaces/    # Shared interfaces
-│   │   └── utils/         # Utility functions
+│   │   ├── utils/         # Utility functions
+│   │   └── validators/    # Validators
 │   ├── app.module.ts      # Root module
 │   └── main.ts            # Application entry point
 ├── test/                  # Test files
