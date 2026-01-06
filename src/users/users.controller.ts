@@ -14,7 +14,6 @@ import {
   ParseFilePipe,
   UseInterceptors,
   FileTypeValidator,
-  MaxFileSizeValidator,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
@@ -26,6 +25,7 @@ import { AUTH_CONSTANTS } from '@/auth/constants/auth.constants';
 import { UpdateProfileDto } from '@/users/dto/update-profile.dto';
 import { ChangePasswordDto } from '@/users/dto/change-password.dto';
 import { getPaginationParams } from '@/common/utils/pagination.util';
+import { FileSizeByTypeValidator } from '@/common/validators/file-size-by-type.validator';
 import { CurrentUser, type UserPayload } from '@/common/decorators/current-user.decorator';
 
 @Controller('users')
@@ -55,7 +55,12 @@ export class UsersController {
     @UploadedFile(
       new ParseFilePipe({
         validators: [
-          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+          new FileSizeByTypeValidator({
+            maxSizeByType: {
+              'image/gif': 1 * 1024 * 1024, // 1MB for GIF
+            },
+            defaultMaxSize: 10 * 1024 * 1024, // 10MB for other image types
+          }),
           new FileTypeValidator({ fileType: /(jpg|jpeg|png|webp|gif)$/ }),
         ],
       }),

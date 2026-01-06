@@ -37,15 +37,25 @@ Content-Type: multipart/form-data
 
 #### File Size
 
-- **Max size:** 10 MB
-- Larger files sẽ bị reject với error 400
+**Giới hạn theo loại file:**
+
+- **GIF files:** Maximum 1 MB
+- **Other image types (JPG, PNG, WebP):** Maximum 10 MB
+
+Lý do giới hạn GIF nhỏ hơn:
+
+- GIF thường là animated images, có thể có dung lượng rất lớn
+- Để tối ưu hiệu năng và trải nghiệm người dùng
+- Giảm chi phí storage và bandwidth
+
+Larger files sẽ bị reject với error 400 và message cụ thể về giới hạn của từng loại file.
 
 #### Allowed File Types
 
-- JPG / JPEG (`.jpg`, `.jpeg`)
-- PNG (`.png`)
-- WebP (`.webp`)
-- GIF (`.gif`) - animation được preserve
+- JPG / JPEG (`.jpg`, `.jpeg`) - Maximum 10 MB
+- PNG (`.png`) - Maximum 10 MB
+- WebP (`.webp`) - Maximum 10 MB
+- GIF (`.gif`) - Maximum 1 MB (animation được preserve)
 
 #### Image Requirements
 
@@ -77,13 +87,28 @@ Content-Type: multipart/form-data
 
 #### 400 Bad Request - File Too Large
 
-Khi file size > 10 MB:
+Khi file size vượt quá giới hạn cho phép:
+
+**For GIF files (> 1 MB):**
 
 ```json
 {
   "success": false,
   "statusCode": 400,
-  "message": "Validation failed (expected size is less than 10485760)",
+  "message": "File size (1.50MB) exceeds the maximum allowed size (1.00MB) for image/gif",
+  "error": "Bad Request",
+  "timestamp": "2024-12-01T08:00:00.000Z",
+  "path": "/users/me/avatar"
+}
+```
+
+**For other image types (> 10 MB):**
+
+```json
+{
+  "success": false,
+  "statusCode": 400,
+  "message": "File size (12.50MB) exceeds the maximum allowed size (10.00MB) for image/jpeg",
   "error": "Bad Request",
   "timestamp": "2024-12-01T08:00:00.000Z",
   "path": "/users/me/avatar"
@@ -422,9 +447,7 @@ function validateImage(file) {
 ```javascript
 const response = await axios.post(url, formData, {
   onUploadProgress: (progressEvent) => {
-    const percentCompleted = Math.round(
-      (progressEvent.loaded * 100) / progressEvent.total,
-    );
+    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
     setProgress(percentCompleted);
   },
 });
