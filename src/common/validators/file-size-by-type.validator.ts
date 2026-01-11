@@ -1,10 +1,10 @@
 import { FileValidator } from '@nestjs/common';
 
 export interface FileSizeByTypeValidatorOptions {
+  defaultMaxSize: number;
   maxSizeByType: {
     [mimeType: string]: number;
   };
-  defaultMaxSize: number;
 }
 
 export class FileSizeByTypeValidator extends FileValidator<FileSizeByTypeValidatorOptions> {
