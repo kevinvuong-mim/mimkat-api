@@ -226,13 +226,15 @@ bucket-name/
 ├── general/
 │   ├── avatars/
 │   │   ├── user-id-1.webp
-│   │   ├── user-id-2.gif
+│   │   ├── user-id-2.webp
 │   │   └── ...
 │   └── uploads/
 │       └── ...
 └── temp/
     └── ...
 ```
+
+**Lưu ý:** Tất cả avatars đều có extension `.webp` vì image processing module convert tất cả ảnh (bao gồm GIF) sang WebP.
 
 ## Usage
 
@@ -332,8 +334,14 @@ const key = `file.jpg`;
 
 ### 2. Include file extension trong key
 
+Vì tất cả ảnh đều được convert sang WebP, luôn dùng extension `.webp`:
+
 ```typescript
-const extension = mimetype === 'image/gif' ? 'gif' : 'webp';
+// Tất cả ảnh đều là WebP sau khi xử lý
+const key = `general/avatars/${userId}.webp`;
+
+// Hoặc nếu xử lý ảnh đã processed
+const extension = 'webp'; // Always webp from image processing
 const key = `general/avatars/${userId}.${extension}`;
 ```
 

@@ -89,7 +89,7 @@ export class UsersService {
     const processedImage = await this.imageProcessing.processImage(file);
 
     // Generate storage key with correct extension based on mimetype
-    const storageKey = `general/avatars/${userId}.${processedImage.mimetype === 'image/gif' ? 'gif' : 'webp'}`;
+    const storageKey = `general/avatars/${userId}.webp`;
 
     // Upload to storage and return encoded key
     const avatarKey = await this.storage

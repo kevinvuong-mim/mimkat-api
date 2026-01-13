@@ -41,7 +41,7 @@ private readonly ALLOWED_MIMETYPES = [
 export interface ProcessedImage {
   size: number; // Final file size in bytes
   buffer: Buffer; // Processed image buffer
-  mimetype: string; // Output mimetype (image/webp or image/gif)
+  mimetype: string; // Output mimetype (always image/webp)
 }
 ```
 
@@ -69,7 +69,7 @@ Xử lý và tối ưu hóa ảnh upload.
 `Promise<ProcessedImage>` - Object chứa processed image:
 
 - `buffer: Buffer` - Ảnh đã xử lý
-- `mimetype: string` - `image/webp` (hoặc `image/gif` nếu input là GIF)
+- `mimetype: string` - Luôn là `image/webp`
 - `size: number` - Kích thước file sau xử lý (bytes)
 
 ### Validation Rules
@@ -110,9 +110,9 @@ Tỷ lệ khung hình (width/height) phải trong khoảng **1:5 đến 5:1**
 
 ### Processing Logic
 
-#### All Images (Including Animated GIFs)
+#### All Images (Bao gồm Animated GIFs)
 
-Tất cả ảnh (bao gồm cả GIF) đều được convert sang **WebP** để tối ưu dung lượng:
+**Tất cả ảnh đều được convert sang WebP** để tối ưu dung lượng, bao gồm cả GIF animated:
 
 ```typescript
 // Get metadata from first frame only (without animated flag)
@@ -129,7 +129,7 @@ const sharpInstance = sharp(file.buffer, { animated: true });
 
 **WebP với animation:**
 
-WebP hỗ trợ animation giống như GIF, với dung lượng nhỏ hơn đáng kể (~30-50% so với GIF).
+WebP hỗ trợ animation tương tự GIF, nhưng với dung lượng nhỏ hơn đáng kể (~30-50% so với GIF gốc).
 
 ```typescript
 // Resize if needed
@@ -155,19 +155,20 @@ return {
 
 **Behavior:**
 
-- Convert tất cả JPG, PNG, WebP, GIF → WebP
-- **Preserve animation** cho GIF (Sharp tự động giữ animation khi có `animated: true`)
+- Convert **TẤT CẢ** JPG, PNG, WebP, GIF → WebP
+- **Preserve animation** cho GIF animated (Sharp tự động giữ animation khi có `animated: true`)
 - Resize nếu vượt quá MAX_DIMENSION (1024px)
-- Maintain aspect ratio (không distort ảnh)
+- Maintain aspect ratio (không làm méo ảnh)
 - Không upscale ảnh nhỏ hơn MAX_DIMENSION
 - Compress với quality = 80
 
 **Animation Preservation:**
 
-- Khi Sharp được khởi tạo với `{ animated: true }`, nó sẽ xử lý tất cả frames
+- Khi Sharp được khởi tạo với `{ animated: true }`, nó sẽ xử lý tất cả frames của GIF
 - Resize sẽ apply cho từng frame
-- Convert sang WebP sẽ giữ animation và timing giữa các frame
-- WebP animated có dung lượng nhỏ hơn GIF ~30-50%
+- Convert sang WebP sẽ giữ nguyên animation và timing giữa các frame
+- WebP animated có dung lượng nhỏ hơn GIF gốc khoảng ~30-50%
+- Output cuối cùng luôn là `image/webp`, không còn `image/gif`
 
 ### Resize Options
 
@@ -254,17 +255,17 @@ export class AvatarService {
 
 ```typescript
 async processAndUpload(file: Express.Multer.File, userId: string) {
-  // Process image (all images convert to WebP)
+  // Process image - TẤT CẢ các loại ảnh đều convert sang WebP
   const processed = await this.imageProcessing.processImage(file);
 
-  // All processed images are now WebP
+  // Output luôn là WebP
   const key = `avatars/${userId}.webp`;
 
   // Upload
   return await this.storage.upload(
     processed.buffer,
     key,
-    processed.mimetype  // Always 'image/webp'
+    processed.mimetype  // Luôn là 'image/webp'
   );
 }
 ```
@@ -317,7 +318,7 @@ const processed = await sharp(file.buffer).resize(...).toBuffer();
 
 ### Compression Savings
 
-Typical compression ratios:
+Typical compression ratios (all convert to WebP):
 
 | Original Format | Original Size | WebP Size | Savings |
 | --------------- | ------------- | --------- | ------- |
@@ -327,7 +328,11 @@ Typical compression ratios:
 | GIF animated    | 1.5 MB        | 750 KB    | ~50%    |
 | GIF static      | 500 KB        | 150 KB    | ~70%    |
 
-**Note:** GIF files giờ được convert sang WebP animated, giúp giảm đáng kể dung lượng (~30-50%) mà vẫn giữ animation
+**Lưu ý:**
+
+- Tất cả file (bao gồm GIF) đều convert sang WebP
+- GIF animated → WebP animated: giảm ~30-50% dung lượng, vẫn giữ animation
+- GIF static → WebP: giảm ~70% dung lượng
 
 ## Configuration
 
@@ -400,9 +405,10 @@ describe('ImageProcessingService', () => {
     expect(result.size).toBeLessThan(jpgFile.size);
   });
 
-  it('should preserve GIF animation', async () => {
+  it('should convert GIF to WebP and preserve animation', async () => {
     const result = await service.processImage(gifFile);
-    expect(result.mimetype).toBe('image/gif');
+    expect(result.mimetype).toBe('image/webp');
+    expect(result.size).toBeLessThan(gifFile.size);
   });
 
   it('should reject small images', async () => {

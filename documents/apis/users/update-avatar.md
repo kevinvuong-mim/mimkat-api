@@ -55,7 +55,7 @@ Larger files sẽ bị reject với error 400 và message cụ thể về giới
 - JPG / JPEG (`.jpg`, `.jpeg`) - Maximum 10 MB
 - PNG (`.png`) - Maximum 10 MB
 - WebP (`.webp`) - Maximum 10 MB
-- GIF (`.gif`) - Maximum 5 MB (animation preserved và converted to WebP)
+- GIF (`.gif`) - Maximum 5 MB (animation preserved, converted to WebP animated)
 
 #### Image Requirements
 
@@ -244,10 +244,11 @@ Tất cả ảnh upload sẽ được tự động xử lý:
 #### 1. Format Conversion
 
 - **Tất cả các format (JPG, PNG, WebP, GIF)** → Converted to **WebP**
-- **Animation preservation:** GIF animated sẽ được convert sang WebP animated
+- **Animation preservation:** GIF animated được convert sang **WebP animated**
   - WebP animated có dung lượng nhỏ hơn GIF ~30-50%
   - Giữ nguyên timing và số frame như GIF gốc
   - Tương thích với hầu hết browsers hiện đại
+  - Output cuối cùng luôn là WebP, không còn GIF
 
 #### 2. Resize
 
@@ -272,8 +273,10 @@ Tất cả ảnh upload sẽ được tự động xử lý:
 
 - PNG 5000x5000 (8.5 MB) → WebP 1024x1024 (850 KB) = **90% smaller**
 - JPG 4000x3000 (3.2 MB) → WebP 1024x768 (420 KB) = **87% smaller**
-- GIF animated 2000x2000 (3 MB) → WebP animated 1024x1024 (1.2 MB) = **60% smaller**
-- GIF animated 1000x1000 (1.5 MB) → WebP animated (750 KB) = **50% smaller**
+- GIF animated 2000x2000 (3 MB) → **WebP animated** 1024x1024 (1.2 MB) = **60% smaller**
+- GIF animated 1000x1000 (1.5 MB) → **WebP animated** (750 KB) = **50% smaller**
+
+**Lưu ý:** Tất cả output đều là WebP (bao gồm cả GIF animated → WebP animated)
 
 ## Storage
 
@@ -287,7 +290,11 @@ Avatars được lưu trên AWS S3 (hoặc S3-compatible storage):
 general/avatars/{userId}.webp
 ```
 
-**Note:** Tất cả avatars đều được lưu với extension `.webp` vì tất cả ảnh (kể cả GIF) đều được convert sang WebP.
+**Lưu ý quan trọng:**
+
+- Tất cả avatars đều được lưu với extension `.webp`
+- Tất cả ảnh (JPG, PNG, WebP, GIF) đều được convert sang WebP
+- GIF animated cũng thành WebP animated, không còn file `.gif`
 
 **Example:**
 
@@ -434,9 +441,11 @@ Typical upload flow:
 
 ```javascript
 function validateImage(file) {
-  // Check file size
-  if (file.size > 10 * 1024 * 1024) {
-    throw new Error('File must be less than 10 MB');
+  // Check file size based on type
+  const maxSize = file.type === 'image/gif' ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+  if (file.size > maxSize) {
+    const limit = file.type === 'image/gif' ? '5 MB' : '10 MB';
+    throw new Error(`File must be less than ${limit}`);
   }
 
   // Check file type
@@ -465,12 +474,13 @@ try {
   await uploadAvatar(file);
   showSuccess('Avatar updated successfully');
 } catch (error) {
-  if (error.status === 413) {
-    showError('File too large. Please use a smaller image');
-  } else if (error.status === 400) {
+  if (error.status === 400) {
+    // Show specific error message from server
     showError(error.message);
   } else if (error.status === 429) {
     showError('Too many uploads. Please wait before trying again');
+  } else if (error.status === 409) {
+    showError('Upload conflict. Please try again');
   } else {
     showError('Failed to upload avatar. Please try again');
   }
