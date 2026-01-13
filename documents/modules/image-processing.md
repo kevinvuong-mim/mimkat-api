@@ -110,44 +110,26 @@ Tỷ lệ khung hình (width/height) phải trong khoảng **1:5 đến 5:1**
 
 ### Processing Logic
 
-#### GIF Files
+#### All Images (Including Animated GIFs)
 
-GIF files được xử lý riêng để **preserve animation**:
+Tất cả ảnh (bao gồm cả GIF) đều được convert sang **WebP** để tối ưu dung lượng:
 
 ```typescript
-if (metadata.format === 'gif') {
-  // Resize if needed, preserving animation
-  if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-    processedBuffer = await sharpInstance
-      .resize(MAX_DIMENSION, MAX_DIMENSION, {
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
-      .gif() // Keep GIF format
-      .toBuffer();
-  } else {
-    // Keep original GIF
-    processedBuffer = file.buffer;
-  }
+// Get metadata from first frame only (without animated flag)
+const metadata = await sharp(file.buffer).metadata();
 
-  return {
-    mimetype: 'image/gif',
-    buffer: processedBuffer,
-    size: processedBuffer.length,
-  };
-}
+// Create Sharp instance with animated support for processing
+const sharpInstance = sharp(file.buffer, { animated: true });
 ```
 
-**Behavior:**
+**Lý do tạo 2 instances:**
 
-- Giữ nguyên định dạng GIF (không convert sang WebP)
-- Preserve animation frames
-- Resize nếu vượt quá MAX_DIMENSION (1024px)
-- Giữ nguyên nếu đã nhỏ hơn MAX_DIMENSION
+1. **Instance không có `animated: true`**: Để lấy metadata chính xác (width/height của frame đầu tiên)
+2. **Instance với `animated: true`**: Để xử lý và preserve animation khi convert
 
-#### Other Images (JPG, PNG, WebP)
+**WebP với animation:**
 
-Ảnh khác sẽ được convert sang **WebP** để tối ưu dung lượng:
+WebP hỗ trợ animation giống như GIF, với dung lượng nhỏ hơn đáng kể (~30-50% so với GIF).
 
 ```typescript
 // Resize if needed
@@ -173,11 +155,19 @@ return {
 
 **Behavior:**
 
-- Convert tất cả JPG, PNG, WebP → WebP
+- Convert tất cả JPG, PNG, WebP, GIF → WebP
+- **Preserve animation** cho GIF (Sharp tự động giữ animation khi có `animated: true`)
 - Resize nếu vượt quá MAX_DIMENSION (1024px)
 - Maintain aspect ratio (không distort ảnh)
 - Không upscale ảnh nhỏ hơn MAX_DIMENSION
 - Compress với quality = 80
+
+**Animation Preservation:**
+
+- Khi Sharp được khởi tạo với `{ animated: true }`, nó sẽ xử lý tất cả frames
+- Resize sẽ apply cho từng frame
+- Convert sang WebP sẽ giữ animation và timing giữa các frame
+- WebP animated có dung lượng nhỏ hơn GIF ~30-50%
 
 ### Resize Options
 
@@ -264,18 +254,17 @@ export class AvatarService {
 
 ```typescript
 async processAndUpload(file: Express.Multer.File, userId: string) {
-  // Process image
+  // Process image (all images convert to WebP)
   const processed = await this.imageProcessing.processImage(file);
 
-  // Generate key with correct extension
-  const extension = processed.mimetype === 'image/gif' ? 'gif' : 'webp';
-  const key = `avatars/${userId}.${extension}`;
+  // All processed images are now WebP
+  const key = `avatars/${userId}.webp`;
 
   // Upload
   return await this.storage.upload(
     processed.buffer,
     key,
-    processed.mimetype
+    processed.mimetype  // Always 'image/webp'
   );
 }
 ```
@@ -335,9 +324,10 @@ Typical compression ratios:
 | PNG 5000x5000   | 8.5 MB        | 850 KB    | ~90%    |
 | JPG 4000x3000   | 3.2 MB        | 420 KB    | ~87%    |
 | PNG 2000x2000   | 2.1 MB        | 280 KB    | ~87%    |
-| GIF animated    | 1.5 MB        | 1.5 MB    | 0%      |
+| GIF animated    | 1.5 MB        | 750 KB    | ~50%    |
+| GIF static      | 500 KB        | 150 KB    | ~70%    |
 
-**Note:** GIF files không được compress (preserve animation)
+**Note:** GIF files giờ được convert sang WebP animated, giúp giảm đáng kể dung lượng (~30-50%) mà vẫn giữ animation
 
 ## Configuration
 

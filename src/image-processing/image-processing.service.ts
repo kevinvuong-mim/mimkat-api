@@ -21,9 +21,8 @@ export class ImageProcessingService {
     }
 
     try {
-      // Create Sharp instance (reuse to avoid memory leak)
-      const sharpInstance = sharp(file.buffer);
-      const metadata = await sharpInstance.metadata();
+      // Get metadata from first frame only (without animated flag)
+      const metadata = await sharp(file.buffer).metadata();
 
       // Validate image dimensions
       if (metadata.width < 50 || metadata.height < 50) {
@@ -38,32 +37,9 @@ export class ImageProcessingService {
         );
       }
 
-      // Handle GIF separately to preserve animation
-      if (metadata.format === 'gif') {
-        let processedBuffer: Buffer;
-
-        if (metadata.width > this.MAX_DIMENSION || metadata.height > this.MAX_DIMENSION) {
-          // Resize GIF while preserving animation
-          processedBuffer = await sharpInstance
-            .resize(this.MAX_DIMENSION, this.MAX_DIMENSION, {
-              fit: 'inside',
-              withoutEnlargement: true,
-            })
-            .gif()
-            .toBuffer();
-        } else {
-          // Keep GIF as-is
-          processedBuffer = file.buffer;
-        }
-
-        return {
-          mimetype: 'image/gif',
-          buffer: processedBuffer,
-          size: processedBuffer.length,
-        };
-      }
-
-      // Process non-GIF images (convert to WebP)
+      // Process all images to WebP (including animated GIFs)
+      // Create Sharp instance with animated support for processing
+      const sharpInstance = sharp(file.buffer, { animated: true });
       let processedBuffer: Buffer;
 
       if (metadata.width > this.MAX_DIMENSION || metadata.height > this.MAX_DIMENSION) {

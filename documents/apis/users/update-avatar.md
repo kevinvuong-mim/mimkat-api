@@ -39,7 +39,7 @@ Content-Type: multipart/form-data
 
 **Giới hạn theo loại file:**
 
-- **GIF files:** Maximum 1 MB
+- **GIF files:** Maximum 5 MB
 - **Other image types (JPG, PNG, WebP):** Maximum 10 MB
 
 Lý do giới hạn GIF nhỏ hơn:
@@ -55,7 +55,7 @@ Larger files sẽ bị reject với error 400 và message cụ thể về giới
 - JPG / JPEG (`.jpg`, `.jpeg`) - Maximum 10 MB
 - PNG (`.png`) - Maximum 10 MB
 - WebP (`.webp`) - Maximum 10 MB
-- GIF (`.gif`) - Maximum 1 MB (animation được preserve)
+- GIF (`.gif`) - Maximum 5 MB (animation preserved và converted to WebP)
 
 #### Image Requirements
 
@@ -89,13 +89,13 @@ Larger files sẽ bị reject với error 400 và message cụ thể về giới
 
 Khi file size vượt quá giới hạn cho phép:
 
-**For GIF files (> 1 MB):**
+**For GIF files (> 5 MB):**
 
 ```json
 {
   "success": false,
   "statusCode": 400,
-  "message": "File size (1.50MB) exceeds the maximum allowed size (1.00MB) for image/gif",
+  "message": "File size (5.50MB) exceeds the maximum allowed size (5.00MB) for image/gif",
   "error": "Bad Request",
   "timestamp": "2024-12-01T08:00:00.000Z",
   "path": "/users/me/avatar"
@@ -243,8 +243,11 @@ Tất cả ảnh upload sẽ được tự động xử lý:
 
 #### 1. Format Conversion
 
-- **JPG, PNG, WebP** → Converted to **WebP** (tối ưu dung lượng, ~70-90% smaller)
-- **GIF** → Giữ nguyên **GIF** (preserve animation)
+- **Tất cả các format (JPG, PNG, WebP, GIF)** → Converted to **WebP**
+- **Animation preservation:** GIF animated sẽ được convert sang WebP animated
+  - WebP animated có dung lượng nhỏ hơn GIF ~30-50%
+  - Giữ nguyên timing và số frame như GIF gốc
+  - Tương thích với hầu hết browsers hiện đại
 
 #### 2. Resize
 
@@ -261,7 +264,7 @@ Tất cả ảnh upload sẽ được tự động xử lý:
 #### 3. Compression
 
 - WebP quality: **80** (good balance between quality and size)
-- GIF: No additional compression (preserve animation)
+- Animated WebP: Quality 80, giữ nguyên timing giữa các frame
 
 #### 4. Result
 
@@ -269,7 +272,8 @@ Tất cả ảnh upload sẽ được tự động xử lý:
 
 - PNG 5000x5000 (8.5 MB) → WebP 1024x1024 (850 KB) = **90% smaller**
 - JPG 4000x3000 (3.2 MB) → WebP 1024x768 (420 KB) = **87% smaller**
-- GIF animated (1.5 MB) → GIF resized (1.2 MB) = **20% smaller** (animation preserved)
+- GIF animated 2000x2000 (3 MB) → WebP animated 1024x1024 (1.2 MB) = **60% smaller**
+- GIF animated 1000x1000 (1.5 MB) → WebP animated (750 KB) = **50% smaller**
 
 ## Storage
 
@@ -280,13 +284,14 @@ Avatars được lưu trên AWS S3 (hoặc S3-compatible storage):
 **Storage key format:**
 
 ```
-general/avatars/{userId}.{extension}
+general/avatars/{userId}.webp
 ```
 
-**Examples:**
+**Note:** Tất cả avatars đều được lưu với extension `.webp` vì tất cả ảnh (kể cả GIF) đều được convert sang WebP.
+
+**Example:**
 
 - `general/avatars/123e4567-e89b-12d3-a456-426614174000.webp`
-- `general/avatars/987fcdeb-51a2-43d1-b789-123456789abc.gif`
 
 ### Old Avatar Cleanup
 

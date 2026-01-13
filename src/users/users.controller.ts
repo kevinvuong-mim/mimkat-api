@@ -57,7 +57,7 @@ export class UsersController {
         validators: [
           new FileSizeByTypeValidator({
             maxSizeByType: {
-              'image/gif': 1 * 1024 * 1024, // 1MB for GIF
+              'image/gif': 5 * 1024 * 1024, // 5MB for GIF
             },
             defaultMaxSize: 10 * 1024 * 1024, // 10MB for other image types
           }),
