@@ -1,22 +1,21 @@
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
     "password" TEXT,
-    "username" TEXT,
-    "fullName" TEXT,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
-    "verificationToken" TEXT,
-    "verificationTokenExpiry" TIMESTAMP(3),
-    "passwordResetToken" TEXT,
-    "passwordResetTokenExpiry" TIMESTAMP(3),
+    "email" TEXT NOT NULL,
     "googleId" TEXT,
     "avatar" TEXT,
-    "avatarUpdatedAt" TIMESTAMP(3),
+    "fullName" TEXT,
     "phoneNumber" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "username" TEXT,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "verificationTokenExpiry" TIMESTAMP(3),
+    "verificationToken" TEXT,
+    "passwordResetTokenExpiry" TIMESTAMP(3),
+    "passwordResetToken" TEXT,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -24,14 +23,14 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "sessions" (
     "id" TEXT NOT NULL,
-    "refreshToken" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "expiresAt" TIMESTAMP(3) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deviceName" TEXT,
     "deviceType" TEXT,
     "ipAddress" TEXT,
     "userAgent" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "refreshToken" TEXT NOT NULL,
     "lastUsedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "sessions_pkey" PRIMARY KEY ("id")
@@ -41,6 +40,9 @@ CREATE TABLE "sessions" (
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "users_googleId_key" ON "users"("googleId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 
 -- CreateIndex
@@ -48,9 +50,6 @@ CREATE UNIQUE INDEX "users_verificationToken_key" ON "users"("verificationToken"
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_passwordResetToken_key" ON "users"("passwordResetToken");
-
--- CreateIndex
-CREATE UNIQUE INDEX "users_googleId_key" ON "users"("googleId");
 
 -- CreateIndex
 CREATE INDEX "users_email_idx" ON "users"("email");

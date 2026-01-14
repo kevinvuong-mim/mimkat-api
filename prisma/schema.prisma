@@ -17,8 +17,7 @@ model User {
   googleId String? @unique
 
   // Avatar/Media
-  avatar          String?
-  avatarUpdatedAt DateTime?
+  avatar String?
 
   // Profile Information
   fullName    String?

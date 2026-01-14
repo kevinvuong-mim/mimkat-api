@@ -28,16 +28,13 @@ export class UsersService {
     this.awsBucketName = this.configService.get<string>('AWS_BUCKET_NAME') || '';
   }
 
-  private buildAvatarUrl(avatarKey: string | null, avatarUpdatedAt: Date | null): string | null {
+  private buildAvatarUrl(avatarKey: string | null): string | null {
     if (!avatarKey) return null;
 
     // If avatar is already a full URL (legacy data from Google OAuth)
     if (/^https?:\/\//.test(avatarKey)) return avatarKey;
 
-    // Add cache busting query param if avatar updated at is provided
-    const timestamp = avatarUpdatedAt ? new Date(avatarUpdatedAt).getTime() : Date.now();
-
-    return `${this.awsEndpoint}/${this.awsBucketName}/${avatarKey}?v=${timestamp}`;
+    return `${this.awsEndpoint}/${this.awsBucketName}/${avatarKey}`;
   }
 
   async getCurrentUser(userId: string) {
@@ -55,7 +52,6 @@ export class UsersService {
         createdAt: true,
         updatedAt: true,
         phoneNumber: true,
-        avatarUpdatedAt: true,
         isEmailVerified: true,
       },
     });
@@ -74,7 +70,7 @@ export class UsersService {
       phoneNumber: user.phoneNumber,
       hasGoogleAuth: !!user.googleId,
       isEmailVerified: user.isEmailVerified,
-      avatar: this.buildAvatarUrl(user.avatar, user.avatarUpdatedAt),
+      avatar: this.buildAvatarUrl(user.avatar),
     };
   }
 
@@ -98,10 +94,10 @@ export class UsersService {
         throw new BadRequestException('Failed to upload avatar');
       });
 
-    // Update database with new avatar key and timestamp
+    // Update database with new avatar key
     const updatedUser = await this.prisma.user.updateMany({
       where: { id: userId, avatar: user.avatar },
-      data: { avatar: avatarKey, avatarUpdatedAt: new Date() },
+      data: { avatar: avatarKey },
     });
 
     if (storageKey !== user.avatar) {
@@ -249,7 +245,6 @@ export class UsersService {
         fullName: true,
         username: true,
         createdAt: true,
-        avatarUpdatedAt: true,
       },
     });
 
@@ -260,7 +255,7 @@ export class UsersService {
       fullName: user.fullName,
       username: user.username,
       createdAt: user.createdAt,
-      avatar: this.buildAvatarUrl(user.avatar, user.avatarUpdatedAt),
+      avatar: this.buildAvatarUrl(user.avatar),
     };
   }
 }

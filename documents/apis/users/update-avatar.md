@@ -338,7 +338,6 @@ await prisma.user.updateMany({
   },
   data: {
     avatar: newAvatar,
-    avatarUpdatedAt: new Date(),
   },
 });
 
@@ -376,19 +375,11 @@ try {
 
 ```prisma
 model User {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  avatar          String?
-  avatarUpdatedAt DateTime?  // New field for cache busting
+  id     String  @id @default(uuid())
+  email  String  @unique
+  avatar String?
   // ... other fields
 }
-```
-
-### Migration
-
-```sql
--- Add avatarUpdatedAt column
-ALTER TABLE "users" ADD COLUMN "avatarUpdatedAt" TIMESTAMP(3);
 ```
 
 ## Security
@@ -420,8 +411,7 @@ ALTER TABLE "users" ADD COLUMN "avatarUpdatedAt" TIMESTAMP(3);
 1. **WebP Compression:** 70-90% smaller than JPG/PNG
 2. **Resize before upload:** Max 1024x1024 (reduces upload time)
 3. **Async old file deletion:** Non-blocking cleanup
-4. **Cache busting:** `?v=timestamp` ensures latest avatar loads
-5. **Sharp optimization:** Fast image processing (~100-500ms)
+4. **Sharp optimization:** Fast image processing (~100-500ms)
 
 ### Response Time
 
@@ -564,9 +554,9 @@ this.deleteOldAvatar(oldKey).catch((err) =>
 
 **Solution:**
 
-- API tự động thêm `?v=timestamp` để bypass cache
 - Client cần reload avatar URL sau upload
-- Check `avatarUpdatedAt` field được update chưa
+- Clear browser cache or use hard refresh (Ctrl+F5)
+- Ensure the new avatar URL is properly updated in the UI
 
 ### 4. 429 Too Many Requests
 
