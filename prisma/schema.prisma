@@ -65,7 +65,7 @@ model Session {
 
   // Session Data
   expiresAt    DateTime
-  refreshToken String   @unique
+  refreshToken String
   lastUsedAt   DateTime @default(now())
 
   // Relations

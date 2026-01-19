@@ -119,7 +119,8 @@ Xử lý callback từ Google sau khi user cấp quyền. Tự động tạo/lin
    - Create new user OR link Google to existing user
    - Create session first to get session ID
    - Generate JWT tokens with session ID embedded
-   - Update session with refresh token
+   - Hash refresh token với bcrypt (salt rounds = 10)
+   - Update session với hashed refresh token
 6. Set HttpOnly cookies với accessToken và refreshToken
 7. Lấy redirect URL từ `state` parameter trong query (đã được Google trả lại từ bước trước)
 8. Redirect (302) về frontend URL từ `state` parameter
@@ -279,7 +280,7 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 - **Session Fields**:
   ```typescript
   {
-    refreshToken: string,
+    refreshToken: string,  // Hashed với bcrypt (salt rounds = 10)
     userId: string,
     expiresAt: Date,
     deviceName: string,
@@ -290,6 +291,7 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
     createdAt: Date
   }
   ```
+- **Security**: Refresh token được hash trước khi lưu vào database để tăng cường bảo mật
 
 ---
 

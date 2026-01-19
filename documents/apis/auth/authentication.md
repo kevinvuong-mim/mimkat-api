@@ -328,6 +328,7 @@ curl -X POST http://localhost:3000/auth/login \
 - Khi vượt quá giới hạn, phiên cũ nhất (theo lastUsedAt) sẽ tự động bị đăng xuất
 - AccessToken: 1 giờ, RefreshToken: 7 ngày
 - Password được verify bằng bcrypt.compare()
+- Refresh token được hash với bcrypt (salt rounds = 10) trước khi lưu vào database
 
 ---
 
@@ -446,6 +447,7 @@ curl -X POST http://localhost:3000/auth/logout \
 
 - **Cookie Method**: Refresh token tự động lấy từ cookie nếu không có trong body
 - **Token Method**: Cần truyền refresh token trong body
+- **Token Verification**: Sử dụng bcrypt.compare() để so sánh refresh token với hash trong database
 - Chỉ xóa phiên đăng nhập của thiết bị hiện tại (dựa vào refresh token)
 - Các thiết bị khác vẫn giữ phiên đăng nhập
 - Cookies tự động được clear (cả accessToken và refreshToken)
@@ -576,14 +578,15 @@ curl -X POST http://localhost:3000/auth/refresh \
 
 - **Hybrid Support**: Lấy refresh token từ cookie trước, fallback sang body
 - **Token Rotation**: Mỗi lần refresh, token cũ sẽ được update với token mới (session giữ nguyên ID)
-- **Session Preservation**: Session ID được giữ nguyên khi refresh, chỉ update `refreshToken` và `lastUsedAt`
+- **Token Hashing**: Refresh token mới được hash bằng bcrypt (salt rounds = 10) trước khi lưu vào database
+- **Session Preservation**: Session ID được giữ nguyên khi refresh, chỉ update `refreshToken` (hash) và `lastUsedAt`
 - **Cookie Update**: Tự động set cookies mới cho web clients
 - **Response Tokens**: Vẫn trả về tokens trong response body cho mobile/API clients
 - **Device Info Update**: Thông tin thiết bị được cập nhật nếu có deviceInfo mới trong request
-- **Token Validation**: Token cũ được verify với cả JWT và database trước khi refresh
+- **Token Validation**: Verify JWT trước, sau đó dùng bcrypt.compare() để tìm session trong database
 - **Error Handling**: Khi có lỗi (invalid/expired token), cookies sẽ được tự động clear
 - **Expired Session Cleanup**: Session hết hạn được tự động xóa khỏi database
-- **Database First**: Check database trước, sau đó mới verify JWT signature
+- **JWT First**: Verify JWT signature trước, sau đó mới compare hash trong database
 - AccessToken mới: 1 giờ, RefreshToken mới: 7 ngày
 - Both new tokens contain the same `sessionId` as the old one
 
@@ -635,14 +638,16 @@ curl -X POST http://localhost:3000/auth/refresh \
 **Refresh Token Validation Flow**:
 
 1. **Input Source**: Lấy refresh token từ cookie hoặc request body (cookie được ưu tiên)
-2. **Database Check**: Tìm session trong database dựa trên refresh token
-3. **Expiration Check**: Kiểm tra `expiresAt` field trong database
-4. **JWT Verification**: Verify JWT signature với `JWT_REFRESH_SECRET`
-5. **Token Generation**: Tạo cặp access/refresh token mới với cùng `sessionId`
-6. **Session Update**: Cập nhật session với refresh token mới và thông tin device
-7. **Cookie Setting**: Set cookies mới cho client (web browsers)
-8. **Response**: Trả về tokens trong response body (mobile/API clients)
-9. **Error Cleanup**: Nếu có lỗi, tự động clear cookies và xóa invalid sessions
+2. **JWT Verification**: Verify JWT signature với `JWT_REFRESH_SECRET` và lấy userId từ payload
+3. **Database Lookup**: Tìm tất cả sessions của user trong database
+4. **Hash Comparison**: Sử dụng bcrypt.compare() để so sánh refresh token với các hash trong database
+5. **Expiration Check**: Kiểm tra `expiresAt` field của session tìm được
+6. **Token Generation**: Tạo cặp access/refresh token mới với cùng `sessionId`
+7. **Hash New Token**: Hash refresh token mới bằng bcrypt (salt rounds = 10)
+8. **Session Update**: Cập nhật session với refresh token hash mới và thông tin device
+9. **Cookie Setting**: Set cookies mới cho client (web browsers)
+10. **Response**: Trả về tokens trong response body (mobile/API clients)
+11. **Error Cleanup**: Nếu có lỗi, tự động clear cookies và xóa invalid sessions
 
 ---
 
@@ -651,8 +656,16 @@ curl -X POST http://localhost:3000/auth/refresh \
 ### Password Hashing
 
 - **Algorithm**: bcrypt
-- **Salt Rounds**: 12 (high security)
+- **Salt Rounds**: 12 (high security cho passwords)
 - **Computation Time**: ~300-500ms per hash
+
+### Refresh Token Hashing
+
+- **Algorithm**: bcrypt
+- **Salt Rounds**: 10 (balanced security cho refresh tokens)
+- **Storage**: Hash được lưu trong database thay vì plain text
+- **Verification**: Sử dụng bcrypt.compare() để so sánh token với hash
+- **Security Benefit**: Ngăn chặn token theft nếu database bị compromised
 
 ### Rate Limiting
 
@@ -685,7 +698,7 @@ curl -X POST http://localhost:3000/auth/refresh \
 - **Số phiên đăng nhập đồng thời tối đa**: 10 sessions (AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS)
 - **Khi vượt quá giới hạn**: Tự động đăng xuất phiên cũ nhất (dựa theo `lastUsedAt` field)
 - **Thông tin lưu trữ trong Session table**:
-  - `refreshToken`: JWT refresh token (unique, indexed)
+  - `refreshToken`: JWT refresh token được hash bằng bcrypt (salt rounds = 10) trước khi lưu vào database
   - `userId`: User ID (foreign key)
   - `expiresAt`: Thời gian hết hạn của session
   - `deviceName`: Tên thiết bị (extracted from User-Agent)
@@ -695,6 +708,7 @@ curl -X POST http://localhost:3000/auth/refresh \
   - `lastUsedAt`: Timestamp lần cuối sử dụng token
   - `createdAt`: Timestamp tạo session
 - **Session Cleanup**: Tự động xóa sessions hết hạn khi refresh token
+- **Refresh Token Security**: Refresh token được hash với bcrypt trước khi lưu vào database để tăng cường bảo mật. Khi verify, sử dụng bcrypt.compare() để so sánh token từ client với hash trong database
 
 ### JWT Strategy
 

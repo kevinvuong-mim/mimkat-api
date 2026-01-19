@@ -195,10 +195,13 @@ export class AuthService {
     // Generate tokens with session ID
     const tokens = await this.generateTokens(user.id, session.id);
 
-    // Update session with refresh token
+    // Hash refresh token before storing
+    const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+
+    // Update session with hashed refresh token
     await this.prisma.session.update({
       where: { id: session.id },
-      data: { refreshToken: tokens.refreshToken },
+      data: { refreshToken: hashedRefreshToken },
     });
 
     // Return tokens in response body for localStorage storage
@@ -211,28 +214,54 @@ export class AuthService {
   async logout(userId: string, refreshToken: string) {
     if (!refreshToken) throw new BadRequestException('Refresh token not provided');
 
-    // Find the refresh token first to verify it exists
-    const tokenRecord = await this.prisma.session.findFirst({
-      where: {
-        userId,
-        refreshToken,
-      },
+    // Find all sessions for the user
+    const userSessions = await this.prisma.session.findMany({
+      where: { userId },
     });
 
-    if (!tokenRecord) throw new BadRequestException('Invalid refresh token');
+    // Find the matching session by comparing hashed tokens
+    let matchingSession = null;
+    for (const session of userSessions) {
+      const isMatch = await bcrypt.compare(refreshToken, session.refreshToken);
+      if (isMatch) {
+        matchingSession = session;
+        break;
+      }
+    }
+
+    if (!matchingSession) throw new BadRequestException('Invalid refresh token');
 
     // Delete refresh token from database
-    await this.prisma.session.delete({ where: { id: tokenRecord.id } });
+    await this.prisma.session.delete({ where: { id: matchingSession.id } });
   }
 
   async refreshTokens(refreshToken: string, deviceInfo?: DeviceInfo) {
     if (!refreshToken) throw new BadRequestException('Refresh token not provided');
 
-    // Check refresh token in database
-    const tokenRecord = await this.prisma.session.findUnique({
+    // Verify refresh token with JWT first
+    let payload;
+    try {
+      payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Get all sessions and find the matching one by comparing hashed tokens
+    const allSessions = await this.prisma.session.findMany({
       include: { user: true },
-      where: { refreshToken: refreshToken },
+      where: { userId: payload.sub },
     });
+
+    let tokenRecord = null;
+    for (const session of allSessions) {
+      const isMatch = await bcrypt.compare(refreshToken, session.refreshToken);
+      if (isMatch) {
+        tokenRecord = session;
+        break;
+      }
+    }
 
     if (!tokenRecord) throw new UnauthorizedException('Invalid refresh token');
 
@@ -243,24 +272,18 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token has expired');
     }
 
-    // Verify refresh token with JWT
-    try {
-      await this.jwtService.verifyAsync(refreshToken, { secret: process.env.JWT_REFRESH_SECRET });
-    } catch {
-      await this.prisma.session.delete({ where: { id: tokenRecord.id } });
-
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
     // Generate new tokens
     const tokens = await this.generateTokens(tokenRecord.user.id, tokenRecord.id);
 
-    // Update session with new refresh token
+    // Hash new refresh token before storing
+    const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+
+    // Update session with new hashed refresh token
     await this.prisma.session.update({
       where: { id: tokenRecord.id },
       data: {
         lastUsedAt: new Date(),
-        refreshToken: tokens.refreshToken,
+        refreshToken: hashedRefreshToken,
         // Update device info if provided
         ...(deviceInfo && {
           ipAddress: deviceInfo.ipAddress,
@@ -326,10 +349,13 @@ export class AuthService {
     // Generate tokens with session ID
     const tokens = await this.generateTokens(user.id, session.id);
 
-    // Update session with refresh token
+    // Hash refresh token before storing
+    const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+
+    // Update session with hashed refresh token
     await this.prisma.session.update({
       where: { id: session.id },
-      data: { refreshToken: tokens.refreshToken },
+      data: { refreshToken: hashedRefreshToken },
     });
 
     // Return tokens in response body for localStorage storage
