@@ -34,7 +34,7 @@ Gửi email chứa link đặt lại mật khẩu. Endpoint này không tiết l
 
 #### Response
 
-**Success (200 OK)** - Khi user tồn tại và có password
+**Success (200 OK)** - Luôn trả về 200 OK nếu request hợp lệ, bất kể email có tồn tại hay không (security measure)
 
 ```json
 {
@@ -47,11 +47,12 @@ Gửi email chứa link đặt lại mật khẩu. Endpoint này không tiết l
 }
 ```
 
-**Notes**:
+**Notes về Security Behavior**:
 
-- Nếu user tồn tại và có password → gửi email và return 200 OK
-- Nếu user không tồn tại hoặc không có password → throw BadRequestException (400) với message "If an account with that email exists, we sent a password reset link."
-- Message giống nhau cho cả 2 trường hợp lỗi để không tiết lộ thông tin về user existence
+- **Khi user TỒN TẠI và có password**: Email được gửi thực tế, trả về 200 OK
+- **Khi user KHÔNG TỒN TẠI**: THROW BadRequestException (400) với message "If an account with that email exists, we sent a password reset link."
+- **Khi user KHÔNG CÓ PASSWORD** (OAuth-only): THROW BadRequestException (400) với message giống nhau
+- Message error giống nhau cho cả 2 trường hợp fail để không tiết lộ user existence
 
 **Error Responses**
 
@@ -229,17 +230,17 @@ curl -X POST http://localhost:3000/verification/reset-password \
 
 1. **Lookup User**: Tìm user theo email
 2. **Check Existence**:
-   - Nếu user không tồn tại → throw BadRequestException với message "If an account with that email exists, we sent a password reset link."
+   - Nếu user không tồn tại → THROW BadRequestException (400) với message "If an account with that email exists, we sent a password reset link."
    - Nếu user tồn tại → continue
 3. **Check Password Capability**:
-   - Nếu user không có password field (OAuth-only account) → throw BadRequestException với message "If an account with that email exists, we sent a password reset link."
+   - Nếu user không có password field (OAuth-only account) → THROW BadRequestException (400) với message "If an account with that email exists, we sent a password reset link."
    - Chỉ accounts có password mới được reset
 4. **Generate Reset Token**: Create 32-byte random token (64 hex chars)
 5. **Hash Token**: Hash với bcrypt (10 salt rounds)
 6. **Set Expiry**: 1 giờ từ bây giờ
 7. **Update Database**: Lưu `passwordResetToken` và `passwordResetTokenExpiry`
-8. **Send Email**: Gửi plain token qua email (có try-catch, log error nếu fail nhưng không throw exception)
-9. **Return**: Success (200 OK) nếu đến bước này
+8. **Send Email**: Gửi plain token qua email (có try-catch, log error nếu fail nhưng KHÔNG throw exception - silent fail để không reveal email sending status)
+9. **Return**: Method kết thúc, NestJS auto-wrap thành 200 OK response với `data: null`
 
 **Reset Password Flow (resetPassword)**:
 
@@ -266,7 +267,7 @@ curl -X POST http://localhost:3000/verification/reset-password \
   - Plain token gửi qua email (1 lần)
   - Hashed token lưu DB (bcrypt 10 rounds for tokens)
   - Password hash sử dụng 12 rounds (cao hơn)
-- **Partial Security**: Forgot password throw BadRequestException cho email không tồn tại hoặc không có password (message giống nhau), nhưng return 200 cho email hợp lệ (có thể reveal user existence)
+- **Security Behavior**: Forgot password THROW BadRequestException (400) cho CẢHẢ 2 trường hợp lỗi (user không tồn tại hoặc không có password) với cùng message để không tiết lộ user existence
 - **Performance**: Loop qua users để compare tokens (giống email verification, có thể optimize)
 
 ---
@@ -602,7 +603,7 @@ The Team
 - **Token Storage**: Hashed với bcrypt 10 salt rounds
 - **Password Storage**: Hashed với bcrypt 12 salt rounds (stronger than token)
 - **Expiry**: 1 hour from creation (shorter than email verification for security)
-- **Security**: Throw BadRequestException (400) cho email không tồn tại/không có password với message giống nhau, nhưng return 200 cho email hợp lệ
+- **Security**: THROW BadRequestException (400) cho cả email không tồn tại VÀ không có password (message giống nhau để không reveal user existence)
 - **Session Invalidation**: Tất cả sessions bị xóa after reset (force re-login)
 - **Performance**: Loop through users để compare tokens (có thể optimize với index)
 - **Email Service**: Uses MailService (Nodemailer/SendGrid)

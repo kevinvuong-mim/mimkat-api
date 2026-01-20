@@ -121,9 +121,11 @@ Xử lý callback từ Google sau khi user cấp quyền. Tự động tạo/lin
    - Generate JWT tokens with session ID embedded
    - Hash refresh token với bcrypt (salt rounds = 10)
    - Update session với hashed refresh token
-6. Set HttpOnly cookies với accessToken và refreshToken
-7. Lấy redirect URL từ `state` parameter trong query (đã được Google trả lại từ bước trước)
-8. Redirect (302) về frontend URL từ `state` parameter
+   - Return tokens object: `{ accessToken: string, refreshToken: string }`
+6. AuthController.googleAuthCallback() receives tokens from service
+7. Set HttpOnly cookies với accessToken và refreshToken (tokens từ service)
+8. Lấy redirect URL từ `state` parameter trong query (đã được Google trả lại từ bước trước)
+9. Redirect (302) về frontend URL từ `state` parameter
 
 **JWT Tokens**: Both access and refresh tokens contain `sessionId` in payload for session tracking
 
@@ -141,10 +143,11 @@ Backend sẽ:
 - Nếu client gọi: `GET /auth/google?redirect_url=http://localhost:3000/dashboard`
 - Sau khi xử lý xong, backend sẽ redirect về: `http://localhost:3000/dashboard`
 
-**Note**:
+**Note về Tokens**:
 
 - Tokens được lưu trữ an toàn trong HttpOnly cookies, không cần truyền qua URL
 - Nếu không có `redirect_url` trong request ban đầu, backend sẽ tự động extract từ request headers
+- Mặc dù tokens không hiển thị trong URL redirect, backend vẫn internally generate và return tokens (tương tự login endpoint) trước khi set cookies
 
 **Response Headers (Set-Cookie)**:
 

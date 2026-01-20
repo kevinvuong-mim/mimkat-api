@@ -51,16 +51,30 @@ sudo usermod -aG docker $USER
 File `docker-compose.yml` đã được tạo sẵn trong thư mục gốc của dự án với cấu hình:
 
 ```yaml
+version: '3.8'
+
 services:
   postgres:
     ports:
       - '5432:5432'
+    restart: unless-stopped
     image: postgres:16-alpine
     container_name: mimkat-postgres
     environment:
       POSTGRES_DB: mimkat
       POSTGRES_USER: kwong2000
       POSTGRES_PASSWORD: 1234abcd
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      retries: 5
+      timeout: 5s
+      interval: 10s
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+
+volumes:
+  postgres_data:
+    driver: local
 ```
 
 ### Thông tin kết nối
@@ -138,10 +152,10 @@ docker-compose up -d
 
 ```bash
 # Từ docker-compose
-docker-compose exec postgres psql -U postgres -d mimkat
+docker-compose exec postgres psql -U kwong2000 -d mimkat
 
 # Hoặc từ docker
-docker exec -it mimkat-postgres psql -U postgres -d mimkat
+docker exec -it mimkat-postgres psql -U kwong2000 -d mimkat
 ```
 
 Sau đó bạn có thể chạy SQL commands:
@@ -177,17 +191,17 @@ npm run prisma:migrate
 
 ```bash
 # Export database ra file
-docker-compose exec postgres pg_dump -U postgres mimkat > backup.sql
+docker-compose exec postgres pg_dump -U kwong2000 mimkat > backup.sql
 
 # Hoặc với timestamp
-docker-compose exec postgres pg_dump -U postgres mimkat > backup-$(date +%Y%m%d-%H%M%S).sql
+docker-compose exec postgres pg_dump -U kwong2000 mimkat > backup-$(date +%Y%m%d-%H%M%S).sql
 ```
 
 ### Restore database từ backup
 
 ```bash
 # Import từ file backup
-docker-compose exec -T postgres psql -U postgres mimkat < backup.sql
+docker-compose exec -T postgres psql -U kwong2000 mimkat < backup.sql
 ```
 
 ### Thay đổi mật khẩu
@@ -240,7 +254,7 @@ ports:
 Và cập nhật `DATABASE_URL`:
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/mimkat"
+DATABASE_URL="postgresql://kwong2000:1234abcd@localhost:5433/mimkat"
 ```
 
 ### Container không start
@@ -277,7 +291,7 @@ docker-compose ps
 docker-compose logs postgres
 
 # Test connection
-docker-compose exec postgres pg_isready -U postgres
+docker-compose exec postgres pg_isready -U kwong2000
 ```
 
 ### Data bị mất sau khi restart
@@ -299,7 +313,7 @@ docker-compose exec postgres pg_isready -U postgres
 
 ### Security
 
-- Mật khẩu mặc định `postgres` chỉ dùng cho local development
+- Mật khẩu mặc định `1234abcd` chỉ dùng cho local development
 - Không expose port 5432 ra internet
 - Không commit `.env` với credentials vào Git
 
@@ -337,13 +351,13 @@ docker-compose logs -f postgres
 docker-compose ps
 
 # Kết nối PostgreSQL CLI
-docker-compose exec postgres psql -U postgres -d mimkat
+docker-compose exec postgres psql -U kwong2000 -d mimkat
 
 # Backup
-docker-compose exec postgres pg_dump -U postgres mimkat > backup.sql
+docker-compose exec postgres pg_dump -U kwong2000 mimkat > backup.sql
 
 # Restore
-docker-compose exec -T postgres psql -U postgres mimkat < backup.sql
+docker-compose exec -T postgres psql -U kwong2000 mimkat < backup.sql
 ```
 
 ---

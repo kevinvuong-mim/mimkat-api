@@ -55,9 +55,6 @@ CREATE UNIQUE INDEX "users_passwordResetToken_key" ON "users"("passwordResetToke
 CREATE INDEX "users_email_idx" ON "users"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "sessions_refreshToken_key" ON "sessions"("refreshToken");
-
--- CreateIndex
 CREATE INDEX "sessions_userId_idx" ON "sessions"("userId");
 
 -- CreateIndex

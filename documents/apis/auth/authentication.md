@@ -187,6 +187,8 @@ curl -X POST http://localhost:3000/auth/register \
 }
 ```
 
+**Note về Response Body**: Mặc dù tokens được set trong HttpOnly cookies (an toàn cho web apps), chúng cũng được trả về trong response body để hỗ trợ mobile/API clients có thể lưu vào storage (localStorage, AsyncStorage, etc.)
+
 **Response Headers (Set-Cookie)**:
 
 ```
@@ -493,6 +495,8 @@ Sử dụng refresh token để lấy cặp access token và refresh token mới
 }
 ```
 
+**Note về Response Body**: Tương tự login endpoint, tokens được trả về trong cả cookies (web) và response body (mobile/API).
+
 **Response Headers (Set new cookies)**:
 
 ```
@@ -584,7 +588,7 @@ curl -X POST http://localhost:3000/auth/refresh \
 - **Response Tokens**: Vẫn trả về tokens trong response body cho mobile/API clients
 - **Device Info Update**: Thông tin thiết bị được cập nhật nếu có deviceInfo mới trong request
 - **Token Validation**: Verify JWT trước, sau đó dùng bcrypt.compare() để tìm session trong database
-- **Error Handling**: Khi có lỗi (invalid/expired token), cookies sẽ được tự động clear
+- **Error Handling**: Khi có lỗi (invalid/expired token), cookies sẽ được tự động clear trong try-catch block của controller. Sau đó exception được re-throw để HttpExceptionFilter xử lý response
 - **Expired Session Cleanup**: Session hết hạn được tự động xóa khỏi database
 - **JWT First**: Verify JWT signature trước, sau đó mới compare hash trong database
 - AccessToken mới: 1 giờ, RefreshToken mới: 7 ngày

@@ -193,7 +193,7 @@ MAIL_PORT=587
 
 - Port 587 là lựa chọn tốt nhất cho hầu hết các trường hợp
 - Code hiện tại dùng `secure: false` nên phù hợp với port 587
-- Nếu muốn dùng port 465, cần thay đổi `secure: true` trong `mail.module.ts`
+- Nếu muốn dùng port 465, cần thay đổi `secure: true` trong `mail.service.ts`
 
 ### MAIL_USER
 
@@ -535,11 +535,11 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 GOOGLE_CALLBACK_URL="http://localhost:3000/auth/google/callback"
 
 # Email
-MAIL_HOST="smtp.gmail.com"
 MAIL_PORT=587
+MAIL_HOST="smtp.gmail.com"
+MAIL_FROM="noreply@mimkat.com"
 MAIL_USER="your-email@gmail.com"
 MAIL_PASSWORD="your-app-password"
-MAIL_FROM="noreply@mimkat.com"
 
 # CORS
 CORS_ORIGIN="http://localhost:3001, http://localhost:3002"
@@ -550,10 +550,10 @@ NODE_ENV="development"
 
 # AWS S3 Configuration
 AWS_REGION="ap-southeast-1"
-AWS_ACCESS_KEY_ID="your-access-key"
-AWS_SECRET_ACCESS_KEY="your-secret-key"
 AWS_BUCKET_NAME="mimkat-storage"
+AWS_ACCESS_KEY_ID="your-access-key"
 AWS_ENDPOINT="https://oss.s3.mimkat.vn"
+AWS_SECRET_ACCESS_KEY="your-secret-key"
 ```
 
 **Lưu ý quan trọng:**

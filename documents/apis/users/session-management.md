@@ -245,7 +245,7 @@ curl -X DELETE http://localhost:3000/users/sessions \
 #### Notes
 
 - Xóa **TẤT CẢ** sessions của user (gọi `prisma.session.deleteMany({ where: { userId } })`)
-- Xoá cookie phiên đăng nhập (`accessToken`) trên thiết bị hiện tại (nếu dùng cookie)
+- Xoá cookies xác thực (`accessToken` và `refreshToken`) trên thiết bị hiện tại để force logout ngay lập tức
 - Bao gồm cả thiết bị hiện tại đang gọi API
 - User cần đăng nhập lại trên tất cả thiết bị
 - Access tokens hiện tại vẫn valid cho đến khi hết hạn (1h), nhưng không thể refresh
