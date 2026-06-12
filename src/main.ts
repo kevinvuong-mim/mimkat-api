@@ -2,6 +2,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { Logger, HttpException, ValidationPipe } from '@nestjs/common';
 
 import { AppModule } from '@/app.module';
@@ -11,6 +12,9 @@ import { ResponseInterceptor } from '@/common/interceptors';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+
+  // WebSocket adapter
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Helmet - Security headers middleware
   app.use(

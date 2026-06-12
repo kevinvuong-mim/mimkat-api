@@ -130,6 +130,12 @@ export class UsersController {
     return this.usersService.logoutDevice(user.id, sessionId);
   }
 
+  @Get('lookup')
+  @HttpCode(HttpStatus.OK)
+  getUserByEmail(@Query('email') email: string) {
+    return this.usersService.getUserByEmail(email);
+  }
+
   @Get(':identifier')
   @HttpCode(HttpStatus.OK)
   getUserByIdOrUsername(@Param('identifier') identifier: string) {

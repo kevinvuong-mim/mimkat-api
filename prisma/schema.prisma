@@ -39,10 +39,90 @@ model User {
   passwordResetToken       String?   @unique
 
   // Relations
-  sessions Session[]
+  sessions                 Session[]
+  conversationParticipants ConversationParticipant[]
+  sentMessages             Message[]                 @relation("MessageSender")
 
   @@index([email])
   @@map("users")
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+model Conversation {
+  // ID & Primary Key
+  id String @id @default(uuid())
+
+  // Conversation Information
+  type   ConversationType
+  name   String?
+  avatar String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  // ID & Primary Key
+  id String @id @default(uuid())
+
+  // Conversation Relation
+  conversationId String
+
+  // User Relation
+  userId String
+
+  // Timestamps
+  joinedAt DateTime @default(now())
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_participants")
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+}
+
+model Message {
+  // ID & Primary Key
+  id String @id @default(uuid())
+
+  // Conversation Relation
+  conversationId String
+
+  // Sender Relation
+  senderId String
+
+  // Message Content
+  content String
+  type    MessageType @default(TEXT)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
 }
 
 model Session {

@@ -6,6 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AppService } from '@/app.service';
 import { AuthModule } from '@/auth/auth.module';
+import { ChatModule } from '@/chat/chat.module';
 import { AppController } from '@/app.controller';
 import { TasksModule } from '@/tasks/tasks.module';
 import { UsersModule } from '@/users/users.module';
@@ -35,6 +36,7 @@ import { ImageProcessingModule } from '@/image-processing/image-processing.modul
   ],
   imports: [
     AuthModule,
+    ChatModule,
     TasksModule,
     UsersModule,
     PrismaModule,
