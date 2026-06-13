@@ -162,13 +162,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
 
       const room = `${CHAT_ROOM_PREFIX}${dto.conversationId}`;
-      client.to(room).emit(CHAT_EVENTS.NEW_MESSAGE, message);
+      this.server.to(room).emit(CHAT_EVENTS.NEW_MESSAGE, message);
 
       const conversation = await this.conversationsService.getById(
         dto.conversationId,
         client.userId,
       );
-      client.to(room).emit(CHAT_EVENTS.CONVERSATION_UPDATED, conversation);
+      this.server.to(room).emit(CHAT_EVENTS.CONVERSATION_UPDATED, conversation);
 
       return { success: true, message };
     } finally {
@@ -180,5 +180,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server
       .to(`${CHAT_ROOM_PREFIX}${conversationId}`)
       .emit(CHAT_EVENTS.CONVERSATION_UPDATED, payload);
+  }
+
+  emitConversationDeleted(conversationId: string) {
+    this.server
+      .to(`${CHAT_ROOM_PREFIX}${conversationId}`)
+      .emit(CHAT_EVENTS.CONVERSATION_DELETED, { conversationId });
   }
 }

@@ -18,6 +18,7 @@ import { MessagesQueryDto } from '@/chat/dto/messages-query.dto';
 import { MessagesService } from '@/chat/services/messages.service';
 import { CurrentUser, type UserPayload } from '@/common/decorators';
 import { UpdateConversationDto } from '@/chat/dto/update-conversation.dto';
+import { ConversationsQueryDto } from '@/chat/dto/conversations-query.dto';
 import { ConversationsService } from '@/chat/services/conversations.service';
 import { CreateGroupConversationDto } from '@/chat/dto/create-group-conversation.dto';
 import { CreateDirectConversationDto } from '@/chat/dto/create-direct-conversation.dto';
@@ -33,14 +34,8 @@ export class ConversationsController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  list(@CurrentUser() user: UserPayload) {
-    return this.conversationsService.listForUser(user.id);
-  }
-
-  @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  getOne(@CurrentUser() user: UserPayload, @Param('id') id: string) {
-    return this.conversationsService.getById(id, user.id);
+  list(@CurrentUser() user: UserPayload, @Query() query: ConversationsQueryDto) {
+    return this.conversationsService.listForUser(user.id, query.cursor, query.limit);
   }
 
   @Get(':id/messages')
@@ -74,7 +69,9 @@ export class ConversationsController {
   ) {
     const result = await this.conversationsService.update(id, user.id, dto);
 
-    if (!('deleted' in result && result.deleted)) {
+    if ('deleted' in result && result.deleted) {
+      this.chatGateway.emitConversationDeleted(id);
+    } else {
       this.chatGateway.emitConversationUpdated(id, result);
     }
 
@@ -83,7 +80,9 @@ export class ConversationsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  remove(@CurrentUser() user: UserPayload, @Param('id') id: string) {
-    return this.conversationsService.delete(id, user.id);
+  async remove(@CurrentUser() user: UserPayload, @Param('id') id: string) {
+    const result = await this.conversationsService.delete(id, user.id);
+    this.chatGateway.emitConversationDeleted(id);
+    return result;
   }
 }

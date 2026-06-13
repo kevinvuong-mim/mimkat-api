@@ -8,9 +8,11 @@ export const CHAT_EVENTS = {
   LEAVE: 'chat:leave',
   NEW_MESSAGE: 'chat:new-message',
   CONVERSATION_UPDATED: 'chat:conversation-updated',
+  CONVERSATION_DELETED: 'chat:conversation-deleted',
 } as const;
 
 export const DEFAULT_MESSAGES_PAGE_SIZE = 30;
+export const DEFAULT_CONVERSATIONS_PAGE_SIZE = 30;
 
 export const CHAT_SEND_RATE_LIMIT = 60;
 export const CHAT_SEND_RATE_WINDOW_MS = 60_000;

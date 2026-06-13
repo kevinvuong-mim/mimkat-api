@@ -9,10 +9,6 @@ export class UpdateConversationDto {
   name?: string;
 
   @IsOptional()
-  @IsString()
-  avatar?: string;
-
-  @IsOptional()
   @IsEmail()
   @Transform(({ value }: { value: string }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
@@ -27,5 +23,9 @@ export class UpdateConversationDto {
   removeMemberEmail?: string;
 
   @IsOptional()
-  leave?: boolean;
+  @IsEmail()
+  @Transform(({ value }: { value: string }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  transferAdminEmail?: string;
 }

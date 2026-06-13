@@ -85,6 +85,9 @@ model ConversationParticipant {
   // Timestamps
   joinedAt DateTime @default(now())
 
+  // Role
+  isAdmin Boolean @default(false)
+
   // Relations
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)

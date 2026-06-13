@@ -262,32 +262,4 @@ export class UsersService {
       avatar: this.buildAvatarUrl(user.avatar),
     };
   }
-
-  async getUserByEmail(email: string) {
-    const user = await this.prisma.user.findFirst({
-      where: {
-        isActive: true,
-        email: email.trim(),
-      },
-      select: {
-        id: true,
-        email: true,
-        avatar: true,
-        fullName: true,
-        username: true,
-        createdAt: true,
-      },
-    });
-
-    if (!user) throw new NotFoundException('User not found');
-
-    return {
-      id: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      username: user.username,
-      createdAt: user.createdAt,
-      avatar: this.buildAvatarUrl(user.avatar),
-    };
-  }
 }

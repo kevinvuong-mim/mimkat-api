@@ -8,6 +8,7 @@ import { Prisma, ConversationType } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { UpdateConversationDto } from '@/chat/dto/update-conversation.dto';
+import { DEFAULT_CONVERSATIONS_PAGE_SIZE } from '@/chat/constants/chat.constants';
 import { CreateGroupConversationDto } from '@/chat/dto/create-group-conversation.dto';
 
 const conversationInclude = {
@@ -64,16 +65,54 @@ export class ConversationsService {
     return participant;
   }
 
-  async listForUser(userId: string) {
+  async assertGroupAdmin(conversationId: string, userId: string) {
+    const participant = await this.assertParticipant(conversationId, userId);
+
+    if (!participant.isAdmin) {
+      throw new ForbiddenException('Only the group admin can perform this action');
+    }
+
+    return participant;
+  }
+
+  async listForUser(userId: string, cursor?: string, limit = DEFAULT_CONVERSATIONS_PAGE_SIZE) {
+    const take = limit + 1;
+    const cursorConversation = cursor
+      ? await this.prisma.conversation.findFirst({
+          where: {
+            id: cursor,
+            participants: { some: { userId } },
+          },
+          select: { id: true },
+        })
+      : null;
+
+    if (cursor && !cursorConversation) {
+      throw new BadRequestException('Invalid cursor');
+    }
+
     const conversations = await this.prisma.conversation.findMany({
       where: {
         participants: { some: { userId } },
       },
       include: conversationInclude,
-      orderBy: { updatedAt: 'desc' },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+      take,
+      ...(cursorConversation
+        ? {
+            cursor: { id: cursorConversation.id },
+            skip: 1,
+          }
+        : {}),
     });
 
-    return conversations.map((conversation) => this.formatConversation(conversation, userId));
+    const hasMore = conversations.length > limit;
+    const items = hasMore ? conversations.slice(0, limit) : conversations;
+
+    return {
+      items: items.map((conversation) => this.formatConversation(conversation, userId)),
+      nextCursor: hasMore ? items[items.length - 1]?.id : null,
+    };
   }
 
   async getById(conversationId: string, userId: string) {
@@ -107,6 +146,26 @@ export class ConversationsService {
     return user.id;
   }
 
+  private directConversationWhere(
+    userId: string,
+    participantId: string,
+  ): Prisma.ConversationWhereInput {
+    return {
+      type: ConversationType.DIRECT,
+      AND: [
+        { participants: { some: { userId } } },
+        { participants: { some: { userId: participantId } } },
+      ],
+    };
+  }
+
+  private async findExistingDirectConversation(userId: string, participantId: string) {
+    return this.prisma.conversation.findFirst({
+      where: this.directConversationWhere(userId, participantId),
+      include: conversationInclude,
+    });
+  }
+
   async findOrCreateDirect(userId: string, participantEmail: string) {
     const participantId = await this.resolveParticipantId(participantEmail);
 
@@ -114,24 +173,17 @@ export class ConversationsService {
       throw new BadRequestException('Cannot start a direct chat with yourself');
     }
 
-    return this.prisma.$transaction(
-      async (tx) => {
-        const existing = await tx.conversation.findFirst({
-          where: {
-            type: ConversationType.DIRECT,
-            AND: [
-              { participants: { some: { userId } } },
-              { participants: { some: { userId: participantId } } },
-            ],
-          },
-          include: conversationInclude,
-        });
+    const maxAttempts = 3;
 
-        if (existing && existing.participants.length === 2) {
-          return this.formatConversation(existing, userId);
-        }
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const existing = await this.findExistingDirectConversation(userId, participantId);
 
-        const conversation = await tx.conversation.create({
+      if (existing && existing.participants.length === 2) {
+        return this.formatConversation(existing, userId);
+      }
+
+      try {
+        const conversation = await this.prisma.conversation.create({
           data: {
             type: ConversationType.DIRECT,
             participants: {
@@ -142,9 +194,19 @@ export class ConversationsService {
         });
 
         return this.formatConversation(conversation, userId);
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    );
+      } catch (error) {
+        const raced = await this.findExistingDirectConversation(userId, participantId);
+        if (raced && raced.participants.length === 2) {
+          return this.formatConversation(raced, userId);
+        }
+
+        if (attempt === maxAttempts - 1) {
+          throw error;
+        }
+      }
+    }
+
+    throw new BadRequestException('Failed to create direct conversation');
   }
 
   async createGroup(userId: string, dto: CreateGroupConversationDto) {
@@ -161,9 +223,11 @@ export class ConversationsService {
       data: {
         type: ConversationType.GROUP,
         name: dto.name,
-        avatar: dto.avatar,
         participants: {
-          create: [{ userId }, ...uniqueMemberIds.map((id) => ({ userId: id }))],
+          create: [
+            { userId, isAdmin: true },
+            ...uniqueMemberIds.map((id) => ({ userId: id, isAdmin: false })),
+          ],
         },
       },
       include: conversationInclude,
@@ -182,14 +246,14 @@ export class ConversationsService {
       throw new NotFoundException('Conversation not found');
     }
 
-    await this.assertParticipant(conversationId, userId);
-
     if (conversation.type === ConversationType.DIRECT) {
       throw new BadRequestException('Direct conversations cannot be updated');
     }
 
-    if (dto.leave) {
-      return this.removeMember(conversationId, userId, userId);
+    await this.assertGroupAdmin(conversationId, userId);
+
+    if (dto.transferAdminEmail) {
+      return this.transferAdmin(conversationId, userId, dto.transferAdminEmail);
     }
 
     if (dto.addMemberEmail) {
@@ -202,13 +266,10 @@ export class ConversationsService {
       return this.removeMember(conversationId, userId, memberId);
     }
 
-    if (dto.name !== undefined || dto.avatar !== undefined) {
+    if (dto.name !== undefined) {
       const updated = await this.prisma.conversation.update({
         where: { id: conversationId },
-        data: {
-          name: dto.name,
-          avatar: dto.avatar,
-        },
+        data: { name: dto.name },
         include: conversationInclude,
       });
 
@@ -219,8 +280,6 @@ export class ConversationsService {
   }
 
   private async addMember(conversationId: string, actorId: string, memberId: string) {
-    await this.assertParticipant(conversationId, actorId);
-
     const existing = await this.prisma.conversationParticipant.findUnique({
       where: {
         conversationId_userId: { conversationId, userId: memberId },
@@ -241,7 +300,7 @@ export class ConversationsService {
     }
 
     await this.prisma.conversationParticipant.create({
-      data: { conversationId, userId: memberId },
+      data: { conversationId, userId: memberId, isAdmin: false },
     });
 
     const conversation = await this.prisma.conversation.update({
@@ -254,24 +313,18 @@ export class ConversationsService {
   }
 
   private async removeMember(conversationId: string, actorId: string, memberId: string) {
-    const conversation = await this.prisma.conversation.findUnique({
-      where: { id: conversationId },
-      include: { participants: { orderBy: { joinedAt: 'asc' } } },
+    const target = await this.prisma.conversationParticipant.findUnique({
+      where: {
+        conversationId_userId: { conversationId, userId: memberId },
+      },
     });
 
-    if (!conversation || conversation.type !== ConversationType.GROUP) {
-      throw new BadRequestException('Invalid group conversation');
+    if (!target) {
+      throw new NotFoundException('Member not found in this conversation');
     }
 
-    const isSelfLeave = actorId === memberId;
-    const isParticipant = conversation.participants.some((p) => p.userId === actorId);
-
-    if (!isParticipant) {
-      throw new ForbiddenException('You are not a member of this conversation');
-    }
-
-    if (!isSelfLeave && conversation.participants[0]?.userId !== actorId) {
-      throw new ForbiddenException('Only the group creator can remove members');
+    if (target.isAdmin) {
+      throw new BadRequestException('Transfer admin role before removing the admin');
     }
 
     await this.prisma.conversationParticipant.delete({
@@ -297,10 +350,54 @@ export class ConversationsService {
     return this.formatConversation(updated!, actorId);
   }
 
+  private async transferAdmin(conversationId: string, actorId: string, transferAdminEmail: string) {
+    const newAdminId = await this.resolveParticipantId(transferAdminEmail);
+
+    if (newAdminId === actorId) {
+      throw new BadRequestException('You are already the admin');
+    }
+
+    const newAdminParticipant = await this.prisma.conversationParticipant.findUnique({
+      where: {
+        conversationId_userId: { conversationId, userId: newAdminId },
+      },
+    });
+
+    if (!newAdminParticipant) {
+      throw new BadRequestException('Target user is not a member of this group');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.conversationParticipant.update({
+        where: {
+          conversationId_userId: { conversationId, userId: actorId },
+        },
+        data: { isAdmin: false },
+      }),
+      this.prisma.conversationParticipant.update({
+        where: {
+          conversationId_userId: { conversationId, userId: newAdminId },
+        },
+        data: { isAdmin: true },
+      }),
+      this.prisma.conversation.update({
+        where: { id: conversationId },
+        data: { updatedAt: new Date() },
+      }),
+    ]);
+
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: conversationInclude,
+    });
+
+    return this.formatConversation(conversation!, actorId);
+  }
+
   async delete(conversationId: string, userId: string) {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
-      include: { participants: { orderBy: { joinedAt: 'asc' } } },
+      include: { participants: true },
     });
 
     if (!conversation) {
@@ -310,13 +407,11 @@ export class ConversationsService {
     await this.assertParticipant(conversationId, userId);
 
     if (conversation.type === ConversationType.DIRECT) {
-      throw new BadRequestException('Direct conversations cannot be deleted');
+      await this.prisma.conversation.delete({ where: { id: conversationId } });
+      return { deleted: true, conversationId };
     }
 
-    if (conversation.participants[0]?.userId !== userId) {
-      throw new ForbiddenException('Only the group creator can delete this conversation');
-    }
-
+    await this.assertGroupAdmin(conversationId, userId);
     await this.prisma.conversation.delete({ where: { id: conversationId } });
 
     return { deleted: true, conversationId };
@@ -344,6 +439,7 @@ export class ConversationsService {
       participants: conversation.participants.map((p) => ({
         id: p.id,
         userId: p.userId,
+        isAdmin: p.isAdmin,
         joinedAt: p.joinedAt,
         user: p.user,
       })),
