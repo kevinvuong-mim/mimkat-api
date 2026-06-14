@@ -25,6 +25,7 @@ model User {
   // Timestamps
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
+  lastSeenAt DateTime?
 
   // Account Status
   isActive        Boolean @default(true)
