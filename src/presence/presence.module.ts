@@ -7,8 +7,8 @@ import { PresenceController } from '@/presence/presence.controller';
 
 @Module({
   imports: [ChatModule],
-  controllers: [PresenceController],
   exports: [PresenceService],
+  controllers: [PresenceController],
   providers: [PresenceGateway, PresenceService],
 })
 export class PresenceModule {}

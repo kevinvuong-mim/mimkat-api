@@ -53,9 +53,9 @@ export class UsersService {
         username: true,
         createdAt: true,
         updatedAt: true,
+        lastSeenAt: true,
         phoneNumber: true,
         isEmailVerified: true,
-        lastSeenAt: true,
       },
     });
 
@@ -71,13 +71,13 @@ export class UsersService {
       username: user.username,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      isOnline: presence.isOnline,
       hasPassword: !!user.password,
       phoneNumber: user.phoneNumber,
       hasGoogleAuth: !!user.googleId,
+      lastSeenAt: presence.lastSeenAt,
       isEmailVerified: user.isEmailVerified,
       avatar: this.buildAvatarUrl(user.avatar),
-      isOnline: presence.isOnline,
-      lastSeenAt: presence.lastSeenAt,
     };
   }
 
@@ -269,9 +269,9 @@ export class UsersService {
       fullName: user.fullName,
       username: user.username,
       createdAt: user.createdAt,
-      avatar: this.buildAvatarUrl(user.avatar),
       isOnline: presence.isOnline,
       lastSeenAt: presence.lastSeenAt,
+      avatar: this.buildAvatarUrl(user.avatar),
     };
   }
 }
