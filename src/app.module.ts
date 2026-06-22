@@ -14,6 +14,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { HttpExceptionFilter } from '@/common/filters';
 import { StorageModule } from '@/storage/storage.module';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { PresenceModule } from '@/presence/presence.module';
 import { VerificationModule } from '@/verification/verification.module';
 import { ImageProcessingModule } from '@/image-processing/image-processing.module';
 
@@ -41,6 +42,7 @@ import { ImageProcessingModule } from '@/image-processing/image-processing.modul
     UsersModule,
     PrismaModule,
     StorageModule,
+    PresenceModule,
     VerificationModule,
     ImageProcessingModule,
     ThrottlerModule.forRoot([

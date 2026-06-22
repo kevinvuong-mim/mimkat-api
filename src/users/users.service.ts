@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { createPaginatedData } from '@/common/utils';
 import { PrismaService } from '@/prisma/prisma.service';
 import { StorageService } from '@/storage/storage.service';
+import { PresenceService } from '@/presence/presence.service';
 import { UpdateProfileDto } from '@/users/dto/update-profile.dto';
 import { ImageProcessingService } from '@/image-processing/image-processing.service';
 
@@ -22,6 +23,7 @@ export class UsersService {
     private prisma: PrismaService,
     private storage: StorageService,
     private configService: ConfigService,
+    private presenceService: PresenceService,
     private imageProcessing: ImageProcessingService,
   ) {
     this.awsEndpoint = this.configService.get<string>('AWS_ENDPOINT') || '';
@@ -51,12 +53,15 @@ export class UsersService {
         username: true,
         createdAt: true,
         updatedAt: true,
+        lastSeenAt: true,
         phoneNumber: true,
         isEmailVerified: true,
       },
     });
 
     if (!user) throw new NotFoundException('User not found');
+
+    const presence = this.presenceService.getPresence(user.id, user.lastSeenAt);
 
     return {
       id: user.id,
@@ -66,9 +71,11 @@ export class UsersService {
       username: user.username,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      isOnline: presence.isOnline,
       hasPassword: !!user.password,
       phoneNumber: user.phoneNumber,
       hasGoogleAuth: !!user.googleId,
+      lastSeenAt: presence.lastSeenAt,
       isEmailVerified: user.isEmailVerified,
       avatar: this.buildAvatarUrl(user.avatar),
     };
@@ -249,16 +256,21 @@ export class UsersService {
         fullName: true,
         username: true,
         createdAt: true,
+        lastSeenAt: true,
       },
     });
 
     if (!user) throw new NotFoundException('User not found');
+
+    const presence = this.presenceService.getPresence(user.id, user.lastSeenAt);
 
     return {
       id: user.id,
       fullName: user.fullName,
       username: user.username,
       createdAt: user.createdAt,
+      isOnline: presence.isOnline,
+      lastSeenAt: presence.lastSeenAt,
       avatar: this.buildAvatarUrl(user.avatar),
     };
   }
